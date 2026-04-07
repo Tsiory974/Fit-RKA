@@ -3,29 +3,20 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FitTrack — Développé couché</title>
+  <!-- Le titre est mis à jour par JS selon l'exercice chargé -->
+  <title>FitTrack — Exercice</title>
   <link rel="stylesheet" href="navbar.css">
   <link rel="stylesheet" href="exercice.css">
 </head>
 <body>
 
   <!-- ============================================================
-       CONTRÔLE DU FLUX : PREMIÈRE VISITE → PAGE EXERCICE
-       Technique : checkbox caché + sélecteurs CSS ~
-       - Décoché (défaut) : écran de saisie du 1RM visible
-       - Coché            : page exercice visible
-       Remarque : sans JS, cette valeur n'est pas persistée entre sessions.
-       Ajouter localStorage via JS pour un vrai comportement "première fois".
+       ÉCRAN 1 — ONBOARDING : SAISIE DU POIDS MAX (1RM)
+       Affiché par JS si l'exercice n'a pas encore de 1RM.
+       Masqué (display:none) par défaut ; JS le montre si besoin.
        ============================================================ -->
-  <input type="checkbox" id="rm-entered" class="flow-toggle">
+  <div class="onboarding-screen" id="onboarding-screen" style="display:none" role="main">
 
-  <!-- ============================================================
-       ÉCRAN 1 — PREMIÈRE VISITE : SAISIE DU POIDS MAX (1RM)
-       Visible par défaut. Masqué quand #rm-entered est coché.
-       ============================================================ -->
-  <div class="onboarding-screen" role="main">
-
-    <!-- Bouton retour -->
     <a href="musculation.html" class="back-link" aria-label="Retour aux exercices">
       <span class="back-link__arrow" aria-hidden="true">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
@@ -38,7 +29,6 @@
 
     <div class="onboarding-card">
 
-      <!-- Icône exercice -->
       <div class="onboarding-icon" aria-hidden="true">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none"
              stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -50,51 +40,48 @@
         </svg>
       </div>
 
-      <!-- Badge première visite -->
-      <span class="badge-first" aria-label="Première fois sur cet exercice">
-        ✦ Première visite
-      </span>
+      <span class="badge-first">✦ Première visite</span>
 
-      <!-- Titre & description -->
-      <h1 class="onboarding-title">Développé couché</h1>
+      <!-- data-exo-name : peuplé par exercice.js -->
+      <h1 class="onboarding-title" data-exo-name></h1>
       <p  class="onboarding-desc">
         Indique ton poids maximal (1RM) pour personnaliser
         tes zones d'entraînement.
       </p>
 
-      <!-- Groupe de saisie du 1RM -->
-      <div class="rm-input-group" role="group" aria-labelledby="rm-label">
-        <label id="rm-label" class="rm-input-label" for="rm-value">
-          Poids maximal
-        </label>
-        <div class="rm-input-row">
-          <input
-            type="number"
-            id="rm-value"
-            class="rm-input"
-            placeholder="100"
-            min="1"
-            max="500"
-            step="0.5"
-            aria-label="Poids maximal en kilogrammes"
-          >
-          <span class="rm-input-unit" aria-hidden="true">kg</span>
+      <!-- Formulaire de saisie du 1RM — soumis par JS (exercice.js) -->
+      <form id="rm-form">
+        <div class="rm-input-group" role="group" aria-labelledby="rm-label">
+          <label id="rm-label" class="rm-input-label" for="rm-value">Poids maximal</label>
+          <div class="rm-input-row">
+            <input
+              type="number"
+              id="rm-value"
+              class="rm-input"
+              placeholder="100"
+              min="1"
+              max="500"
+              step="0.5"
+              required
+              aria-label="Poids maximal en kilogrammes"
+            >
+            <span class="rm-input-unit" aria-hidden="true">kg</span>
+          </div>
+          <p class="rm-input-hint">
+            Ton 1RM est le poids que tu peux soulever en 1 répétition maximum.
+          </p>
         </div>
-        <p class="rm-input-hint">
-          Ton 1RM est le poids que tu peux soulever en 1 répétition maximum.
-        </p>
-      </div>
 
-      <!-- Bouton Valider — label qui coche #rm-entered → affiche la page exercice -->
-      <label for="rm-entered" class="btn-validate" role="button">
-        <span class="btn-validate__icon" aria-hidden="true">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
-               stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="20 6 9 17 4 12"/>
-          </svg>
-        </span>
-        Valider et commencer
-      </label>
+        <button type="submit" class="btn-validate">
+          <span class="btn-validate__icon" aria-hidden="true">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+          </span>
+          Valider et commencer
+        </button>
+      </form>
 
     </div>
   </div>
@@ -103,25 +90,18 @@
 
   <!-- ============================================================
        ÉCRAN 2 — PAGE EXERCICE (onglets stats + historique)
-       Masqué par défaut. Affiché quand #rm-entered est coché.
-
-       STRUCTURE INTERNE :
-         → Radio inputs (enfants directs) pilotent les onglets via ~
-         → .tabs-header + .tabs-track sont aussi enfants directs
-         Cela permet les sélecteurs :
-           #tab-history:checked ~ .tabs-header .tab-indicator { ... }
-           #tab-history:checked ~ .tabs-track              { ... }
+       Affiché par JS quand le 1RM est connu.
+       Les radio inputs sont enfants directs de .exercise-page :
+       sélecteurs CSS ~ (tab-header, tabs-track) fonctionnent.
        ============================================================ -->
-  <div class="exercise-page">
+  <div class="exercise-page" id="exercise-page" style="display:none">
 
-    <!-- Radio inputs des onglets — DOIVENT être enfants directs de .exercise-page -->
     <input type="radio" id="tab-stats"   name="exercise-tabs" checked>
     <input type="radio" id="tab-history" name="exercise-tabs">
 
-    <!-- ===== EN-TÊTE DE LA PAGE EXERCICE ===== -->
+    <!-- ===== EN-TÊTE ===== -->
     <header class="exercise-header">
 
-      <!-- Retour -->
       <a href="musculation.html" class="exercise-header__back" aria-label="Retour aux exercices">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
              stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -129,16 +109,15 @@
         </svg>
       </a>
 
-      <!-- Nom + groupe musculaire -->
       <div class="exercise-header__info">
-        <h1 class="exercise-header__name">Développé couché</h1>
-        <span class="exercise-header__muscle">Pectoraux</span>
+        <!-- data-exo-name / data-exo-muscle : peuplés par exercice.js -->
+        <h1 class="exercise-header__name"  data-exo-name></h1>
+        <span class="exercise-header__muscle" data-exo-muscle></span>
       </div>
 
-      <!-- 1RM affiché dans le header -->
-      <!-- Note : valeur fictive — à lier dynamiquement via JS -->
-      <div class="exercise-header__rm" aria-label="Poids maximal : 100 kg">
-        <span class="exercise-header__rm-value">100</span>
+      <!-- data-exo-rm : conteneur, .rm-value peuplé par exercice.js -->
+      <div class="exercise-header__rm" data-exo-rm>
+        <span class="exercise-header__rm-value rm-value">—</span>
         <span class="exercise-header__rm-unit">kg</span>
       </div>
 
@@ -147,11 +126,7 @@
     <!-- ===== BARRE D'ONGLETS ===== -->
     <nav class="tabs-header" role="tablist" aria-label="Sections de l'exercice">
 
-      <!-- Onglet Mes stats -->
-      <label for="tab-stats"
-             class="tab-btn"
-             role="tab"
-             aria-controls="panel-stats">
+      <label for="tab-stats" class="tab-btn" role="tab" aria-controls="panel-stats">
         <span class="tab-btn__icon" aria-hidden="true">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -163,11 +138,7 @@
         <span class="tab-btn__label">Mes stats</span>
       </label>
 
-      <!-- Onglet Historique -->
-      <label for="tab-history"
-             class="tab-btn"
-             role="tab"
-             aria-controls="panel-history">
+      <label for="tab-history" class="tab-btn" role="tab" aria-controls="panel-history">
         <span class="tab-btn__icon" aria-hidden="true">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -178,7 +149,6 @@
         <span class="tab-btn__label">Historique</span>
       </label>
 
-      <!-- Indicateur glissant -->
       <span class="tab-indicator" aria-hidden="true"></span>
 
     </nav>
@@ -189,111 +159,164 @@
       <!-- ── ONGLET 1 : MES STATS ── -->
       <section class="tab-panel stats-tab" id="panel-stats" role="tabpanel" aria-labelledby="tab-stats">
 
-        <!-- Card hero : 1RM -->
+        <!-- BLOC 1 : CARTE 1RM -->
         <div class="stat-hero">
           <div class="stat-hero__label">Poids maximal (1RM)</div>
+          <!-- .rm-value peuplé par exercice.js -->
           <div class="stat-hero__value">
-            100 <span class="stat-hero__unit">kg</span>
+            <span class="rm-value">—</span><span class="stat-hero__unit">kg</span>
           </div>
-          <div class="stat-hero__meta">Mis à jour le 3 avril 2026</div>
-          <!-- Modifier le 1RM (remet au flow d'onboarding via un second checkbox si besoin) -->
+          <!-- data-rm-date peuplé par exercice.js -->
+          <div class="stat-hero__meta" data-rm-date>—</div>
           <button class="stat-hero__edit-btn" type="button" disabled
-                  title="Modification disponible prochainement">
-            Modifier
-          </button>
+                  title="Modification disponible prochainement">Modifier</button>
         </div>
 
-        <!-- Tableau des zones d'entraînement -->
-        <!--
-          Note : les poids sont des valeurs fictives (1RM = 100 kg pour la démo).
-          À calculer dynamiquement avec JS : poids = Math.round(rm * pct / 5) * 5
-        -->
-        <div class="training-zones">
-          <h2 class="training-zones__title">Zones d'entraînement</h2>
-          <p  class="training-zones__subtitle">Basé sur un 1RM de 100 kg</p>
+        <!-- BLOC 2 : SÉLECTEUR DE ZONE D'ENTRAÎNEMENT
+             Technique CSS : radio inputs + sélecteurs ~
+             Les poids (data-zone-weight) sont mis à jour par exercice.js -->
+        <div class="zone-selector-wrapper">
 
-          <div class="zones-list">
+          <input type="radio" id="z50"  name="zone-pct" class="zone-radio" value="50">
+          <input type="radio" id="z60"  name="zone-pct" class="zone-radio" value="60">
+          <input type="radio" id="z70"  name="zone-pct" class="zone-radio" value="70" checked>
+          <input type="radio" id="z75"  name="zone-pct" class="zone-radio" value="75">
+          <input type="radio" id="z80"  name="zone-pct" class="zone-radio" value="80">
+          <input type="radio" id="z85"  name="zone-pct" class="zone-radio" value="85">
+          <input type="radio" id="z90"  name="zone-pct" class="zone-radio" value="90">
+          <input type="radio" id="z100" name="zone-pct" class="zone-radio" value="100">
 
-            <!-- Zone : Activation -->
-            <div class="zone-row zone-row--light">
-              <div class="zone-row__pct">50 %</div>
-              <div class="zone-row__info">
-                <span class="zone-row__label">Activation</span>
-                <span class="zone-row__usage">Échauffement, mobilité</span>
-              </div>
-              <div class="zone-row__weight">50 <span>kg</span></div>
+          <h2 class="section-title">Zone d'entraînement</h2>
+          <p  class="section-sub">Sélectionne un pourcentage de ton 1RM</p>
+
+          <div class="zone-chips" role="group" aria-label="Pourcentage du 1RM">
+            <label for="z50"  class="zone-chip">50 %</label>
+            <label for="z60"  class="zone-chip">60 %</label>
+            <label for="z70"  class="zone-chip">70 %</label>
+            <label for="z75"  class="zone-chip">75 %</label>
+            <label for="z80"  class="zone-chip">80 %</label>
+            <label for="z85"  class="zone-chip">85 %</label>
+            <label for="z90"  class="zone-chip">90 %</label>
+            <label for="z100" class="zone-chip">100 %</label>
+          </div>
+
+          <!-- Cartes résultat — une visible à la fois (CSS :checked ~)
+               data-zone-weight : valeur mise à jour par exercice.js -->
+
+          <div class="zone-result zone-result--activation">
+            <div class="zone-result__header">
+              <span class="zone-result__pct">50 %</span>
+              <span class="zone-result__weight" data-zone-weight="50">— <small>kg</small></span>
             </div>
-
-            <!-- Zone : Endurance -->
-            <div class="zone-row zone-row--light">
-              <div class="zone-row__pct">60 %</div>
-              <div class="zone-row__info">
-                <span class="zone-row__label">Endurance</span>
-                <span class="zone-row__usage">Séries longues, 15+ reps</span>
-              </div>
-              <div class="zone-row__weight">60 <span>kg</span></div>
+            <div class="zone-result__badge">Activation</div>
+            <p class="zone-result__desc">Échauffement et mobilité articulaire.</p>
+            <div class="zone-result__prescription">
+              <span>🔁 15–20 reps</span><span>📦 2–3 séries</span><span>⏱ 45 s repos</span>
             </div>
+          </div>
 
-            <!-- Zone : Hypertrophie légère -->
-            <div class="zone-row zone-row--moderate">
-              <div class="zone-row__pct">70 %</div>
-              <div class="zone-row__info">
-                <span class="zone-row__label">Hypertrophie</span>
-                <span class="zone-row__usage">8–12 reps, volume</span>
-              </div>
-              <div class="zone-row__weight">70 <span>kg</span></div>
+          <div class="zone-result zone-result--endurance">
+            <div class="zone-result__header">
+              <span class="zone-result__pct">60 %</span>
+              <span class="zone-result__weight" data-zone-weight="60">— <small>kg</small></span>
             </div>
-
-            <!-- Zone : Hypertrophie -->
-            <div class="zone-row zone-row--moderate">
-              <div class="zone-row__pct">75 %</div>
-              <div class="zone-row__info">
-                <span class="zone-row__label">Hypertrophie+</span>
-                <span class="zone-row__usage">8–10 reps</span>
-              </div>
-              <div class="zone-row__weight">75 <span>kg</span></div>
+            <div class="zone-result__badge">Endurance</div>
+            <p class="zone-result__desc">Développe la résistance musculaire sur la durée.</p>
+            <div class="zone-result__prescription">
+              <span>🔁 15+ reps</span><span>📦 3–4 séries</span><span>⏱ 60 s repos</span>
             </div>
+          </div>
 
-            <!-- Zone : Force -->
-            <div class="zone-row zone-row--heavy">
-              <div class="zone-row__pct">80 %</div>
-              <div class="zone-row__info">
-                <span class="zone-row__label">Force</span>
-                <span class="zone-row__usage">5–8 reps</span>
-              </div>
-              <div class="zone-row__weight">80 <span>kg</span></div>
+          <div class="zone-result zone-result--hypertrophy">
+            <div class="zone-result__header">
+              <span class="zone-result__pct">70 %</span>
+              <span class="zone-result__weight" data-zone-weight="70">— <small>kg</small></span>
             </div>
-
-            <!-- Zone : Force lourde -->
-            <div class="zone-row zone-row--heavy">
-              <div class="zone-row__pct">85 %</div>
-              <div class="zone-row__info">
-                <span class="zone-row__label">Force lourde</span>
-                <span class="zone-row__usage">3–5 reps</span>
-              </div>
-              <div class="zone-row__weight">85 <span>kg</span></div>
+            <div class="zone-result__badge">Hypertrophie</div>
+            <p class="zone-result__desc">Zone principale de prise de masse musculaire.</p>
+            <div class="zone-result__prescription">
+              <span>🔁 10–12 reps</span><span>📦 3–4 séries</span><span>⏱ 60–90 s repos</span>
             </div>
+          </div>
 
-            <!-- Zone : Force maximale -->
-            <div class="zone-row zone-row--max">
-              <div class="zone-row__pct">90 %</div>
-              <div class="zone-row__info">
-                <span class="zone-row__label">Force max</span>
-                <span class="zone-row__usage">1–3 reps</span>
-              </div>
-              <div class="zone-row__weight">90 <span>kg</span></div>
+          <div class="zone-result zone-result--hypertrophy-plus">
+            <div class="zone-result__header">
+              <span class="zone-result__pct">75 %</span>
+              <span class="zone-result__weight" data-zone-weight="75">— <small>kg</small></span>
             </div>
-
-            <!-- Zone : 1RM -->
-            <div class="zone-row zone-row--max zone-row--rm">
-              <div class="zone-row__pct">100 %</div>
-              <div class="zone-row__info">
-                <span class="zone-row__label">1RM</span>
-                <span class="zone-row__usage">Maximum absolu</span>
-              </div>
-              <div class="zone-row__weight">100 <span>kg</span></div>
+            <div class="zone-result__badge">Hypertrophie+</div>
+            <p class="zone-result__desc">Volume modéré, charge plus lourde — compromis masse/force.</p>
+            <div class="zone-result__prescription">
+              <span>🔁 8–10 reps</span><span>📦 3–5 séries</span><span>⏱ 90 s repos</span>
             </div>
+          </div>
 
+          <div class="zone-result zone-result--strength">
+            <div class="zone-result__header">
+              <span class="zone-result__pct">80 %</span>
+              <span class="zone-result__weight" data-zone-weight="80">— <small>kg</small></span>
+            </div>
+            <div class="zone-result__badge">Force</div>
+            <p class="zone-result__desc">Développe la force fonctionnelle et la densité musculaire.</p>
+            <div class="zone-result__prescription">
+              <span>🔁 5–8 reps</span><span>📦 4–5 séries</span><span>⏱ 2 min repos</span>
+            </div>
+          </div>
+
+          <div class="zone-result zone-result--heavy-strength">
+            <div class="zone-result__header">
+              <span class="zone-result__pct">85 %</span>
+              <span class="zone-result__weight" data-zone-weight="85">— <small>kg</small></span>
+            </div>
+            <div class="zone-result__badge">Force lourde</div>
+            <p class="zone-result__desc">Recrutement neuromusculaire maximal, charges lourdes.</p>
+            <div class="zone-result__prescription">
+              <span>🔁 3–5 reps</span><span>📦 4–5 séries</span><span>⏱ 2–3 min repos</span>
+            </div>
+          </div>
+
+          <div class="zone-result zone-result--power">
+            <div class="zone-result__header">
+              <span class="zone-result__pct">90 %</span>
+              <span class="zone-result__weight" data-zone-weight="90">— <small>kg</small></span>
+            </div>
+            <div class="zone-result__badge">Puissance</div>
+            <p class="zone-result__desc">Explosivité maximale — approche du maximum absolu.</p>
+            <div class="zone-result__prescription">
+              <span>🔁 1–3 reps</span><span>📦 3–5 séries</span><span>⏱ 3–5 min repos</span>
+            </div>
+          </div>
+
+          <div class="zone-result zone-result--max">
+            <div class="zone-result__header">
+              <span class="zone-result__pct">100 %</span>
+              <span class="zone-result__weight" data-zone-weight="100">— <small>kg</small></span>
+            </div>
+            <div class="zone-result__badge">1RM — Test max</div>
+            <p class="zone-result__desc">Effort maximum absolu. À faire rarement, avec un pareur.</p>
+            <div class="zone-result__prescription">
+              <span>🔁 1 rep</span><span>📦 1–2 essais</span><span>⏱ 5+ min repos</span>
+            </div>
+          </div>
+
+        </div><!-- fin .zone-selector-wrapper -->
+
+        <!-- BLOC 3 : GRAPHIQUE D'ÉVOLUTION DU 1RM
+             Barres + labels rendus dynamiquement par exercice.js -->
+        <div class="rm-chart-block">
+          <div class="rm-chart-block__header">
+            <h2 class="section-title">Évolution du 1RM</h2>
+            <span class="rm-chart-block__trend rm-chart-block__trend--up"></span>
+          </div>
+          <p class="section-sub">Poids max enregistré par séance</p>
+
+          <div class="rm-chart" role="img" aria-label="Graphique d'évolution du poids maximal">
+            <!-- Grille Y — mise à jour par exercice.js -->
+            <div class="chart-grid" aria-hidden="true"></div>
+            <!-- Barres — rendu complet par exercice.js -->
+            <div class="chart-bars"></div>
+            <!-- Labels X — rendu complet par exercice.js -->
+            <div class="chart-labels" aria-hidden="true"></div>
           </div>
         </div>
 
@@ -304,128 +327,12 @@
 
         <div class="history-header">
           <h2 class="history-header__title">Historique</h2>
-          <span class="history-header__count">4 séances</span>
+          <span class="history-header__count">0 séance</span>
         </div>
 
-        <!-- Liste des entrées d'historique -->
-        <ol class="history-list" reversed>
+        <!-- Liste rendue dynamiquement par exercice.js -->
+        <ol class="history-list"></ol>
 
-          <!-- Entrée la plus récente en premier -->
-          <li>
-            <article class="history-entry">
-              <div class="history-entry__date-col">
-                <span class="history-entry__day">03</span>
-                <span class="history-entry__month">avr.</span>
-                <span class="history-entry__year">2026</span>
-              </div>
-              <div class="history-entry__body">
-                <div class="history-entry__title">Séance Hypertrophie</div>
-                <div class="history-entry__stats">
-                  <span class="history-entry__stat">
-                    <span class="history-entry__stat-icon" aria-hidden="true">⚡</span>
-                    4 séries
-                  </span>
-                  <span class="history-entry__stat">
-                    <span class="history-entry__stat-icon" aria-hidden="true">↩</span>
-                    8 reps
-                  </span>
-                  <span class="history-entry__stat">
-                    <span class="history-entry__stat-icon" aria-hidden="true">⏱</span>
-                    90 s repos
-                  </span>
-                </div>
-                <div class="history-entry__weight-badge">70 kg</div>
-              </div>
-            </article>
-          </li>
-
-          <li>
-            <article class="history-entry">
-              <div class="history-entry__date-col">
-                <span class="history-entry__day">31</span>
-                <span class="history-entry__month">mars</span>
-                <span class="history-entry__year">2026</span>
-              </div>
-              <div class="history-entry__body">
-                <div class="history-entry__title">Séance Force</div>
-                <div class="history-entry__stats">
-                  <span class="history-entry__stat">
-                    <span class="history-entry__stat-icon" aria-hidden="true">⚡</span>
-                    4 séries
-                  </span>
-                  <span class="history-entry__stat">
-                    <span class="history-entry__stat-icon" aria-hidden="true">↩</span>
-                    6 reps
-                  </span>
-                  <span class="history-entry__stat">
-                    <span class="history-entry__stat-icon" aria-hidden="true">⏱</span>
-                    2 min repos
-                  </span>
-                </div>
-                <div class="history-entry__weight-badge history-entry__weight-badge--heavy">75 kg</div>
-              </div>
-            </article>
-          </li>
-
-          <li>
-            <article class="history-entry">
-              <div class="history-entry__date-col">
-                <span class="history-entry__day">28</span>
-                <span class="history-entry__month">mars</span>
-                <span class="history-entry__year">2026</span>
-              </div>
-              <div class="history-entry__body">
-                <div class="history-entry__title">Séance Volume</div>
-                <div class="history-entry__stats">
-                  <span class="history-entry__stat">
-                    <span class="history-entry__stat-icon" aria-hidden="true">⚡</span>
-                    3 séries
-                  </span>
-                  <span class="history-entry__stat">
-                    <span class="history-entry__stat-icon" aria-hidden="true">↩</span>
-                    10 reps
-                  </span>
-                  <span class="history-entry__stat">
-                    <span class="history-entry__stat-icon" aria-hidden="true">⏱</span>
-                    60 s repos
-                  </span>
-                </div>
-                <div class="history-entry__weight-badge">65 kg</div>
-              </div>
-            </article>
-          </li>
-
-          <li>
-            <article class="history-entry">
-              <div class="history-entry__date-col">
-                <span class="history-entry__day">24</span>
-                <span class="history-entry__month">mars</span>
-                <span class="history-entry__year">2026</span>
-              </div>
-              <div class="history-entry__body">
-                <div class="history-entry__title">Séance Force max</div>
-                <div class="history-entry__stats">
-                  <span class="history-entry__stat">
-                    <span class="history-entry__stat-icon" aria-hidden="true">⚡</span>
-                    5 séries
-                  </span>
-                  <span class="history-entry__stat">
-                    <span class="history-entry__stat-icon" aria-hidden="true">↩</span>
-                    5 reps
-                  </span>
-                  <span class="history-entry__stat">
-                    <span class="history-entry__stat-icon" aria-hidden="true">⏱</span>
-                    3 min repos
-                  </span>
-                </div>
-                <div class="history-entry__weight-badge history-entry__weight-badge--max">80 kg</div>
-              </div>
-            </article>
-          </li>
-
-        </ol>
-
-        <!-- Placeholder pour nouvelles entrées futures -->
         <div class="history-empty-hint">
           Les prochaines séances apparaîtront ici automatiquement.
         </div>
@@ -453,7 +360,6 @@
       <span class="nav-label">Accueil</span>
     </a>
 
-    <!-- Musculation actif (contexte de navigation) -->
     <a href="musculation.html" class="nav-item active" aria-label="Musculation">
       <span class="nav-icon" aria-hidden="true">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
@@ -492,6 +398,10 @@
     </a>
 
   </nav>
+
+  <!-- Scripts — data.js TOUJOURS avant exercice.js -->
+  <script src="js/data.js"></script>
+  <script src="js/exercice.js"></script>
 
 </body>
 </html>

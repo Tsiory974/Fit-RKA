@@ -27,6 +27,7 @@
    pour que les sélecteurs CSS ~ (sibling) fonctionnent
    ============================================================ */
 #tab-seance,
+#tab-seances,
 #tab-exercices {
   position: absolute;
   width: 1px;
@@ -142,7 +143,7 @@
   position: absolute;
   bottom: 0;
   left: 0;
-  width: 50%;           /* couvre 1 onglet sur 2 */
+  width: 33.333%;       /* couvre 1 onglet sur 3 */
   height: 3px;
   background: var(--accent);
   border-radius: 3px 3px 0 0;
@@ -159,13 +160,23 @@
 }
 
 /* Onglet 2 actif */
-#tab-exercices:checked ~ .tabs-header label[for="tab-exercices"] {
+#tab-seances:checked ~ .tabs-header label[for="tab-seances"] {
   color: var(--accent);
 }
 
 /* Déplace l'indicateur vers le 2e onglet */
-#tab-exercices:checked ~ .tabs-header .tab-indicator {
+#tab-seances:checked ~ .tabs-header .tab-indicator {
   transform: translateX(100%);
+}
+
+/* Onglet 3 actif */
+#tab-exercices:checked ~ .tabs-header label[for="tab-exercices"] {
+  color: var(--accent);
+}
+
+/* Déplace l'indicateur vers le 3e onglet */
+#tab-exercices:checked ~ .tabs-header .tab-indicator {
+  transform: translateX(200%);
 }
 
 /* ============================================================
@@ -173,8 +184,8 @@
    ============================================================ */
 .tabs-track {
   display: flex;
-  /* Le track fait 200% (2 panneaux côte à côte) */
-  width: 200%;
+  /* Le track fait 300% (3 panneaux côte à côte) */
+  width: 300%;
   /* Transition de glissement entre les onglets */
   transition: transform 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   /* Hauteur min : tout l'écran moins les zones fixes */
@@ -186,15 +197,20 @@
   );
 }
 
-/* Glisser vers le 2e panneau quand tab-exercices est coché */
-#tab-exercices:checked ~ .tabs-track {
-  transform: translateX(-50%);
+/* Glisser vers le 2e panneau quand tab-seances est coché */
+#tab-seances:checked ~ .tabs-track {
+  transform: translateX(-33.333%);
 }
 
-/* --- Chaque panneau occupe 50% du track = 100% de l'écran --- */
+/* Glisser vers le 3e panneau quand tab-exercices est coché */
+#tab-exercices:checked ~ .tabs-track {
+  transform: translateX(-66.666%);
+}
+
+/* --- Chaque panneau occupe 33.333% du track = 100% de l'écran --- */
 .tab-panel {
-  width: 50%;
-  min-width: 50%;
+  width: 33.333%;
+  min-width: 33.333%;
   padding: 1.25rem 1rem 2rem;
   overflow-y: auto;
   /* Empêche le contenu de déborder horizontalement */
@@ -560,7 +576,8 @@
 }
 
 /* Afficher quand le checkbox est coché */
-#show-create-session:checked ~ .session-modal {
+#show-add-session:checked  ~ #modal-add-session,
+#show-add-exercise:checked ~ #modal-add-exercise {
   visibility: visible;
   transition: visibility 0s 0s;
 }
@@ -575,7 +592,8 @@
   transition: background 0.35s ease;
 }
 
-#show-create-session:checked ~ .session-modal .session-modal__overlay {
+#show-add-session:checked  ~ #modal-add-session  .session-modal__overlay,
+#show-add-exercise:checked ~ #modal-add-exercise .session-modal__overlay {
   background: rgba(0, 0, 0, 0.78);
 }
 
@@ -598,7 +616,14 @@
   transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
-#show-create-session:checked ~ .session-modal .session-modal__sheet {
+/* Variante haute pour le formulaire séance (plus de contenu) */
+.session-modal__sheet--tall {
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+#show-add-session:checked  ~ #modal-add-session  .session-modal__sheet,
+#show-add-exercise:checked ~ #modal-add-exercise .session-modal__sheet {
   transform: translateY(0);
 }
 
@@ -774,7 +799,8 @@
     border-radius: 24px 24px 0 0;
   }
 
-  #show-create-session:checked ~ .session-modal .session-modal__sheet {
+  #show-add-session:checked  ~ #modal-add-session  .session-modal__sheet,
+  #show-add-exercise:checked ~ #modal-add-exercise .session-modal__sheet {
     transform: translateX(-50%) translateY(0);
   }
 }
@@ -793,9 +819,9 @@
     margin-right: auto;
   }
 
-  /* Le track doit être 200% de 480px */
+  /* Le track doit être 300% de 480px */
   .tabs-track {
-    width: calc(480px * 2);
+    width: calc(480px * 3);
   }
 
   /* Chaque panneau = 480px */
@@ -808,4 +834,494 @@
   .page-header__title {
     font-size: 1.375rem;
   }
+}
+
+/* ============================================================
+   MODALE AJOUT EXERCICE — styles du formulaire
+   Réutilise .session-modal ; uniquement les champs de form
+   ============================================================ */
+
+/* Champs de formulaire */
+.form-field {
+  margin-bottom: 1rem;
+}
+
+.form-field__label {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-idle);
+  margin-bottom: 0.5rem;
+}
+
+.form-field__input,
+.form-field__select {
+  width: 100%;
+  background: #0e1114;
+  border: 2px solid #1f2428;
+  border-radius: 12px;
+  padding: 0.75rem 1rem;
+  color: #f0f0f0;
+  font-size: 0.9rem;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.form-field__input:focus,
+.form-field__select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
+.form-field__input::placeholder {
+  color: #374151;
+}
+
+.form-field__select option {
+  background: #1a1e23;
+  color: #f0f0f0;
+}
+
+/* Classe générique .exercises-empty (état vide, JS) */
+.exercises-empty {
+  text-align: center;
+  color: var(--text-idle);
+  font-size: 0.82rem;
+  padding: 1.5rem 0;
+}
+
+/* Classe générique .history-empty (état vide, JS) */
+.history-empty {
+  text-align: center;
+  color: #374151;
+  font-size: 0.8rem;
+  padding: 1.5rem 0;
+  list-style: none;
+}
+
+/* .chart-empty (graphique sans données, JS) */
+.chart-empty {
+  color: #374151;
+  font-size: 0.75rem;
+  text-align: center;
+  padding: 2rem 0;
+  width: 100%;
+}
+
+/* ============================================================
+   PANNEAU 1 — SÉANCE DU JOUR (composants)
+   ============================================================ */
+
+/* Header de la séance active */
+.today-session-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+  padding: 1rem 1rem 1rem;
+  background: rgba(57, 224, 122, 0.06);
+  border: 1px solid rgba(57, 224, 122, 0.2);
+  border-radius: 14px;
+}
+
+.today-session-header__label {
+  display: block;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 4px;
+}
+
+.today-session-header__name {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -0.01em;
+}
+
+/* Liste des exercices en lecture seule */
+.today-exercise-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.today-exercise-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: #141820;
+  border: 1px solid #1f2428;
+  border-radius: 12px;
+  padding: 0.75rem 0.875rem;
+}
+
+.today-exercise-row__tag {
+  flex-shrink: 0;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 3px 7px;
+  border-radius: 5px;
+  min-width: 60px;
+  text-align: center;
+  /* Couleur par défaut */
+  color: var(--color-pecto);
+  background: rgba(57, 224, 122, 0.1);
+  border: 1px solid rgba(57, 224, 122, 0.2);
+}
+
+.today-exercise-row__tag--dos      { color: var(--color-dos);     background: rgba(59,158,255,0.1); border-color: rgba(59,158,255,0.2); }
+.today-exercise-row__tag--epaules  { color: var(--color-epaules); background: rgba(168,85,247,0.1); border-color: rgba(168,85,247,0.2); }
+.today-exercise-row__tag--bras     { color: var(--color-bras);    background: rgba(249,115,22,0.1); border-color: rgba(249,115,22,0.2); }
+.today-exercise-row__tag--jambes   { color: var(--color-jambes);  background: rgba(239,68,68,0.1);  border-color: rgba(239,68,68,0.2); }
+.today-exercise-row__tag--abdos    { color: var(--color-abdos);   background: rgba(234,179,8,0.1);  border-color: rgba(234,179,8,0.2); }
+
+.today-exercise-row__name {
+  flex: 1;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #e5e7eb;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.today-exercise-row__info {
+  font-size: 0.72rem;
+  color: var(--text-idle);
+  flex-shrink: 0;
+}
+
+/* Bouton "Commencer la séance" */
+.btn-start-session {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.625rem;
+  width: 100%;
+  padding: 0.9rem 1.5rem;
+  background: var(--accent);
+  color: #0a1a0d;
+  font-size: 0.95rem;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  border: none;
+  border-radius: 14px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: opacity 0.2s, transform 0.15s, box-shadow 0.2s;
+  box-shadow: 0 4px 20px rgba(57, 224, 122, 0.3);
+}
+
+.btn-start-session:hover {
+  opacity: 0.92;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(57, 224, 122, 0.4);
+}
+
+.btn-start-session:active {
+  transform: scale(0.97);
+}
+
+/* ============================================================
+   PANNEAU 2 — SÉANCES (composants)
+   ============================================================ */
+
+/* Bouton ＋ dans le panel-header */
+.panel-header__action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: rgba(57, 224, 122, 0.1);
+  border: 1px solid rgba(57, 224, 122, 0.3);
+  border-radius: 10px;
+  color: var(--accent);
+  font-size: 1.25rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+  user-select: none;
+}
+
+.panel-header__action:hover {
+  background: rgba(57, 224, 122, 0.18);
+  border-color: rgba(57, 224, 122, 0.5);
+}
+
+/* État vide (aucune séance) */
+.sessions-empty {
+  text-align: center;
+  padding: 2rem 1rem;
+  color: var(--text-idle);
+  font-size: 0.85rem;
+  line-height: 1.6;
+}
+
+/* Carte séance */
+.session-card {
+  background: #141820;
+  border: 1px solid #1f2428;
+  border-radius: 14px;
+  padding: 1rem;
+  margin-bottom: 0.625rem;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.session-card:hover {
+  background: #1a2028;
+  border-color: #2a3540;
+}
+
+.session-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.session-card__name {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #e5e7eb;
+}
+
+.session-card__delete {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: transparent;
+  border: 1px solid #2a3038;
+  border-radius: 8px;
+  color: #4b5563;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+
+.session-card__delete:hover {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.4);
+  color: #ef4444;
+}
+
+.session-card__meta {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.625rem;
+}
+
+.session-card__days {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.session-card__count {
+  font-size: 0.68rem;
+  color: var(--text-idle);
+  background: #1f2428;
+  padding: 2px 8px;
+  border-radius: 20px;
+}
+
+.session-card__exercises {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+.session-card__exo-chip {
+  font-size: 0.65rem;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 5px;
+  /* Couleur par défaut */
+  color: var(--color-pecto);
+  background: rgba(57, 224, 122, 0.1);
+  border: 1px solid rgba(57, 224, 122, 0.2);
+}
+
+.session-card__exo-chip--dos      { color: var(--color-dos);     background: rgba(59,158,255,0.1); border-color: rgba(59,158,255,0.2); }
+.session-card__exo-chip--epaules  { color: var(--color-epaules); background: rgba(168,85,247,0.1); border-color: rgba(168,85,247,0.2); }
+.session-card__exo-chip--bras     { color: var(--color-bras);    background: rgba(249,115,22,0.1); border-color: rgba(249,115,22,0.2); }
+.session-card__exo-chip--jambes   { color: var(--color-jambes);  background: rgba(239,68,68,0.1);  border-color: rgba(239,68,68,0.2); }
+.session-card__exo-chip--abdos    { color: var(--color-abdos);   background: rgba(234,179,8,0.1);  border-color: rgba(234,179,8,0.2); }
+
+.session-card__exo-more {
+  font-size: 0.65rem;
+  color: var(--text-idle);
+  padding: 3px 8px;
+}
+
+/* ============================================================
+   MODALE SÉANCE — composants du formulaire
+   ============================================================ */
+
+/* Sélecteur de jours */
+.day-picker {
+  display: flex;
+  gap: 0.375rem;
+  flex-wrap: wrap;
+  margin-top: 0.375rem;
+}
+
+.day-chip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 36px;
+  background: #0e1114;
+  border: 1.5px solid #1f2428;
+  border-radius: 8px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-idle);
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.2s, border-color 0.2s, color 0.2s;
+}
+
+.day-chip input[type="checkbox"] {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.day-chip:has(input:checked) {
+  background: rgba(57, 224, 122, 0.12);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.day-chip:hover {
+  border-color: rgba(57, 224, 122, 0.4);
+  color: #e5e7eb;
+}
+
+/* Ligne select + bouton ＋ */
+.form-field__row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+/* Bouton ＋ inline (à côté du select) */
+.btn-inline {
+  flex-shrink: 0;
+  width: 42px;
+  height: 42px;
+  background: rgba(57, 224, 122, 0.1);
+  border: 1.5px solid rgba(57, 224, 122, 0.3);
+  border-radius: 10px;
+  color: var(--accent);
+  font-size: 1.3rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-inline:hover {
+  background: rgba(57, 224, 122, 0.2);
+  border-color: rgba(57, 224, 122, 0.5);
+}
+
+/* Bloc exercice dans la modale séance */
+.session-exo-block {
+  background: #0e1114;
+  border: 1px solid #1f2428;
+  border-radius: 10px;
+  padding: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.session-exo-block__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.session-exo-block__name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #e5e7eb;
+}
+
+.session-exo-block__remove {
+  width: 24px;
+  height: 24px;
+  background: transparent;
+  border: 1px solid #2a3038;
+  border-radius: 6px;
+  color: #4b5563;
+  font-size: 0.7rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+
+.session-exo-block__remove:hover {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.4);
+  color: #ef4444;
+}
+
+.session-exo-block__fields {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+}
+
+.session-exo-block__fields label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-idle);
+}
+
+.session-exo-block__fields input {
+  background: #141820;
+  border: 1.5px solid #1f2428;
+  border-radius: 8px;
+  padding: 0.5rem 0.625rem;
+  color: #f0f0f0;
+  font-size: 0.85rem;
+  font-family: inherit;
+  outline: none;
+  width: 100%;
+  -webkit-appearance: none;
+  appearance: none;
+  transition: border-color 0.2s;
+}
+
+.session-exo-block__fields input:focus {
+  border-color: var(--accent);
 }

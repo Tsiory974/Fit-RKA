@@ -10,21 +10,24 @@
 <body>
 
   <!-- ============================================================
-       SYSTÈME D'ONGLETS (radio inputs cachés)
-       Principe : les labels déclenchent les inputs, les sélecteurs
-       CSS ~ (sibling) pilotent le track et l'indicateur.
-       Pour ajouter le swipe tactile réel, un petit JS suffit (non requis ici).
+       RADIO INPUTS — pilotent les 3 onglets via CSS ~
+       tab-seance    → onglet 1 : Séance du jour
+       tab-seances   → onglet 2 : Séances (gestion)
+       tab-exercices → onglet 3 : Exercices
        ============================================================ -->
-  <input type="radio"    id="tab-seance"          name="musculation-tabs" checked>
-  <input type="radio"    id="tab-exercices"       name="musculation-tabs">
-  <!-- Checkbox caché : contrôle l'affichage de la modale de choix de séance -->
-  <input type="checkbox" id="show-create-session" class="modal-toggle">
+  <input type="radio" id="tab-seance"    name="musculation-tabs" checked>
+  <input type="radio" id="tab-seances"   name="musculation-tabs">
+  <input type="radio" id="tab-exercices" name="musculation-tabs">
+
+  <!-- Checkbox modale ajout exercice -->
+  <input type="checkbox" id="show-add-exercise" class="modal-toggle">
+  <!-- Checkbox modale création séance -->
+  <input type="checkbox" id="show-add-session"  class="modal-toggle">
 
   <!-- ===== EN-TÊTE DE PAGE ===== -->
   <header class="page-header">
     <div class="page-header__inner">
       <div class="page-header__icon" aria-hidden="true">
-        <!-- Icône haltère -->
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <rect x="2"  y="10" width="3" height="4" rx="1"/>
@@ -36,22 +39,30 @@
       </div>
       <div>
         <h1 class="page-header__title">Musculation</h1>
-        <p  class="page-header__subtitle">Lundi 7 avril 2026</p>
+        <!-- Date mise à jour par musculation.js -->
+        <p class="page-header__subtitle"></p>
       </div>
     </div>
   </header>
 
-  <!-- ===== BARRE D'ONGLETS ===== -->
+  <!-- ===== BARRE D'ONGLETS (3 onglets) ===== -->
   <div class="tabs-header" role="tablist" aria-label="Sections musculation">
 
-    <!-- Onglet 1 -->
-    <label for="tab-seance"
-           class="tab-btn"
-           role="tab"
-           aria-controls="panel-seance"
-           aria-selected="true">
+    <!-- Onglet 1 : Séance du jour -->
+    <label for="tab-seance" class="tab-btn" role="tab" aria-controls="panel-seance">
       <span class="tab-btn__icon" aria-hidden="true">
-        <!-- Icône calendrier / séance -->
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="9"/>
+          <polyline points="12 7 12 12 16 12"/>
+        </svg>
+      </span>
+      <span class="tab-btn__label">Aujourd'hui</span>
+    </label>
+
+    <!-- Onglet 2 : Séances -->
+    <label for="tab-seances" class="tab-btn" role="tab" aria-controls="panel-seances">
+      <span class="tab-btn__icon" aria-hidden="true">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <rect x="3" y="4" width="18" height="18" rx="2"/>
@@ -61,17 +72,12 @@
           <line x1="8"  y1="15" x2="16" y2="15"/>
         </svg>
       </span>
-      <span class="tab-btn__label">Ma séance du jour</span>
+      <span class="tab-btn__label">Séances</span>
     </label>
 
-    <!-- Onglet 2 -->
-    <label for="tab-exercices"
-           class="tab-btn"
-           role="tab"
-           aria-controls="panel-exercices"
-           aria-selected="false">
+    <!-- Onglet 3 : Exercices -->
+    <label for="tab-exercices" class="tab-btn" role="tab" aria-controls="panel-exercices">
       <span class="tab-btn__icon" aria-hidden="true">
-        <!-- Icône liste / exercices -->
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <line x1="8"  y1="6"  x2="21" y2="6"/>
@@ -85,60 +91,97 @@
       <span class="tab-btn__label">Exercices</span>
     </label>
 
-    <!-- Indicateur glissant sous les onglets -->
     <span class="tab-indicator" aria-hidden="true"></span>
-
   </div>
 
-  <!-- ===== ZONE DE CONTENU (track horizontal) ===== -->
+  <!-- ===== TRACK HORIZONTAL (3 panneaux) ===== -->
   <div class="tabs-track">
 
-    <!-- ── PANNEAU 1 : Ma séance du jour ── -->
-    <section class="tab-panel" id="panel-seance" role="tabpanel" aria-labelledby="tab-seance">
+    <!-- ══════════════════════════════════════════════════════════
+         PANNEAU 1 : SÉANCE DU JOUR
+         Lecture seule. Pas d'édition ici.
+         musculation.js affiche/cache today-empty vs today-active
+         selon qu'une séance est programmée pour aujourd'hui.
+         ══════════════════════════════════════════════════════════ -->
+    <section class="tab-panel" id="panel-seance" role="tabpanel">
 
-      <!-- En-tête du panneau -->
-      <div class="panel-header">
-        <h2 class="panel-header__title">Séance du jour</h2>
-        <span class="panel-header__badge">0 exercice</span>
-      </div>
-
-      <!-- État vide -->
-      <div class="empty-state">
-        <div class="empty-state__icon" aria-hidden="true">
-          <!-- Haltère stylisé -->
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none"
-               stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="4"  y="26" width="8"  height="12" rx="3"/>
-            <rect x="52" y="26" width="8"  height="12" rx="3"/>
-            <rect x="12" y="20" width="8"  height="24" rx="3"/>
-            <rect x="44" y="20" width="8"  height="24" rx="3"/>
-            <line x1="20" y1="32" x2="44" y2="32"/>
-          </svg>
+      <!-- ── État vide : aucune séance programmée aujourd'hui ── -->
+      <div class="today-empty" id="today-empty">
+        <div class="empty-state">
+          <div class="empty-state__icon" aria-hidden="true">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none"
+                 stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="4"  y="26" width="8"  height="12" rx="3"/>
+              <rect x="52" y="26" width="8"  height="12" rx="3"/>
+              <rect x="12" y="20" width="8"  height="24" rx="3"/>
+              <rect x="44" y="20" width="8"  height="24" rx="3"/>
+              <line x1="20" y1="32" x2="44" y2="32"/>
+            </svg>
+          </div>
+          <p class="empty-state__title">Aucune séance aujourd'hui</p>
+          <p class="empty-state__desc">
+            Tu n'as pas de séance programmée pour aujourd'hui.
+            Crée ou planifie une séance dans l'onglet <strong>Séances</strong>.
+          </p>
+          <!-- Lien vers l'onglet Séances -->
+          <label for="tab-seances" class="btn-cta" role="button">
+            <span class="btn-cta__icon" aria-hidden="true">📅</span>
+            Voir mes séances
+          </label>
         </div>
-        <p class="empty-state__title">Aucune séance enregistrée</p>
-        <p class="empty-state__desc">
-          Commence ta première séance pour suivre ta progression.
-        </p>
-        <!-- CTA : ouvre la modale de choix via le checkbox #show-create-session -->
-        <label for="show-create-session" class="btn-cta" role="button" aria-haspopup="dialog">
-          <span class="btn-cta__icon" aria-hidden="true">＋</span>
-          Créer une séance
-        </label>
       </div>
 
-      <!-- Section historique (placeholder pour ajout futur) -->
-      <div class="section-block">
-        <h3 class="section-block__title">Historique récent</h3>
-        <p class="section-block__empty">Aucune séance passée.</p>
-        <!-- Les cartes de séances passées seront insérées ici -->
+      <!-- ── État actif : séance programmée pour aujourd'hui ── -->
+      <div class="today-active" id="today-active" style="display:none">
+
+        <!-- Header de la séance -->
+        <div class="today-session-header">
+          <div class="today-session-header__info">
+            <span class="today-session-header__label">Séance du jour</span>
+            <h2 class="today-session-header__name" id="today-session-name">—</h2>
+          </div>
+          <span class="today-exercise-count panel-header__badge">0 exercice</span>
+        </div>
+
+        <!-- Liste des exercices (lecture seule) -->
+        <div id="today-exercise-list" class="today-exercise-list"></div>
+
+        <!-- Bouton commencer — seul point d'action -->
+        <button class="btn-start-session" id="btn-start-session" type="button">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
+               width="20" height="20">
+            <polygon points="5 3 19 12 5 21 5 3"/>
+          </svg>
+          Commencer la séance
+        </button>
+
       </div>
 
     </section>
 
-    <!-- ── PANNEAU 2 : Exercices ── -->
-    <section class="tab-panel" id="panel-exercices" role="tabpanel" aria-labelledby="tab-exercices">
+    <!-- ══════════════════════════════════════════════════════════
+         PANNEAU 2 : SÉANCES
+         Gestion : créer, planifier, supprimer des séances.
+         ══════════════════════════════════════════════════════════ -->
+    <section class="tab-panel" id="panel-seances" role="tabpanel">
 
-      <!-- Barre de recherche (placeholder) -->
+      <div class="panel-header">
+        <h2 class="panel-header__title">Mes séances</h2>
+        <!-- Ouvre la modale de création -->
+        <label for="show-add-session" class="panel-header__action" role="button"
+               aria-label="Créer une séance">＋</label>
+      </div>
+
+      <!-- Liste rendue par musculation.js -->
+      <div id="sessions-list"></div>
+
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════════
+         PANNEAU 3 : EXERCICES
+         ══════════════════════════════════════════════════════════ -->
+    <section class="tab-panel" id="panel-exercices" role="tabpanel">
+
       <div class="search-bar" role="search">
         <span class="search-bar__icon" aria-hidden="true">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
@@ -147,14 +190,10 @@
             <line x1="21" y1="21" x2="16.65" y2="16.65"/>
           </svg>
         </span>
-        <input class="search-bar__input"
-               type="search"
-               placeholder="Rechercher un exercice…"
-               aria-label="Rechercher un exercice"
-               disabled>
+        <input class="search-bar__input" type="search"
+               placeholder="Rechercher un exercice…" aria-label="Rechercher" disabled>
       </div>
 
-      <!-- Filtres par groupe musculaire (placeholder) -->
       <div class="filter-chips" role="group" aria-label="Filtrer par groupe musculaire">
         <span class="chip chip--active">Tous</span>
         <span class="chip">Pectoraux</span>
@@ -165,149 +204,132 @@
         <span class="chip">Abdos</span>
       </div>
 
-      <!-- Liste d'exercices — chaque card est un <a> vers la page exercice -->
+      <!-- Liste rendue par musculation.js -->
       <div class="exercises-list">
-
-        <a href="exercice.html" class="exercise-card">
-          <div class="exercise-card__muscle-tag">Pectoraux</div>
-          <div class="exercise-card__body">
-            <h3 class="exercise-card__name">Développé couché</h3>
-            <p  class="exercise-card__info">Barre · Plat</p>
-          </div>
-          <span class="exercise-card__arrow" aria-hidden="true">›</span>
-        </a>
-
-        <a href="exercice.html" class="exercise-card">
-          <div class="exercise-card__muscle-tag exercise-card__muscle-tag--dos">Dos</div>
-          <div class="exercise-card__body">
-            <h3 class="exercise-card__name">Tractions</h3>
-            <p  class="exercise-card__info">Poids de corps · Large prise</p>
-          </div>
-          <span class="exercise-card__arrow" aria-hidden="true">›</span>
-        </a>
-
-        <a href="exercice.html" class="exercise-card">
-          <div class="exercise-card__muscle-tag exercise-card__muscle-tag--epaules">Épaules</div>
-          <div class="exercise-card__body">
-            <h3 class="exercise-card__name">Développé militaire</h3>
-            <p  class="exercise-card__info">Barre · Debout</p>
-          </div>
-          <span class="exercise-card__arrow" aria-hidden="true">›</span>
-        </a>
-
-        <a href="exercice.html" class="exercise-card">
-          <div class="exercise-card__muscle-tag exercise-card__muscle-tag--bras">Bras</div>
-          <div class="exercise-card__body">
-            <h3 class="exercise-card__name">Curl biceps</h3>
-            <p  class="exercise-card__info">Haltères · Assis</p>
-          </div>
-          <span class="exercise-card__arrow" aria-hidden="true">›</span>
-        </a>
-
-        <a href="exercice.html" class="exercise-card">
-          <div class="exercise-card__muscle-tag exercise-card__muscle-tag--jambes">Jambes</div>
-          <div class="exercise-card__body">
-            <h3 class="exercise-card__name">Squat</h3>
-            <p  class="exercise-card__info">Barre · Libre</p>
-          </div>
-          <span class="exercise-card__arrow" aria-hidden="true">›</span>
-        </a>
-
-        <a href="exercice.html" class="exercise-card">
-          <div class="exercise-card__muscle-tag exercise-card__muscle-tag--abdos">Abdos</div>
-          <div class="exercise-card__body">
-            <h3 class="exercise-card__name">Crunchs</h3>
-            <p  class="exercise-card__info">Poids de corps · Sol</p>
-          </div>
-          <span class="exercise-card__arrow" aria-hidden="true">›</span>
-        </a>
-
-        <!-- Placeholder d'ajout futur -->
         <div class="add-exercise-placeholder">
-          <span>＋ Ajouter un exercice</span>
+          <label for="show-add-exercise" style="cursor:pointer;display:contents">
+            ＋ Ajouter un exercice
+          </label>
         </div>
-
       </div>
+
     </section>
 
   </div>
-  <!-- ===== FIN TABS TRACK ===== -->
+  <!-- ===== FIN TRACK ===== -->
 
 
-  <!-- ===== MODALE : CHOIX DE CRÉATION DE SÉANCE =====
-       Technique : #show-create-session:checked ~ .session-modal (sibling CSS)
-       → le checkbox (en haut du <body>) contrôle la visibilité de la modale.
-       Fermeture : cliquer sur l'overlay ou "Annuler" décoche le checkbox.
-       ============================================================ -->
-  <div class="session-modal" role="dialog" aria-modal="true" aria-label="Créer une séance">
+  <!-- ══════════════════════════════════════════════════════════
+       MODALE : CRÉER UNE SÉANCE
+       Contrôlée par #show-add-session (checkbox CSS)
+       ══════════════════════════════════════════════════════════ -->
+  <div class="session-modal" id="modal-add-session"
+       role="dialog" aria-modal="true" aria-label="Créer une séance">
 
-    <!-- Overlay sombre cliquable — décoche le checkbox → ferme la modale -->
-    <label for="show-create-session"
-           class="session-modal__overlay"
-           aria-label="Fermer la fenêtre"></label>
+    <label for="show-add-session" class="session-modal__overlay" aria-label="Fermer"></label>
 
-    <!-- Bottom sheet -->
-    <div class="session-modal__sheet">
-
-      <!-- Handle décoratif (style app mobile) -->
+    <div class="session-modal__sheet session-modal__sheet--tall">
       <div class="session-modal__handle" aria-hidden="true"></div>
 
-      <!-- Titre -->
       <h2 class="session-modal__title">Nouvelle séance</h2>
-      <p  class="session-modal__subtitle">Comment veux-tu démarrer ?</p>
+      <p  class="session-modal__subtitle">Programme tes exercices et tes jours</p>
 
-      <!-- ── OPTION 1 : Programme existant ── -->
-      <a href="programmes.html" class="choice-card">
+      <form id="add-session-form" novalidate>
 
-        <div class="choice-card__icon choice-card__icon--select" aria-hidden="true">
-          <!-- Icône "liste / programme" -->
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
-               stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="3" y="3" width="18" height="18" rx="3"/>
-            <line x1="8"  y1="9"  x2="16" y2="9"/>
-            <line x1="8"  y1="13" x2="16" y2="13"/>
-            <line x1="8"  y1="17" x2="12" y2="17"/>
-          </svg>
+        <!-- Nom de la séance -->
+        <div class="form-field">
+          <label class="form-field__label" for="session-nom">Nom de la séance</label>
+          <input type="text" id="session-nom" class="form-field__input"
+                 placeholder="Ex : Push A, Full Body…" autocomplete="off" required>
         </div>
 
-        <div class="choice-card__body">
-          <strong class="choice-card__title">Sélectionner un programme existant</strong>
-          <span   class="choice-card__desc">Choisis un programme déjà créé</span>
+        <!-- Jours de la semaine -->
+        <div class="form-field">
+          <span class="form-field__label">Jours planifiés</span>
+          <div class="day-picker" role="group" aria-label="Choisir les jours">
+            <label class="day-chip"><input type="checkbox" name="session-jour" value="0">Lun</label>
+            <label class="day-chip"><input type="checkbox" name="session-jour" value="1">Mar</label>
+            <label class="day-chip"><input type="checkbox" name="session-jour" value="2">Mer</label>
+            <label class="day-chip"><input type="checkbox" name="session-jour" value="3">Jeu</label>
+            <label class="day-chip"><input type="checkbox" name="session-jour" value="4">Ven</label>
+            <label class="day-chip"><input type="checkbox" name="session-jour" value="5">Sam</label>
+            <label class="day-chip"><input type="checkbox" name="session-jour" value="6">Dim</label>
+          </div>
         </div>
 
-        <span class="choice-card__arrow" aria-hidden="true">›</span>
-
-      </a>
-
-      <!-- ── OPTION 2 : Créer un programme ── -->
-      <a href="creer-programme.html" class="choice-card choice-card--create">
-
-        <div class="choice-card__icon choice-card__icon--create" aria-hidden="true">
-          <!-- Icône "crayon / créer" -->
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
-               stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 20h9"/>
-            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/>
-          </svg>
+        <!-- Ajouter des exercices à la séance -->
+        <div class="form-field">
+          <span class="form-field__label">Exercices</span>
+          <div class="form-field__row">
+            <select id="session-exo-select" class="form-field__select" style="flex:1">
+              <option value="">Choisir un exercice…</option>
+              <!-- Options peuplées par musculation.js -->
+            </select>
+            <button type="button" id="btn-add-exo-to-session" class="btn-inline">＋</button>
+          </div>
+          <!-- Blocs d'exercice ajoutés dynamiquement -->
+          <div id="session-exo-blocks"></div>
         </div>
 
-        <div class="choice-card__body">
-          <strong class="choice-card__title">Créer un programme</strong>
-          <span   class="choice-card__desc">Crée ton propre programme d'entraînement</span>
-        </div>
+        <button type="submit" class="btn-cta" style="width:100%;justify-content:center;margin-top:0.75rem">
+          <span class="btn-cta__icon" aria-hidden="true">✓</span>
+          Enregistrer la séance
+        </button>
 
-        <span class="choice-card__arrow" aria-hidden="true">›</span>
+      </form>
 
-      </a>
-
-      <!-- Bouton Annuler — décoche le checkbox → ferme la modale -->
-      <label for="show-create-session" class="session-modal__cancel" role="button">
-        Annuler
-      </label>
-
+      <label for="show-add-session" class="session-modal__cancel" role="button">Annuler</label>
     </div>
   </div>
-  <!-- ===== FIN MODALE ===== -->
+
+
+  <!-- ══════════════════════════════════════════════════════════
+       MODALE : AJOUTER UN EXERCICE
+       ══════════════════════════════════════════════════════════ -->
+  <div class="session-modal" id="modal-add-exercise"
+       role="dialog" aria-modal="true" aria-label="Ajouter un exercice">
+
+    <label for="show-add-exercise" class="session-modal__overlay" aria-label="Fermer"></label>
+
+    <div class="session-modal__sheet">
+      <div class="session-modal__handle" aria-hidden="true"></div>
+
+      <h2 class="session-modal__title">Nouvel exercice</h2>
+      <p  class="session-modal__subtitle">Ajoute un exercice à ta bibliothèque</p>
+
+      <form id="add-exercise-form" novalidate>
+
+        <div class="form-field">
+          <label class="form-field__label" for="new-exo-nom">Nom de l'exercice</label>
+          <input type="text" id="new-exo-nom" class="form-field__input"
+                 placeholder="Ex : Soulevé de terre" autocomplete="off" required>
+        </div>
+
+        <div class="form-field">
+          <label class="form-field__label" for="new-exo-groupe">Groupe musculaire</label>
+          <select id="new-exo-groupe" class="form-field__select" required>
+            <option value="" disabled selected>Choisir…</option>
+            <option value="Pectoraux" data-couleur="pecto">Pectoraux</option>
+            <option value="Dos"       data-couleur="dos">Dos</option>
+            <option value="Épaules"   data-couleur="epaules">Épaules</option>
+            <option value="Bras"      data-couleur="bras">Bras</option>
+            <option value="Jambes"    data-couleur="jambes">Jambes</option>
+            <option value="Abdos"     data-couleur="abdos">Abdos</option>
+            <option value="Autre"     data-couleur="autre">Autre</option>
+          </select>
+        </div>
+
+        <button type="submit" class="btn-cta" style="width:100%;justify-content:center;margin-top:0.5rem">
+          <span class="btn-cta__icon" aria-hidden="true">＋</span>
+          Ajouter l'exercice
+        </button>
+
+      </form>
+
+      <label for="show-add-exercise" class="session-modal__cancel" role="button">Annuler</label>
+    </div>
+  </div>
+
 
   <!-- ===== NAVBAR FIXE EN BAS ===== -->
   <nav class="bottom-nav" role="navigation" aria-label="Navigation principale">
@@ -323,7 +345,6 @@
       <span class="nav-label">Accueil</span>
     </a>
 
-    <!-- ACTIF sur cette page -->
     <a href="musculation.html" class="nav-item active" aria-label="Musculation" aria-current="page">
       <span class="nav-icon" aria-hidden="true">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
@@ -362,7 +383,9 @@
     </a>
 
   </nav>
-  <!-- ===== FIN NAVBAR ===== -->
+
+  <script src="js/data.js"></script>
+  <script src="js/musculation.js"></script>
 
 </body>
 </html>
