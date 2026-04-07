@@ -6,7 +6,6 @@
   <title>FitTrack — Musculation</title>
   <link rel="stylesheet" href="navbar.css">
   <link rel="stylesheet" href="musculation.css">
-  <link rel="stylesheet" href="exercice-overlay.css">
 </head>
 <body>
 
@@ -18,16 +17,8 @@
        ============================================================ -->
   <input type="radio"    id="tab-seance"          name="musculation-tabs" checked>
   <input type="radio"    id="tab-exercices"       name="musculation-tabs">
-  <!-- Contrôle la modale de choix de séance -->
+  <!-- Checkbox caché : contrôle l'affichage de la modale de choix de séance -->
   <input type="checkbox" id="show-create-session" class="modal-toggle">
-  <!-- ============================================================
-       Contrôle l'overlay exercice.
-       - décoché (défaut) : overlay caché
-       - coché (clic card) : overlay visible, glisse depuis la droite
-       La couche JS pourra intercepter ce changement d'état pour
-       charger dynamiquement les données de l'exercice via API.
-       ============================================================ -->
-  <input type="checkbox" id="show-exercise" class="modal-toggle">
 
   <!-- ===== EN-TÊTE DE PAGE ===== -->
   <header class="page-header">
@@ -174,74 +165,62 @@
         <span class="chip">Abdos</span>
       </div>
 
-      <!-- ============================================================
-           Chaque card est un <label for="show-exercise">.
-           Cliquer coche le checkbox → overlay exercice s'affiche.
-           Aucune navigation HTTP — on reste dans le même document.
-           JS hook futur : écouter le change sur #show-exercise et
-           injecter les données de l'exercice cliqué via API.
-           ============================================================ -->
+      <!-- Liste d'exercices — chaque card est un <a> vers la page exercice -->
       <div class="exercises-list">
 
-        <label for="show-exercise" class="exercise-card" role="button"
-               aria-label="Ouvrir Développé couché">
+        <a href="exercice.html" class="exercise-card">
           <div class="exercise-card__muscle-tag">Pectoraux</div>
           <div class="exercise-card__body">
             <h3 class="exercise-card__name">Développé couché</h3>
             <p  class="exercise-card__info">Barre · Plat</p>
           </div>
           <span class="exercise-card__arrow" aria-hidden="true">›</span>
-        </label>
+        </a>
 
-        <label for="show-exercise" class="exercise-card" role="button"
-               aria-label="Ouvrir Tractions">
+        <a href="exercice.html" class="exercise-card">
           <div class="exercise-card__muscle-tag exercise-card__muscle-tag--dos">Dos</div>
           <div class="exercise-card__body">
             <h3 class="exercise-card__name">Tractions</h3>
             <p  class="exercise-card__info">Poids de corps · Large prise</p>
           </div>
           <span class="exercise-card__arrow" aria-hidden="true">›</span>
-        </label>
+        </a>
 
-        <label for="show-exercise" class="exercise-card" role="button"
-               aria-label="Ouvrir Développé militaire">
+        <a href="exercice.html" class="exercise-card">
           <div class="exercise-card__muscle-tag exercise-card__muscle-tag--epaules">Épaules</div>
           <div class="exercise-card__body">
             <h3 class="exercise-card__name">Développé militaire</h3>
             <p  class="exercise-card__info">Barre · Debout</p>
           </div>
           <span class="exercise-card__arrow" aria-hidden="true">›</span>
-        </label>
+        </a>
 
-        <label for="show-exercise" class="exercise-card" role="button"
-               aria-label="Ouvrir Curl biceps">
+        <a href="exercice.html" class="exercise-card">
           <div class="exercise-card__muscle-tag exercise-card__muscle-tag--bras">Bras</div>
           <div class="exercise-card__body">
             <h3 class="exercise-card__name">Curl biceps</h3>
             <p  class="exercise-card__info">Haltères · Assis</p>
           </div>
           <span class="exercise-card__arrow" aria-hidden="true">›</span>
-        </label>
+        </a>
 
-        <label for="show-exercise" class="exercise-card" role="button"
-               aria-label="Ouvrir Squat">
+        <a href="exercice.html" class="exercise-card">
           <div class="exercise-card__muscle-tag exercise-card__muscle-tag--jambes">Jambes</div>
           <div class="exercise-card__body">
             <h3 class="exercise-card__name">Squat</h3>
             <p  class="exercise-card__info">Barre · Libre</p>
           </div>
           <span class="exercise-card__arrow" aria-hidden="true">›</span>
-        </label>
+        </a>
 
-        <label for="show-exercise" class="exercise-card" role="button"
-               aria-label="Ouvrir Crunchs">
+        <a href="exercice.html" class="exercise-card">
           <div class="exercise-card__muscle-tag exercise-card__muscle-tag--abdos">Abdos</div>
           <div class="exercise-card__body">
             <h3 class="exercise-card__name">Crunchs</h3>
             <p  class="exercise-card__info">Poids de corps · Sol</p>
           </div>
           <span class="exercise-card__arrow" aria-hidden="true">›</span>
-        </label>
+        </a>
 
         <!-- Placeholder d'ajout futur -->
         <div class="add-exercise-placeholder">
@@ -329,281 +308,6 @@
     </div>
   </div>
   <!-- ===== FIN MODALE ===== -->
-
-  <!-- ============================================================
-       OVERLAY EXERCICE
-       Technique : #show-exercise:checked ~ .exercise-overlay (sibling CSS)
-       → glisse depuis la droite, reste dans le même document.
-       → Zéro navigation HTTP. L'URL ne change pas.
-
-       Séparation des couches :
-         CSS  : affichage, transitions, état des onglets
-         JS   : peuplera [data-exo-name], [data-exo-muscle], etc.
-                via l'API lorsqu'il sera ajouté
-       ============================================================ -->
-  <div class="exercise-overlay" role="dialog" aria-modal="true" aria-label="Détail exercice">
-
-    <!-- ── Inputs de contrôle (enfants directs → ~ sibling fonctionne) ── -->
-    <!-- Contrôle du flux onboarding / page principale -->
-    <input type="checkbox" id="rm-done" class="modal-toggle">
-    <!-- Onglets de la page principale -->
-    <input type="radio" id="exo-tab-stats"   name="exo-tabs" checked>
-    <input type="radio" id="exo-tab-history" name="exo-tabs">
-
-    <!-- ══════════════════════════════════════════════════════════
-         ÉCRAN A — ONBOARDING : saisie du 1RM
-         Visible par défaut (rm-done décoché)
-         Masqué après validation
-         ══════════════════════════════════════════════════════════ -->
-    <div class="exo-onboarding">
-
-      <!-- Retour à la liste (décoche show-exercise → ferme l'overlay) -->
-      <label for="show-exercise" class="exo-back-link" role="button">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
-             stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
-             width="18" height="18"><polyline points="15 18 9 12 15 6"/></svg>
-        Exercices
-      </label>
-
-      <div class="exo-onboarding__card">
-
-        <div class="exo-onboarding__icon" aria-hidden="true">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none"
-               stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="4"  y="26" width="10" height="12" rx="3"/>
-            <rect x="50" y="26" width="10" height="12" rx="3"/>
-            <rect x="14" y="19" width="9"  height="26" rx="3"/>
-            <rect x="41" y="19" width="9"  height="26" rx="3"/>
-            <line x1="23" y1="32" x2="41" y2="32" stroke-width="3.5"/>
-          </svg>
-        </div>
-
-        <span class="exo-onboarding__badge">✦ Première visite</span>
-
-        <!-- data-exo-name sera peuplé par JS depuis l'API -->
-        <h1 class="exo-onboarding__title" data-exo-name>Développé couché</h1>
-        <p  class="exo-onboarding__desc">
-          Indique ton poids maximal (1RM) pour personnaliser
-          tes zones d'entraînement.
-        </p>
-
-        <div class="rm-field">
-          <label class="rm-field__label" for="rm-input">Poids maximal</label>
-          <div class="rm-field__row">
-            <input type="number" id="rm-input" class="rm-field__input"
-                   placeholder="100" min="1" max="500" step="0.5"
-                   aria-label="Poids maximal en kilogrammes">
-            <span class="rm-field__unit" aria-hidden="true">kg</span>
-          </div>
-          <p class="rm-field__hint">Le poids que tu peux soulever en 1 répétition.</p>
-        </div>
-
-        <!-- Valider → coche rm-done → affiche l'écran principal -->
-        <label for="rm-done" class="btn-primary" role="button">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
-               stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
-               width="18" height="18"><polyline points="20 6 9 17 4 12"/></svg>
-          Valider et commencer
-        </label>
-
-      </div>
-    </div>
-
-    <!-- ══════════════════════════════════════════════════════════
-         ÉCRAN B — PAGE PRINCIPALE : stats + historique
-         Masqué par défaut. Affiché quand rm-done est coché.
-         ══════════════════════════════════════════════════════════ -->
-    <div class="exo-main">
-
-      <!-- En-tête -->
-      <header class="exo-header">
-        <!-- Retour à la liste -->
-        <label for="show-exercise" class="exo-header__back" role="button" aria-label="Retour aux exercices">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
-               stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
-               width="18" height="18"><polyline points="15 18 9 12 15 6"/></svg>
-        </label>
-        <div class="exo-header__info">
-          <!-- data-exo-name / data-exo-muscle peuplés par JS -->
-          <h1 class="exo-header__name"   data-exo-name>Développé couché</h1>
-          <span class="exo-header__muscle" data-exo-muscle>Pectoraux</span>
-        </div>
-        <!-- data-exo-rm peuplé par JS depuis la valeur saisie -->
-        <div class="exo-header__rm" data-exo-rm aria-label="1RM : 100 kg">
-          <span class="exo-header__rm-value">100</span>
-          <span class="exo-header__rm-unit">kg</span>
-        </div>
-      </header>
-
-      <!-- Barre d'onglets -->
-      <nav class="exo-tabs-bar" role="tablist" aria-label="Sections de l'exercice">
-        <label for="exo-tab-stats"   class="exo-tab-btn" role="tab">
-          <span class="exo-tab-btn__icon" aria-hidden="true">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
-                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                 width="16" height="16">
-              <line x1="18" y1="20" x2="18" y2="10"/>
-              <line x1="12" y1="20" x2="12" y2="4"/>
-              <line x1="6"  y1="20" x2="6"  y2="14"/>
-            </svg>
-          </span>
-          Mes stats
-        </label>
-        <label for="exo-tab-history" class="exo-tab-btn" role="tab">
-          <span class="exo-tab-btn__icon" aria-hidden="true">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
-                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                 width="16" height="16">
-              <circle cx="12" cy="12" r="9"/>
-              <polyline points="12 7 12 12 15 15"/>
-            </svg>
-          </span>
-          Historique
-        </label>
-        <span class="exo-tab-indicator" aria-hidden="true"></span>
-      </nav>
-
-      <!-- Track horizontal des panneaux -->
-      <div class="exo-track">
-
-        <!-- ─ PANNEAU : MES STATS ─ -->
-        <section class="exo-panel" id="exo-panel-stats" role="tabpanel">
-
-          <!-- Card 1RM -->
-          <div class="exo-stat-hero">
-            <div class="exo-stat-hero__label">Poids maximal (1RM)</div>
-            <!-- data-exo-rm sera synchronisé par JS -->
-            <div class="exo-stat-hero__value" data-exo-rm>
-              100 <span class="exo-stat-hero__unit">kg</span>
-            </div>
-            <div class="exo-stat-hero__meta">Mis à jour le 7 avril 2026</div>
-          </div>
-
-          <!-- Zones d'entraînement -->
-          <!-- Note : valeurs calculées pour 1RM = 100 kg (placeholder)
-               Calcul JS : Math.round(rm * pct / 5) * 5 -->
-          <div class="exo-zones">
-            <h2 class="exo-zones__title">Zones d'entraînement</h2>
-            <p  class="exo-zones__sub">Basé sur un 1RM de 100 kg</p>
-            <div class="exo-zones__list">
-              <div class="exo-zone exo-zone--light">
-                <span class="exo-zone__pct">50 %</span>
-                <span class="exo-zone__info"><b>Activation</b><small>Échauffement</small></span>
-                <span class="exo-zone__kg">50 kg</span>
-              </div>
-              <div class="exo-zone exo-zone--light">
-                <span class="exo-zone__pct">60 %</span>
-                <span class="exo-zone__info"><b>Endurance</b><small>15+ reps</small></span>
-                <span class="exo-zone__kg">60 kg</span>
-              </div>
-              <div class="exo-zone exo-zone--moderate">
-                <span class="exo-zone__pct">70 %</span>
-                <span class="exo-zone__info"><b>Hypertrophie</b><small>8–12 reps</small></span>
-                <span class="exo-zone__kg">70 kg</span>
-              </div>
-              <div class="exo-zone exo-zone--moderate">
-                <span class="exo-zone__pct">75 %</span>
-                <span class="exo-zone__info"><b>Hypertrophie+</b><small>8–10 reps</small></span>
-                <span class="exo-zone__kg">75 kg</span>
-              </div>
-              <div class="exo-zone exo-zone--heavy">
-                <span class="exo-zone__pct">80 %</span>
-                <span class="exo-zone__info"><b>Force</b><small>5–8 reps</small></span>
-                <span class="exo-zone__kg">80 kg</span>
-              </div>
-              <div class="exo-zone exo-zone--heavy">
-                <span class="exo-zone__pct">85 %</span>
-                <span class="exo-zone__info"><b>Force lourde</b><small>3–5 reps</small></span>
-                <span class="exo-zone__kg">85 kg</span>
-              </div>
-              <div class="exo-zone exo-zone--max">
-                <span class="exo-zone__pct">90 %</span>
-                <span class="exo-zone__info"><b>Force max</b><small>1–3 reps</small></span>
-                <span class="exo-zone__kg">90 kg</span>
-              </div>
-              <div class="exo-zone exo-zone--max exo-zone--rm">
-                <span class="exo-zone__pct">100 %</span>
-                <span class="exo-zone__info"><b>1RM</b><small>Maximum absolu</small></span>
-                <span class="exo-zone__kg">100 kg</span>
-              </div>
-            </div>
-          </div>
-
-        </section>
-
-        <!-- ─ PANNEAU : HISTORIQUE ─ -->
-        <section class="exo-panel" id="exo-panel-history" role="tabpanel">
-
-          <div class="exo-history-header">
-            <h2>Historique</h2>
-            <span class="exo-history-count">4 séances</span>
-          </div>
-
-          <ol class="exo-history-list" reversed>
-            <li>
-              <article class="exo-history-entry">
-                <div class="exo-entry-date"><b>03</b><span>avr.</span><small>2026</small></div>
-                <div class="exo-entry-body">
-                  <div class="exo-entry-title">Séance Hypertrophie</div>
-                  <div class="exo-entry-stats">
-                    <span>⚡ 4 séries</span>
-                    <span>↩ 8 reps</span>
-                    <span>⏱ 90 s repos</span>
-                  </div>
-                  <span class="exo-entry-weight">70 kg</span>
-                </div>
-              </article>
-            </li>
-            <li>
-              <article class="exo-history-entry">
-                <div class="exo-entry-date"><b>31</b><span>mars</span><small>2026</small></div>
-                <div class="exo-entry-body">
-                  <div class="exo-entry-title">Séance Force</div>
-                  <div class="exo-entry-stats">
-                    <span>⚡ 4 séries</span>
-                    <span>↩ 6 reps</span>
-                    <span>⏱ 2 min repos</span>
-                  </div>
-                  <span class="exo-entry-weight exo-entry-weight--heavy">75 kg</span>
-                </div>
-              </article>
-            </li>
-            <li>
-              <article class="exo-history-entry">
-                <div class="exo-entry-date"><b>28</b><span>mars</span><small>2026</small></div>
-                <div class="exo-entry-body">
-                  <div class="exo-entry-title">Séance Volume</div>
-                  <div class="exo-entry-stats">
-                    <span>⚡ 3 séries</span>
-                    <span>↩ 10 reps</span>
-                    <span>⏱ 60 s repos</span>
-                  </div>
-                  <span class="exo-entry-weight">65 kg</span>
-                </div>
-              </article>
-            </li>
-            <li>
-              <article class="exo-history-entry">
-                <div class="exo-entry-date"><b>24</b><span>mars</span><small>2026</small></div>
-                <div class="exo-entry-body">
-                  <div class="exo-entry-title">Séance Force max</div>
-                  <div class="exo-entry-stats">
-                    <span>⚡ 5 séries</span>
-                    <span>↩ 5 reps</span>
-                    <span>⏱ 3 min repos</span>
-                  </div>
-                  <span class="exo-entry-weight exo-entry-weight--max">80 kg</span>
-                </div>
-              </article>
-            </li>
-          </ol>
-
-        </section>
-
-      </div><!-- fin .exo-track -->
-    </div><!-- fin .exo-main -->
-  </div>
-  <!-- ===== FIN OVERLAY EXERCICE ===== -->
 
   <!-- ===== NAVBAR FIXE EN BAS ===== -->
   <nav class="bottom-nav" role="navigation" aria-label="Navigation principale">
