@@ -1,0 +1,849 @@
+/* ============================================================
+   FITTRACK — PAGE EXERCICE
+   Flux CSS : onboarding (1RM) → page stats/historique
+   Onglets  : radio inputs + transform translateX
+   Mobile First | HTML5 + CSS3 uniquement
+   ============================================================ */
+
+/* ============================================================
+   VARIABLES LOCALES
+   ============================================================ */
+:root {
+  --exo-header-height : 68px;
+  --exo-tabs-height   : 48px;
+
+  /* Zones d'entraînement */
+  --zone-light    : #39e07a;   /* 50–65%  */
+  --zone-moderate : #f59e0b;   /* 70–75%  */
+  --zone-heavy    : #f97316;   /* 80–85%  */
+  --zone-max      : #ef4444;   /* 90–100% */
+}
+
+/* ============================================================
+   TOGGLE DE FLUX (checkbox caché)
+   Doit rester dans le flux DOM pour que ~ sibling fonctionne
+   ============================================================ */
+.flow-toggle {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ============================================================
+   ÉCRAN 1 — ONBOARDING : SAISIE DU 1RM
+   ============================================================ */
+.onboarding-screen {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: #0e1114;
+  padding: 1rem 1.25rem calc(1.5rem + var(--nav-height));
+  /* Visible par défaut */
+}
+
+/* Masquer l'onboarding une fois le 1RM validé */
+#rm-entered:checked ~ .onboarding-screen {
+  display: none;
+}
+
+/* --- Lien retour --- */
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-start;
+  color: var(--text-idle);
+  text-decoration: none;
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 0.5rem 0;
+  margin-bottom: 1rem;
+  transition: color 0.2s ease;
+}
+
+.back-link:hover { color: #e5e7eb; }
+
+.back-link__arrow {
+  display: flex;
+  width: 18px;
+  height: 18px;
+}
+
+.back-link__arrow svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* --- Card centrale de l'onboarding --- */
+.onboarding-card {
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 2rem 1.5rem 2.5rem;
+  background: #141820;
+  border: 1px solid #1f2428;
+  border-radius: 24px;
+  gap: 0;
+}
+
+/* --- Icône --- */
+.onboarding-icon {
+  width: 80px;
+  height: 80px;
+  color: var(--accent);
+  margin-bottom: 1.25rem;
+  opacity: 0.9;
+}
+
+.onboarding-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* --- Badge "Première visite" --- */
+.badge-first {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+  background: var(--accent-glow);
+  border: 1px solid rgba(57, 224, 122, 0.3);
+  padding: 4px 12px;
+  border-radius: 20px;
+  margin-bottom: 1rem;
+}
+
+/* --- Titre & description --- */
+.onboarding-title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -0.02em;
+  margin-bottom: 0.5rem;
+}
+
+.onboarding-desc {
+  font-size: 0.82rem;
+  color: var(--text-idle);
+  line-height: 1.6;
+  max-width: 300px;
+  margin-bottom: 2rem;
+}
+
+/* --- Groupe de saisie du 1RM --- */
+.rm-input-group {
+  width: 100%;
+  margin-bottom: 1.5rem;
+}
+
+.rm-input-label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-idle);
+  margin-bottom: 0.625rem;
+}
+
+.rm-input-row {
+  display: flex;
+  align-items: center;
+  background: #0e1114;
+  border: 2px solid #1f2428;
+  border-radius: 16px;
+  overflow: hidden;
+  transition: border-color 0.2s ease;
+}
+
+.rm-input-row:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
+.rm-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  padding: 1rem 1.25rem;
+  font-size: 2rem;         /* chiffre bien lisible */
+  font-weight: 800;
+  color: #fff;
+  font-family: inherit;
+  text-align: center;
+  letter-spacing: -0.02em;
+  /* Masquer les flèches de l'input number */
+  -moz-appearance: textfield;
+}
+
+.rm-input::-webkit-outer-spin-button,
+.rm-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+}
+
+.rm-input::placeholder {
+  color: #2e3540;
+}
+
+.rm-input-unit {
+  padding: 0 1.25rem 0 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-idle);
+  user-select: none;
+}
+
+.rm-input-hint {
+  font-size: 0.72rem;
+  color: #374151;
+  text-align: center;
+  margin-top: 0.625rem;
+  line-height: 1.5;
+}
+
+/* --- Bouton Valider --- */
+.btn-validate {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 0.9rem 1.5rem;
+  background: var(--accent);
+  color: #0e1114;
+  font-size: 0.95rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  border-radius: 14px;
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: opacity 0.2s ease,
+              transform 0.15s ease,
+              box-shadow 0.2s ease;
+  box-shadow: 0 4px 20px rgba(57, 224, 122, 0.3);
+}
+
+.btn-validate:hover {
+  opacity: 0.9;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(57, 224, 122, 0.4);
+}
+
+.btn-validate:active {
+  transform: scale(0.97);
+}
+
+.btn-validate__icon {
+  display: flex;
+  width: 20px;
+  height: 20px;
+}
+
+.btn-validate__icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* ============================================================
+   ÉCRAN 2 — PAGE EXERCICE (onglets)
+   ============================================================ */
+.exercise-page {
+  display: none;          /* masqué par défaut */
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* Afficher la page exercice une fois le 1RM validé */
+#rm-entered:checked ~ .exercise-page {
+  display: flex;
+}
+
+/* ============================================================
+   EN-TÊTE DE LA PAGE EXERCICE
+   ============================================================ */
+.exercise-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  height: var(--exo-header-height);
+  background: linear-gradient(135deg, #111417 0%, #161e14 100%);
+  border-bottom: 1px solid #1f2a22;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0 1rem;
+}
+
+/* Bouton retour */
+.exercise-header__back {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: #1a1e23;
+  border: 1px solid #2a3038;
+  border-radius: 10px;
+  color: #9ca3af;
+  flex-shrink: 0;
+  transition: color 0.2s, border-color 0.2s;
+}
+
+.exercise-header__back svg {
+  width: 18px;
+  height: 18px;
+}
+
+.exercise-header__back:hover {
+  color: #fff;
+  border-color: #3a4550;
+}
+
+/* Nom + groupe musculaire */
+.exercise-header__info {
+  flex: 1;
+  min-width: 0;
+}
+
+.exercise-header__name {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  letter-spacing: -0.01em;
+}
+
+.exercise-header__muscle {
+  display: inline-block;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent);
+  background: var(--accent-glow);
+  border: 1px solid rgba(57, 224, 122, 0.25);
+  padding: 2px 8px;
+  border-radius: 6px;
+  margin-top: 3px;
+}
+
+/* 1RM affiché en header */
+.exercise-header__rm {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: #1a1e23;
+  border: 1px solid #2a3038;
+  border-radius: 10px;
+  padding: 4px 10px;
+  flex-shrink: 0;
+}
+
+.exercise-header__rm-value {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--accent);
+  line-height: 1.1;
+}
+
+.exercise-header__rm-unit {
+  font-size: 0.6rem;
+  color: var(--text-idle);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* ============================================================
+   BARRE D'ONGLETS (même pattern que musculation.css)
+   Les inputs radio sont frères directs de .tabs-header
+   dans .exercise-page → les sélecteurs ~ fonctionnent
+   ============================================================ */
+.tabs-header {
+  position: sticky;
+  top: var(--exo-header-height);
+  z-index: 99;
+  height: var(--exo-tabs-height);
+  background: #111417;
+  border-bottom: 1px solid #1f242a;
+  display: flex;
+  align-items: stretch;
+  overflow: hidden;
+}
+
+.tab-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: var(--text-idle);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: color 0.25s ease;
+  padding: 0 0.5rem;
+  white-space: nowrap;
+}
+
+.tab-btn__icon {
+  display: flex;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.tab-btn__icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* Indicateur glissant */
+.tab-indicator {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 50%;
+  height: 3px;
+  background: var(--accent);
+  border-radius: 3px 3px 0 0;
+  transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* ===== État actif des onglets ===== */
+/* (les radio inputs sont enfants directs de .exercise-page,
+    frères de .tabs-header et .tabs-track → ~ fonctionne) */
+
+#tab-stats:checked ~ .tabs-header label[for="tab-stats"] {
+  color: var(--accent);
+}
+
+#tab-history:checked ~ .tabs-header label[for="tab-history"] {
+  color: var(--accent);
+}
+
+/* Déplacer l'indicateur vers l'onglet Historique */
+#tab-history:checked ~ .tabs-header .tab-indicator {
+  transform: translateX(100%);
+}
+
+/* ============================================================
+   TRACK HORIZONTAL DES ONGLETS
+   ============================================================ */
+.tabs-track {
+  display: flex;
+  width: 200%;
+  transition: transform 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  flex: 1;
+}
+
+/* Glisser vers l'historique */
+#tab-history:checked ~ .tabs-track {
+  transform: translateX(-50%);
+}
+
+.tab-panel {
+  width: 50%;
+  min-width: 50%;
+  padding: 1.25rem 1rem 2rem;
+  overflow-x: hidden;
+}
+
+/* ============================================================
+   ONGLET 1 — MES STATS
+   ============================================================ */
+
+/* Card héro : 1RM affiché en grand */
+.stat-hero {
+  background: linear-gradient(135deg, #141820 0%, #162014 100%);
+  border: 1px solid rgba(57, 224, 122, 0.2);
+  border-radius: 20px;
+  padding: 1.5rem 1.25rem 1.25rem;
+  text-align: center;
+  margin-bottom: 1.25rem;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Halo décoratif en fond */
+.stat-hero::before {
+  content: "";
+  position: absolute;
+  top: -40px;
+  right: -40px;
+  width: 140px;
+  height: 140px;
+  background: radial-gradient(circle, rgba(57,224,122,0.08) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.stat-hero__label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-idle);
+  margin-bottom: 0.5rem;
+}
+
+.stat-hero__value {
+  font-size: 3.5rem;
+  font-weight: 900;
+  color: var(--accent);
+  line-height: 1;
+  letter-spacing: -0.03em;
+  margin-bottom: 0.5rem;
+}
+
+.stat-hero__unit {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: rgba(57, 224, 122, 0.7);
+}
+
+.stat-hero__meta {
+  font-size: 0.72rem;
+  color: var(--text-idle);
+  margin-bottom: 1rem;
+}
+
+.stat-hero__edit-btn {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-idle);
+  background: #1f2428;
+  border: 1px solid #2a3038;
+  border-radius: 8px;
+  padding: 5px 14px;
+  cursor: not-allowed;
+  opacity: 0.5;
+  font-family: inherit;
+}
+
+/* --- Zones d'entraînement --- */
+.training-zones {
+  background: #141820;
+  border: 1px solid #1f2428;
+  border-radius: 18px;
+  padding: 1.25rem 1rem;
+}
+
+.training-zones__title {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-idle);
+  margin-bottom: 4px;
+}
+
+.training-zones__subtitle {
+  font-size: 0.72rem;
+  color: #374151;
+  margin-bottom: 1rem;
+}
+
+/* Liste des zones */
+.zones-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* Ligne de zone */
+.zone-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.625rem 0.5rem;
+  border-radius: 10px;
+  transition: background 0.15s ease;
+}
+
+.zone-row:hover {
+  background: #1a1e23;
+}
+
+/* Séparateur subtil entre les lignes */
+.zone-row + .zone-row {
+  border-top: 1px solid #1a1e23;
+}
+
+/* Pourcentage */
+.zone-row__pct {
+  font-size: 0.85rem;
+  font-weight: 800;
+  min-width: 44px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Couleur du % selon la zone */
+.zone-row--light    .zone-row__pct { color: var(--zone-light); }
+.zone-row--moderate .zone-row__pct { color: var(--zone-moderate); }
+.zone-row--heavy    .zone-row__pct { color: var(--zone-heavy); }
+.zone-row--max      .zone-row__pct { color: var(--zone-max); }
+
+/* Nom de zone + usage */
+.zone-row__info {
+  flex: 1;
+  min-width: 0;
+}
+
+.zone-row__label {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #d1d5db;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.zone-row__usage {
+  display: block;
+  font-size: 0.68rem;
+  color: #4b5563;
+  margin-top: 1px;
+}
+
+/* Poids calculé */
+.zone-row__weight {
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: #e5e7eb;
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.zone-row__weight span {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--text-idle);
+  margin-left: 2px;
+}
+
+/* Mise en valeur de la ligne 1RM */
+.zone-row--rm {
+  background: rgba(239, 68, 68, 0.06);
+  border-radius: 10px;
+  border-top: 1px solid rgba(239, 68, 68, 0.15) !important;
+  margin-top: 4px;
+}
+
+.zone-row--rm .zone-row__weight {
+  color: var(--zone-max);
+}
+
+/* ============================================================
+   ONGLET 2 — HISTORIQUE
+   ============================================================ */
+.history-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+}
+
+.history-header__title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #e5e7eb;
+}
+
+.history-header__count {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-idle);
+  background: #1f2428;
+  padding: 3px 10px;
+  border-radius: 20px;
+  border: 1px solid #2a3038;
+}
+
+/* Liste d'historique */
+.history-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  padding: 0;
+  margin: 0 0 1.5rem;
+}
+
+/* Entrée d'historique */
+.history-entry {
+  display: flex;
+  gap: 0.875rem;
+  align-items: flex-start;
+  background: #141820;
+  border: 1px solid #1f2428;
+  border-radius: 16px;
+  padding: 1rem;
+  transition: background 0.2s ease, border-color 0.2s ease;
+  cursor: pointer;
+}
+
+.history-entry:hover {
+  background: #1a2028;
+  border-color: #2e3a44;
+}
+
+/* Colonne date */
+.history-entry__date-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: #0e1114;
+  border: 1px solid #1f2428;
+  border-radius: 10px;
+  padding: 6px 8px;
+  min-width: 40px;
+  flex-shrink: 0;
+}
+
+.history-entry__day {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #fff;
+  line-height: 1;
+}
+
+.history-entry__month {
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--accent);
+  letter-spacing: 0.04em;
+  margin-top: 2px;
+}
+
+.history-entry__year {
+  font-size: 0.58rem;
+  color: var(--text-idle);
+  margin-top: 1px;
+}
+
+/* Corps de l'entrée */
+.history-entry__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.history-entry__title {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #e5e7eb;
+  margin-bottom: 0.5rem;
+}
+
+/* Ligne des stats (séries, reps, repos) */
+.history-entry__stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.625rem;
+}
+
+.history-entry__stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-idle);
+  background: #1a1e23;
+  border: 1px solid #252b33;
+  padding: 3px 8px;
+  border-radius: 6px;
+}
+
+.history-entry__stat-icon {
+  font-size: 0.65rem;
+  opacity: 0.7;
+}
+
+/* Badge du poids utilisé */
+.history-entry__weight-badge {
+  display: inline-block;
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: var(--accent);
+  background: var(--accent-glow);
+  border: 1px solid rgba(57, 224, 122, 0.25);
+  padding: 3px 10px;
+  border-radius: 8px;
+}
+
+/* Variantes de couleur pour les poids lourds */
+.history-entry__weight-badge--heavy {
+  color: var(--zone-heavy);
+  background: rgba(249, 115, 22, 0.1);
+  border-color: rgba(249, 115, 22, 0.25);
+}
+
+.history-entry__weight-badge--max {
+  color: var(--zone-max);
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.25);
+}
+
+/* Hint en bas de l'historique */
+.history-empty-hint {
+  text-align: center;
+  font-size: 0.75rem;
+  color: #374151;
+  padding: 1rem 0;
+  border-top: 1px solid #1f2428;
+}
+
+/* ============================================================
+   RESPONSIVE — Desktop (≥ 768px)
+   ============================================================ */
+@media (min-width: 768px) {
+
+  /* Centrer les écrans à 480px */
+  .onboarding-screen {
+    justify-content: center;
+    padding-top: 3rem;
+  }
+
+  .exercise-header,
+  .tabs-header,
+  .tabs-track {
+    max-width: 480px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  /* Track = 2 × 480px */
+  .tabs-track {
+    width: calc(480px * 2);
+  }
+
+  .tab-panel {
+    width: 480px;
+    min-width: 480px;
+  }
+
+  /* Titre un peu plus grand */
+  .exercise-header__name {
+    font-size: 1.125rem;
+  }
+}

@@ -1,0 +1,811 @@
+/* ============================================================
+   FITTRACK — PAGE MUSCULATION
+   Onglets CSS : radio inputs + transform translateX
+   Mobile First | HTML5 + CSS3 uniquement
+   ============================================================ */
+
+/* ============================================================
+   VARIABLES LOCALES
+   (héritées de navbar.css pour la cohérence)
+   ============================================================ */
+:root {
+  /* Hauteurs des zones fixes pour calculer la zone défilable */
+  --header-height:   72px;
+  --tabs-height:     48px;
+
+  /* Couleurs des groupes musculaires */
+  --color-pecto:     #39e07a;   /* vert  */
+  --color-dos:       #3b9eff;   /* bleu  */
+  --color-epaules:   #a855f7;   /* violet */
+  --color-bras:      #f97316;   /* orange */
+  --color-jambes:    #ef4444;   /* rouge  */
+  --color-abdos:     #eab308;   /* jaune  */
+}
+
+/* ============================================================
+   RADIO INPUTS — complètement cachés, mais restent dans le DOM
+   pour que les sélecteurs CSS ~ (sibling) fonctionnent
+   ============================================================ */
+#tab-seance,
+#tab-exercices {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ============================================================
+   EN-TÊTE DE PAGE
+   ============================================================ */
+.page-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  height: var(--header-height);
+  background: linear-gradient(135deg, #111417 0%, #1a2318 100%);
+  border-bottom: 1px solid #1f2a22;
+  display: flex;
+  align-items: center;
+  padding: 0 1.25rem;
+}
+
+.page-header__inner {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+}
+
+.page-header__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  background: var(--accent-glow);
+  border: 1px solid rgba(57, 224, 122, 0.3);
+  border-radius: 12px;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.page-header__icon svg {
+  width: 22px;
+  height: 22px;
+}
+
+.page-header__title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+}
+
+.page-header__subtitle {
+  font-size: 0.75rem;
+  color: var(--text-idle);
+  margin-top: 2px;
+}
+
+/* ============================================================
+   BARRE D'ONGLETS
+   ============================================================ */
+.tabs-header {
+  position: sticky;
+  top: var(--header-height);
+  z-index: 99;
+  height: var(--tabs-height);
+  background: #111417;
+  border-bottom: 1px solid #1f242a;
+  display: flex;
+  align-items: stretch;
+
+  /* Contexte pour l'indicateur positionné en absolu */
+  position: sticky;
+  overflow: hidden;
+}
+
+/* --- Chaque bouton-onglet --- */
+.tab-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: var(--text-idle);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: color 0.25s ease;
+  padding: 0 0.5rem;
+  white-space: nowrap;
+}
+
+.tab-btn__icon {
+  display: flex;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.tab-btn__icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* --- Indicateur glissant (trait vert sous l'onglet actif) --- */
+.tab-indicator {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 50%;           /* couvre 1 onglet sur 2 */
+  height: 3px;
+  background: var(--accent);
+  border-radius: 3px 3px 0 0;
+  transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* ============================================================
+   ÉTAT DES ONGLETS — piloté par les radio inputs (~ sibling CSS)
+   ============================================================ */
+
+/* Onglet 1 actif (par défaut, "checked" dans le HTML) */
+#tab-seance:checked ~ .tabs-header label[for="tab-seance"] {
+  color: var(--accent);
+}
+
+/* Onglet 2 actif */
+#tab-exercices:checked ~ .tabs-header label[for="tab-exercices"] {
+  color: var(--accent);
+}
+
+/* Déplace l'indicateur vers le 2e onglet */
+#tab-exercices:checked ~ .tabs-header .tab-indicator {
+  transform: translateX(100%);
+}
+
+/* ============================================================
+   ZONE DE CONTENU — TRACK HORIZONTAL
+   ============================================================ */
+.tabs-track {
+  display: flex;
+  /* Le track fait 200% (2 panneaux côte à côte) */
+  width: 200%;
+  /* Transition de glissement entre les onglets */
+  transition: transform 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  /* Hauteur min : tout l'écran moins les zones fixes */
+  min-height: calc(
+    100vh
+    - var(--header-height)
+    - var(--tabs-height)
+    - var(--nav-height)
+  );
+}
+
+/* Glisser vers le 2e panneau quand tab-exercices est coché */
+#tab-exercices:checked ~ .tabs-track {
+  transform: translateX(-50%);
+}
+
+/* --- Chaque panneau occupe 50% du track = 100% de l'écran --- */
+.tab-panel {
+  width: 50%;
+  min-width: 50%;
+  padding: 1.25rem 1rem 2rem;
+  overflow-y: auto;
+  /* Empêche le contenu de déborder horizontalement */
+  overflow-x: hidden;
+}
+
+/* ============================================================
+   EN-TÊTE DU PANNEAU
+   ============================================================ */
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+}
+
+.panel-header__title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #e5e7eb;
+}
+
+.panel-header__badge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-idle);
+  background: #1f2428;
+  padding: 3px 10px;
+  border-radius: 20px;
+  border: 1px solid #2a3038;
+}
+
+/* ============================================================
+   ÉTAT VIDE (panneau 1)
+   ============================================================ */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 2.5rem 1rem 2rem;
+  gap: 0.75rem;
+}
+
+.empty-state__icon {
+  width: 80px;
+  height: 80px;
+  color: #2a3038;
+  margin-bottom: 0.5rem;
+}
+
+.empty-state__icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.empty-state__title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #9ca3af;
+}
+
+.empty-state__desc {
+  font-size: 0.82rem;
+  color: var(--text-idle);
+  max-width: 260px;
+  line-height: 1.5;
+}
+
+/* Bouton CTA (label cliquable, ouvre la modale de choix) */
+.btn-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 0.75rem;
+  padding: 0.75rem 1.5rem;
+  background: var(--accent);
+  color: #0e1114;
+  font-size: 0.875rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: opacity 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+  box-shadow: 0 4px 16px rgba(57, 224, 122, 0.25);
+}
+
+.btn-cta:hover {
+  opacity: 0.9;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(57, 224, 122, 0.35);
+}
+
+.btn-cta:active {
+  transform: scale(0.97);
+  opacity: 1;
+}
+
+.btn-cta__icon {
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+/* ============================================================
+   BLOC SECTION (historique, etc.)
+   ============================================================ */
+.section-block {
+  margin-top: 1.75rem;
+  background: #141820;
+  border: 1px solid #1f2428;
+  border-radius: 14px;
+  padding: 1rem 1rem 1.25rem;
+}
+
+.section-block__title {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-idle);
+  margin-bottom: 0.75rem;
+}
+
+.section-block__empty {
+  font-size: 0.82rem;
+  color: #374151;
+  text-align: center;
+  padding: 1rem 0 0.5rem;
+}
+
+/* ============================================================
+   BARRE DE RECHERCHE (panneau 2)
+   ============================================================ */
+.search-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  background: #141820;
+  border: 1px solid #1f2428;
+  border-radius: 12px;
+  padding: 0 0.875rem;
+  height: 44px;
+  margin-bottom: 1rem;
+}
+
+.search-bar__icon {
+  display: flex;
+  width: 18px;
+  height: 18px;
+  color: var(--text-idle);
+  flex-shrink: 0;
+}
+
+.search-bar__icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.search-bar__input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #f0f0f0;
+  font-size: 0.875rem;
+  font-family: inherit;
+}
+
+.search-bar__input::placeholder {
+  color: var(--text-idle);
+}
+
+/* ============================================================
+   FILTRES PAR GROUPE MUSCULAIRE (chips)
+   ============================================================ */
+.filter-chips {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+  margin-bottom: 1rem;
+  /* Masquer la scrollbar des chips */
+  scrollbar-width: none;
+}
+
+.filter-chips::-webkit-scrollbar { display: none; }
+
+.chip {
+  flex-shrink: 0;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  padding: 5px 12px;
+  border-radius: 20px;
+  background: #1a1e23;
+  color: var(--text-idle);
+  border: 1px solid #2a3038;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+  user-select: none;
+}
+
+.chip--active,
+.chip:hover {
+  background: var(--accent-glow);
+  color: var(--accent);
+  border-color: rgba(57, 224, 122, 0.4);
+}
+
+/* ============================================================
+   LISTE D'EXERCICES
+   ============================================================ */
+.exercises-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+/* --- Card exercice --- */
+.exercise-card {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  background: #141820;
+  border: 1px solid #1f2428;
+  border-radius: 14px;
+  padding: 0.875rem 1rem;
+  cursor: pointer;
+  text-decoration: none;   /* supprime le soulignement du <a> */
+  color: inherit;           /* hérite la couleur du thème sombre */
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
+}
+
+.exercise-card:hover,
+.exercise-card:active {
+  background: #1a2028;
+  border-color: #2a3540;
+  transform: translateX(2px);
+}
+
+/* Tag groupe musculaire */
+.exercise-card__muscle-tag {
+  flex-shrink: 0;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 4px 8px;
+  border-radius: 6px;
+  min-width: 70px;
+  text-align: center;
+
+  /* Couleur par défaut (Pectoraux = vert) */
+  color: var(--color-pecto);
+  background: rgba(57, 224, 122, 0.1);
+  border: 1px solid rgba(57, 224, 122, 0.25);
+}
+
+/* Variantes couleur par groupe */
+.exercise-card__muscle-tag--dos {
+  color: var(--color-dos);
+  background: rgba(59, 158, 255, 0.1);
+  border-color: rgba(59, 158, 255, 0.25);
+}
+.exercise-card__muscle-tag--epaules {
+  color: var(--color-epaules);
+  background: rgba(168, 85, 247, 0.1);
+  border-color: rgba(168, 85, 247, 0.25);
+}
+.exercise-card__muscle-tag--bras {
+  color: var(--color-bras);
+  background: rgba(249, 115, 22, 0.1);
+  border-color: rgba(249, 115, 22, 0.25);
+}
+.exercise-card__muscle-tag--jambes {
+  color: var(--color-jambes);
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.25);
+}
+.exercise-card__muscle-tag--abdos {
+  color: var(--color-abdos);
+  background: rgba(234, 179, 8, 0.1);
+  border-color: rgba(234, 179, 8, 0.25);
+}
+
+/* Infos de l'exercice */
+.exercise-card__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.exercise-card__name {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #e5e7eb;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.exercise-card__info {
+  font-size: 0.72rem;
+  color: var(--text-idle);
+  margin-top: 2px;
+}
+
+/* Flèche droite */
+.exercise-card__arrow {
+  font-size: 1.4rem;
+  color: #374151;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+/* Placeholder ajout exercice */
+.add-exercise-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 52px;
+  border: 1.5px dashed #2a3038;
+  border-radius: 14px;
+  color: var(--text-idle);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+}
+
+.add-exercise-placeholder:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* ============================================================
+   MODALE : CHOIX DE CRÉATION DE SÉANCE
+   Technique CSS :
+     - .modal-toggle (checkbox) caché en haut du <body>
+     - #show-create-session:checked ~ .session-modal contrôle tout
+     - Animation via visibility + opacity + transform
+   ============================================================ */
+
+/* Checkbox caché (doit rester dans le flux DOM pour ~ sibling) */
+.modal-toggle {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Conteneur principal de la modale — invisible par défaut */
+.session-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  visibility: hidden;
+  /* Délai : attend la fin de l'animation avant de vraiment cacher */
+  transition: visibility 0s 0.4s;
+}
+
+/* Afficher quand le checkbox est coché */
+#show-create-session:checked ~ .session-modal {
+  visibility: visible;
+  transition: visibility 0s 0s;
+}
+
+/* --- Overlay sombre derrière la feuille --- */
+.session-modal__overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0);
+  cursor: pointer;
+  /* Transition de l'opacité de l'overlay */
+  transition: background 0.35s ease;
+}
+
+#show-create-session:checked ~ .session-modal .session-modal__overlay {
+  background: rgba(0, 0, 0, 0.78);
+}
+
+/* --- Bottom sheet (feuille qui monte du bas) --- */
+.session-modal__sheet {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #1a1e23;
+  border-radius: 24px 24px 0 0;
+  border-top: 1px solid #252b33;
+
+  /* Espace interne : dessus + côtés + bas (+ hauteur navbar) */
+  padding: 0.75rem 1.25rem;
+  padding-bottom: calc(1.5rem + var(--nav-height));
+
+  /* Départ hors écran, glisse vers le haut à l'ouverture */
+  transform: translateY(100%);
+  transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+#show-create-session:checked ~ .session-modal .session-modal__sheet {
+  transform: translateY(0);
+}
+
+/* Handle décoratif (trait arrondi en haut de la feuille) */
+.session-modal__handle {
+  width: 40px;
+  height: 4px;
+  background: #2e3540;
+  border-radius: 2px;
+  margin: 0 auto 1.5rem;
+}
+
+/* Titre de la modale */
+.session-modal__title {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -0.01em;
+  margin-bottom: 4px;
+}
+
+.session-modal__subtitle {
+  font-size: 0.8rem;
+  color: var(--text-idle);
+  margin-bottom: 1.5rem;
+}
+
+/* ============================================================
+   CARTES DE CHOIX (.choice-card)
+   ============================================================ */
+.choice-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: #111417;
+  border: 1px solid #1f2428;
+  border-radius: 16px;
+  padding: 1rem 1.125rem;
+  text-decoration: none;
+  margin-bottom: 0.75rem;
+  /* Transition hover/active */
+  transition: background 0.2s ease,
+              border-color 0.2s ease,
+              transform 0.15s ease,
+              box-shadow 0.2s ease;
+}
+
+.choice-card:hover {
+  background: #1a2028;
+  border-color: #2e3a44;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+}
+
+.choice-card:active {
+  transform: scale(0.98);
+}
+
+/* Variante "Créer" : accent vert plus prononcé */
+.choice-card--create {
+  background: rgba(57, 224, 122, 0.04);
+  border-color: rgba(57, 224, 122, 0.2);
+}
+
+.choice-card--create:hover {
+  background: rgba(57, 224, 122, 0.09);
+  border-color: rgba(57, 224, 122, 0.4);
+  box-shadow: 0 4px 20px rgba(57, 224, 122, 0.12);
+}
+
+/* --- Icône de la carte --- */
+.choice-card__icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+
+.choice-card:hover .choice-card__icon {
+  transform: scale(1.05);
+}
+
+/* Icône "sélectionner" : bleu */
+.choice-card__icon--select {
+  background: rgba(59, 158, 255, 0.12);
+  color: #3b9eff;
+  border: 1px solid rgba(59, 158, 255, 0.25);
+}
+
+/* Icône "créer" : vert */
+.choice-card__icon--create {
+  background: rgba(57, 224, 122, 0.12);
+  color: var(--accent);
+  border: 1px solid rgba(57, 224, 122, 0.25);
+}
+
+.choice-card__icon svg {
+  width: 24px;
+  height: 24px;
+}
+
+/* --- Textes de la carte --- */
+.choice-card__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.choice-card__title {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #e5e7eb;
+  line-height: 1.3;
+}
+
+.choice-card__desc {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--text-idle);
+  margin-top: 4px;
+  line-height: 1.4;
+}
+
+/* --- Flèche droite --- */
+.choice-card__arrow {
+  font-size: 1.6rem;
+  color: #374151;
+  flex-shrink: 0;
+  line-height: 1;
+  transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.choice-card:hover .choice-card__arrow {
+  color: var(--accent);
+  transform: translateX(3px);
+}
+
+/* ============================================================
+   BOUTON ANNULER
+   ============================================================ */
+.session-modal__cancel {
+  display: block;
+  text-align: center;
+  padding: 0.875rem 1rem;
+  margin-top: 0.25rem;
+  color: var(--text-idle);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 12px;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: color 0.2s ease, background 0.2s ease;
+}
+
+.session-modal__cancel:hover {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.08);
+}
+
+/* ============================================================
+   DESKTOP : centrer la bottom sheet (max 480px)
+   ============================================================ */
+@media (min-width: 768px) {
+  .session-modal__sheet {
+    max-width: 480px;
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%) translateY(100%);
+    border-radius: 24px 24px 0 0;
+  }
+
+  #show-create-session:checked ~ .session-modal .session-modal__sheet {
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+/* ============================================================
+   RESPONSIVE — Desktop (≥ 768px)
+   ============================================================ */
+@media (min-width: 768px) {
+
+  /* Centrer le contenu, max 480px pour l'effet "app" */
+  .page-header,
+  .tabs-header,
+  .tabs-track {
+    max-width: 480px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  /* Le track doit être 200% de 480px */
+  .tabs-track {
+    width: calc(480px * 2);
+  }
+
+  /* Chaque panneau = 480px */
+  .tab-panel {
+    width: 480px;
+    min-width: 480px;
+  }
+
+  /* Ajustement titre */
+  .page-header__title {
+    font-size: 1.375rem;
+  }
+}

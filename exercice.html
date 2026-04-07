@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FitTrack — Développé couché</title>
+  <link rel="stylesheet" href="navbar.css">
+  <link rel="stylesheet" href="exercice.css">
+</head>
+<body>
+
+  <!-- ============================================================
+       CONTRÔLE DU FLUX : PREMIÈRE VISITE → PAGE EXERCICE
+       Technique : checkbox caché + sélecteurs CSS ~
+       - Décoché (défaut) : écran de saisie du 1RM visible
+       - Coché            : page exercice visible
+       Remarque : sans JS, cette valeur n'est pas persistée entre sessions.
+       Ajouter localStorage via JS pour un vrai comportement "première fois".
+       ============================================================ -->
+  <input type="checkbox" id="rm-entered" class="flow-toggle">
+
+  <!-- ============================================================
+       ÉCRAN 1 — PREMIÈRE VISITE : SAISIE DU POIDS MAX (1RM)
+       Visible par défaut. Masqué quand #rm-entered est coché.
+       ============================================================ -->
+  <div class="onboarding-screen" role="main">
+
+    <!-- Bouton retour -->
+    <a href="musculation.html" class="back-link" aria-label="Retour aux exercices">
+      <span class="back-link__arrow" aria-hidden="true">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="15 18 9 12 15 6"/>
+        </svg>
+      </span>
+      Exercices
+    </a>
+
+    <div class="onboarding-card">
+
+      <!-- Icône exercice -->
+      <div class="onboarding-icon" aria-hidden="true">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none"
+             stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="4"  y="26" width="10" height="12" rx="3"/>
+          <rect x="50" y="26" width="10" height="12" rx="3"/>
+          <rect x="14" y="19" width="9"  height="26" rx="3"/>
+          <rect x="41" y="19" width="9"  height="26" rx="3"/>
+          <line x1="23" y1="32" x2="41" y2="32" stroke-width="3.5"/>
+        </svg>
+      </div>
+
+      <!-- Badge première visite -->
+      <span class="badge-first" aria-label="Première fois sur cet exercice">
+        ✦ Première visite
+      </span>
+
+      <!-- Titre & description -->
+      <h1 class="onboarding-title">Développé couché</h1>
+      <p  class="onboarding-desc">
+        Indique ton poids maximal (1RM) pour personnaliser
+        tes zones d'entraînement.
+      </p>
+
+      <!-- Groupe de saisie du 1RM -->
+      <div class="rm-input-group" role="group" aria-labelledby="rm-label">
+        <label id="rm-label" class="rm-input-label" for="rm-value">
+          Poids maximal
+        </label>
+        <div class="rm-input-row">
+          <input
+            type="number"
+            id="rm-value"
+            class="rm-input"
+            placeholder="100"
+            min="1"
+            max="500"
+            step="0.5"
+            aria-label="Poids maximal en kilogrammes"
+          >
+          <span class="rm-input-unit" aria-hidden="true">kg</span>
+        </div>
+        <p class="rm-input-hint">
+          Ton 1RM est le poids que tu peux soulever en 1 répétition maximum.
+        </p>
+      </div>
+
+      <!-- Bouton Valider — label qui coche #rm-entered → affiche la page exercice -->
+      <label for="rm-entered" class="btn-validate" role="button">
+        <span class="btn-validate__icon" aria-hidden="true">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+        </span>
+        Valider et commencer
+      </label>
+
+    </div>
+  </div>
+  <!-- ===== FIN ÉCRAN 1 ===== -->
+
+
+  <!-- ============================================================
+       ÉCRAN 2 — PAGE EXERCICE (onglets stats + historique)
+       Masqué par défaut. Affiché quand #rm-entered est coché.
+
+       STRUCTURE INTERNE :
+         → Radio inputs (enfants directs) pilotent les onglets via ~
+         → .tabs-header + .tabs-track sont aussi enfants directs
+         Cela permet les sélecteurs :
+           #tab-history:checked ~ .tabs-header .tab-indicator { ... }
+           #tab-history:checked ~ .tabs-track              { ... }
+       ============================================================ -->
+  <div class="exercise-page">
+
+    <!-- Radio inputs des onglets — DOIVENT être enfants directs de .exercise-page -->
+    <input type="radio" id="tab-stats"   name="exercise-tabs" checked>
+    <input type="radio" id="tab-history" name="exercise-tabs">
+
+    <!-- ===== EN-TÊTE DE LA PAGE EXERCICE ===== -->
+    <header class="exercise-header">
+
+      <!-- Retour -->
+      <a href="musculation.html" class="exercise-header__back" aria-label="Retour aux exercices">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="15 18 9 12 15 6"/>
+        </svg>
+      </a>
+
+      <!-- Nom + groupe musculaire -->
+      <div class="exercise-header__info">
+        <h1 class="exercise-header__name">Développé couché</h1>
+        <span class="exercise-header__muscle">Pectoraux</span>
+      </div>
+
+      <!-- 1RM affiché dans le header -->
+      <!-- Note : valeur fictive — à lier dynamiquement via JS -->
+      <div class="exercise-header__rm" aria-label="Poids maximal : 100 kg">
+        <span class="exercise-header__rm-value">100</span>
+        <span class="exercise-header__rm-unit">kg</span>
+      </div>
+
+    </header>
+
+    <!-- ===== BARRE D'ONGLETS ===== -->
+    <nav class="tabs-header" role="tablist" aria-label="Sections de l'exercice">
+
+      <!-- Onglet Mes stats -->
+      <label for="tab-stats"
+             class="tab-btn"
+             role="tab"
+             aria-controls="panel-stats">
+        <span class="tab-btn__icon" aria-hidden="true">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="20" x2="18" y2="10"/>
+            <line x1="12" y1="20" x2="12" y2="4"/>
+            <line x1="6"  y1="20" x2="6"  y2="14"/>
+          </svg>
+        </span>
+        <span class="tab-btn__label">Mes stats</span>
+      </label>
+
+      <!-- Onglet Historique -->
+      <label for="tab-history"
+             class="tab-btn"
+             role="tab"
+             aria-controls="panel-history">
+        <span class="tab-btn__icon" aria-hidden="true">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="9"/>
+            <polyline points="12 7 12 12 15 15"/>
+          </svg>
+        </span>
+        <span class="tab-btn__label">Historique</span>
+      </label>
+
+      <!-- Indicateur glissant -->
+      <span class="tab-indicator" aria-hidden="true"></span>
+
+    </nav>
+
+    <!-- ===== ZONE DE CONTENU — TRACK HORIZONTAL ===== -->
+    <div class="tabs-track">
+
+      <!-- ── ONGLET 1 : MES STATS ── -->
+      <section class="tab-panel stats-tab" id="panel-stats" role="tabpanel" aria-labelledby="tab-stats">
+
+        <!-- Card hero : 1RM -->
+        <div class="stat-hero">
+          <div class="stat-hero__label">Poids maximal (1RM)</div>
+          <div class="stat-hero__value">
+            100 <span class="stat-hero__unit">kg</span>
+          </div>
+          <div class="stat-hero__meta">Mis à jour le 3 avril 2026</div>
+          <!-- Modifier le 1RM (remet au flow d'onboarding via un second checkbox si besoin) -->
+          <button class="stat-hero__edit-btn" type="button" disabled
+                  title="Modification disponible prochainement">
+            Modifier
+          </button>
+        </div>
+
+        <!-- Tableau des zones d'entraînement -->
+        <!--
+          Note : les poids sont des valeurs fictives (1RM = 100 kg pour la démo).
+          À calculer dynamiquement avec JS : poids = Math.round(rm * pct / 5) * 5
+        -->
+        <div class="training-zones">
+          <h2 class="training-zones__title">Zones d'entraînement</h2>
+          <p  class="training-zones__subtitle">Basé sur un 1RM de 100 kg</p>
+
+          <div class="zones-list">
+
+            <!-- Zone : Activation -->
+            <div class="zone-row zone-row--light">
+              <div class="zone-row__pct">50 %</div>
+              <div class="zone-row__info">
+                <span class="zone-row__label">Activation</span>
+                <span class="zone-row__usage">Échauffement, mobilité</span>
+              </div>
+              <div class="zone-row__weight">50 <span>kg</span></div>
+            </div>
+
+            <!-- Zone : Endurance -->
+            <div class="zone-row zone-row--light">
+              <div class="zone-row__pct">60 %</div>
+              <div class="zone-row__info">
+                <span class="zone-row__label">Endurance</span>
+                <span class="zone-row__usage">Séries longues, 15+ reps</span>
+              </div>
+              <div class="zone-row__weight">60 <span>kg</span></div>
+            </div>
+
+            <!-- Zone : Hypertrophie légère -->
+            <div class="zone-row zone-row--moderate">
+              <div class="zone-row__pct">70 %</div>
+              <div class="zone-row__info">
+                <span class="zone-row__label">Hypertrophie</span>
+                <span class="zone-row__usage">8–12 reps, volume</span>
+              </div>
+              <div class="zone-row__weight">70 <span>kg</span></div>
+            </div>
+
+            <!-- Zone : Hypertrophie -->
+            <div class="zone-row zone-row--moderate">
+              <div class="zone-row__pct">75 %</div>
+              <div class="zone-row__info">
+                <span class="zone-row__label">Hypertrophie+</span>
+                <span class="zone-row__usage">8–10 reps</span>
+              </div>
+              <div class="zone-row__weight">75 <span>kg</span></div>
+            </div>
+
+            <!-- Zone : Force -->
+            <div class="zone-row zone-row--heavy">
+              <div class="zone-row__pct">80 %</div>
+              <div class="zone-row__info">
+                <span class="zone-row__label">Force</span>
+                <span class="zone-row__usage">5–8 reps</span>
+              </div>
+              <div class="zone-row__weight">80 <span>kg</span></div>
+            </div>
+
+            <!-- Zone : Force lourde -->
+            <div class="zone-row zone-row--heavy">
+              <div class="zone-row__pct">85 %</div>
+              <div class="zone-row__info">
+                <span class="zone-row__label">Force lourde</span>
+                <span class="zone-row__usage">3–5 reps</span>
+              </div>
+              <div class="zone-row__weight">85 <span>kg</span></div>
+            </div>
+
+            <!-- Zone : Force maximale -->
+            <div class="zone-row zone-row--max">
+              <div class="zone-row__pct">90 %</div>
+              <div class="zone-row__info">
+                <span class="zone-row__label">Force max</span>
+                <span class="zone-row__usage">1–3 reps</span>
+              </div>
+              <div class="zone-row__weight">90 <span>kg</span></div>
+            </div>
+
+            <!-- Zone : 1RM -->
+            <div class="zone-row zone-row--max zone-row--rm">
+              <div class="zone-row__pct">100 %</div>
+              <div class="zone-row__info">
+                <span class="zone-row__label">1RM</span>
+                <span class="zone-row__usage">Maximum absolu</span>
+              </div>
+              <div class="zone-row__weight">100 <span>kg</span></div>
+            </div>
+
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ── ONGLET 2 : HISTORIQUE ── -->
+      <section class="tab-panel history-tab" id="panel-history" role="tabpanel" aria-labelledby="tab-history">
+
+        <div class="history-header">
+          <h2 class="history-header__title">Historique</h2>
+          <span class="history-header__count">4 séances</span>
+        </div>
+
+        <!-- Liste des entrées d'historique -->
+        <ol class="history-list" reversed>
+
+          <!-- Entrée la plus récente en premier -->
+          <li>
+            <article class="history-entry">
+              <div class="history-entry__date-col">
+                <span class="history-entry__day">03</span>
+                <span class="history-entry__month">avr.</span>
+                <span class="history-entry__year">2026</span>
+              </div>
+              <div class="history-entry__body">
+                <div class="history-entry__title">Séance Hypertrophie</div>
+                <div class="history-entry__stats">
+                  <span class="history-entry__stat">
+                    <span class="history-entry__stat-icon" aria-hidden="true">⚡</span>
+                    4 séries
+                  </span>
+                  <span class="history-entry__stat">
+                    <span class="history-entry__stat-icon" aria-hidden="true">↩</span>
+                    8 reps
+                  </span>
+                  <span class="history-entry__stat">
+                    <span class="history-entry__stat-icon" aria-hidden="true">⏱</span>
+                    90 s repos
+                  </span>
+                </div>
+                <div class="history-entry__weight-badge">70 kg</div>
+              </div>
+            </article>
+          </li>
+
+          <li>
+            <article class="history-entry">
+              <div class="history-entry__date-col">
+                <span class="history-entry__day">31</span>
+                <span class="history-entry__month">mars</span>
+                <span class="history-entry__year">2026</span>
+              </div>
+              <div class="history-entry__body">
+                <div class="history-entry__title">Séance Force</div>
+                <div class="history-entry__stats">
+                  <span class="history-entry__stat">
+                    <span class="history-entry__stat-icon" aria-hidden="true">⚡</span>
+                    4 séries
+                  </span>
+                  <span class="history-entry__stat">
+                    <span class="history-entry__stat-icon" aria-hidden="true">↩</span>
+                    6 reps
+                  </span>
+                  <span class="history-entry__stat">
+                    <span class="history-entry__stat-icon" aria-hidden="true">⏱</span>
+                    2 min repos
+                  </span>
+                </div>
+                <div class="history-entry__weight-badge history-entry__weight-badge--heavy">75 kg</div>
+              </div>
+            </article>
+          </li>
+
+          <li>
+            <article class="history-entry">
+              <div class="history-entry__date-col">
+                <span class="history-entry__day">28</span>
+                <span class="history-entry__month">mars</span>
+                <span class="history-entry__year">2026</span>
+              </div>
+              <div class="history-entry__body">
+                <div class="history-entry__title">Séance Volume</div>
+                <div class="history-entry__stats">
+                  <span class="history-entry__stat">
+                    <span class="history-entry__stat-icon" aria-hidden="true">⚡</span>
+                    3 séries
+                  </span>
+                  <span class="history-entry__stat">
+                    <span class="history-entry__stat-icon" aria-hidden="true">↩</span>
+                    10 reps
+                  </span>
+                  <span class="history-entry__stat">
+                    <span class="history-entry__stat-icon" aria-hidden="true">⏱</span>
+                    60 s repos
+                  </span>
+                </div>
+                <div class="history-entry__weight-badge">65 kg</div>
+              </div>
+            </article>
+          </li>
+
+          <li>
+            <article class="history-entry">
+              <div class="history-entry__date-col">
+                <span class="history-entry__day">24</span>
+                <span class="history-entry__month">mars</span>
+                <span class="history-entry__year">2026</span>
+              </div>
+              <div class="history-entry__body">
+                <div class="history-entry__title">Séance Force max</div>
+                <div class="history-entry__stats">
+                  <span class="history-entry__stat">
+                    <span class="history-entry__stat-icon" aria-hidden="true">⚡</span>
+                    5 séries
+                  </span>
+                  <span class="history-entry__stat">
+                    <span class="history-entry__stat-icon" aria-hidden="true">↩</span>
+                    5 reps
+                  </span>
+                  <span class="history-entry__stat">
+                    <span class="history-entry__stat-icon" aria-hidden="true">⏱</span>
+                    3 min repos
+                  </span>
+                </div>
+                <div class="history-entry__weight-badge history-entry__weight-badge--max">80 kg</div>
+              </div>
+            </article>
+          </li>
+
+        </ol>
+
+        <!-- Placeholder pour nouvelles entrées futures -->
+        <div class="history-empty-hint">
+          Les prochaines séances apparaîtront ici automatiquement.
+        </div>
+
+      </section>
+
+    </div>
+    <!-- ===== FIN TABS TRACK ===== -->
+
+  </div>
+  <!-- ===== FIN ÉCRAN 2 ===== -->
+
+
+  <!-- ===== NAVBAR FIXE EN BAS ===== -->
+  <nav class="bottom-nav" role="navigation" aria-label="Navigation principale">
+
+    <a href="index.html" class="nav-item" aria-label="Accueil">
+      <span class="nav-icon" aria-hidden="true">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5z"/>
+          <polyline points="9 21 9 12 15 12 15 21"/>
+        </svg>
+      </span>
+      <span class="nav-label">Accueil</span>
+    </a>
+
+    <!-- Musculation actif (contexte de navigation) -->
+    <a href="musculation.html" class="nav-item active" aria-label="Musculation">
+      <span class="nav-icon" aria-hidden="true">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2"  y="10" width="3" height="4" rx="1"/>
+          <rect x="19" y="10" width="3" height="4" rx="1"/>
+          <rect x="5"  y="8"  width="3" height="8" rx="1"/>
+          <rect x="16" y="8"  width="3" height="8" rx="1"/>
+          <line x1="8" y1="12" x2="16" y2="12"/>
+        </svg>
+      </span>
+      <span class="nav-label">Musculation</span>
+    </a>
+
+    <a href="alimentation.html" class="nav-item" aria-label="Alimentation">
+      <span class="nav-icon" aria-hidden="true">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2c1-1 3-1 4 0"/>
+          <path d="M17.5 6C20 7.5 21 10 21 13c0 4.5-3 8-6.5 8S8 17.5 8 13C8 9.5 9.5 7 12.5 6"/>
+          <path d="M8 13c-1.5 0-4-1-4-4s2.5-4 4-3"/>
+        </svg>
+      </span>
+      <span class="nav-label">Alimentation</span>
+    </a>
+
+    <a href="profil.html" class="nav-item" aria-label="Mon profil">
+      <span class="nav-icon" aria-hidden="true">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="8" r="4"/>
+          <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+        </svg>
+      </span>
+      <span class="nav-label">Mon profil</span>
+    </a>
+
+  </nav>
+
+</body>
+</html>
