@@ -304,6 +304,16 @@ function updateSousGroupeChips() {
   });
 }
 
+/* ── Calcul 1RM estimé (formule Epley, même logique qu'exercice.js) ── */
+function calculerRMDepuisHistorique(exo) {
+  if (exo.materiel === 'Poids du corps') return null;
+  const entries = (exo.historique || []).filter(e => e.poids > 0 && e.reps > 0);
+  if (entries.length === 0) return null;
+  const avgPoids = entries.reduce((s, e) => s + e.poids, 0) / entries.length;
+  const avgReps  = entries.reduce((s, e) => s + e.reps,  0) / entries.length;
+  return Math.round(avgPoids * (1 + avgReps / 30) * 2) / 2;
+}
+
 /* ── Formulaire : créer une séance ── */
 function bindAddSessionForm() {
   const form = document.getElementById('add-session-form');
@@ -336,6 +346,7 @@ function bindAddSessionForm() {
       series: parseInt(block.querySelector('[data-field="series"]').value) || 3,
       reps:   parseInt(block.querySelector('[data-field="reps"]').value)   || 10,
       repos:  block.querySelector('[data-field="repos"]').value             || '90 s',
+      poids:  parseFloat(block.querySelector('[data-field="poids"]')?.value) || null,
     }));
 
     DB.addSession({ nom, jours, exercices });
@@ -361,8 +372,30 @@ function bindAddSessionForm() {
 
       const container = document.getElementById('session-exo-blocks');
       const block = document.createElement('div');
-      block.className      = 'session-exo-block';
-      block.dataset.exoId  = exoId;
+      block.className     = 'session-exo-block';
+      block.dataset.exoId = exoId;
+
+      const isPoidsDuCorps = exo.materiel === 'Poids du corps';
+      const rmEstime       = calculerRMDepuisHistorique(exo);
+
+      // Poids conseillé hypertrophie : 70–80% du 1RM, arrondi à 2,5 kg
+      let poidsConseille = null;
+      if (!isPoidsDuCorps && rmEstime) {
+        poidsConseille = Math.round(rmEstime * 0.75 / 2.5) * 2.5;
+      }
+
+      const champsPoidsHTML = isPoidsDuCorps ? '' : `
+        <label class="session-exo-block__poids-label">
+          Poids (kg)
+          ${poidsConseille
+            ? `<span class="session-exo-block__poids-hint">conseillé : ${poidsConseille} kg</span>`
+            : ''}
+          <input type="number" data-field="poids"
+                 value="${poidsConseille || ''}"
+                 placeholder="${poidsConseille ? poidsConseille : '—'}"
+                 min="0" max="500" step="0.5">
+        </label>`;
+
       block.innerHTML = `
         <div class="session-exo-block__header">
           <span class="session-exo-block__name">${exo.nom}</span>
@@ -378,7 +411,9 @@ function bindAddSessionForm() {
           <label>Repos
             <input type="text"   data-field="repos"  value="90 s" placeholder="90 s">
           </label>
+          ${champsPoidsHTML}
         </div>`;
+
       block.querySelector('.session-exo-block__remove').addEventListener('click', () => block.remove());
       container.appendChild(block);
     });
