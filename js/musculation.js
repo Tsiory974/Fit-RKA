@@ -10,6 +10,10 @@
 const JOURS_FR = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
 const JOURS_LONG = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
 
+// État partagé des filtres exercices
+let currentSearch = '';
+let currentGroupe = '';
+
 document.addEventListener('DOMContentLoaded', () => {
   DB.init();
 
@@ -170,10 +174,14 @@ function renderExerciseList() {
   const container = document.querySelector('.exercises-list');
   if (!container) return;
 
-  const placeholder = container.querySelector('.add-exercise-placeholder');
   container.innerHTML = '';
 
-  const exercises = DB.getAllExercices();
+  const q = currentSearch.trim().toLowerCase();
+  const exercises = DB.getAllExercices().filter(exo => {
+    const matchSearch = !q || exo.nom.toLowerCase().includes(q) || exo.groupe.toLowerCase().includes(q);
+    const matchGroupe = !currentGroupe || exo.groupe === currentGroupe;
+    return matchSearch && matchGroupe;
+  });
 
   exercises.forEach(exo => {
     const card = document.createElement('a');
@@ -192,16 +200,6 @@ function renderExerciseList() {
       <span class="exercise-card__arrow" aria-hidden="true">›</span>`;
     container.appendChild(card);
   });
-
-  // Placeholder toujours en dernier
-  if (placeholder) {
-    container.appendChild(placeholder);
-  } else {
-    const ph = document.createElement('div');
-    ph.className = 'add-exercise-placeholder';
-    ph.innerHTML = '<label for="show-add-exercise" style="cursor:pointer;display:contents">＋ Ajouter un exercice</label>';
-    container.appendChild(ph);
-  }
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -211,6 +209,30 @@ function renderExerciseList() {
 function bindForms() {
   bindAddSessionForm();
   bindAddExerciseForm();
+  bindExerciseSearch();
+  bindFilterChips();
+}
+
+function bindExerciseSearch() {
+  const input = document.getElementById('exercise-search');
+  if (!input) return;
+  input.addEventListener('input', () => {
+    currentSearch = input.value;
+    renderExerciseList();
+  });
+}
+
+function bindFilterChips() {
+  const chips = document.querySelectorAll('.filter-chips .chip');
+  chips.forEach(chip => {
+    chip.addEventListener('click', () => {
+      chips.forEach(c => c.classList.remove('chip--active'));
+      chip.classList.add('chip--active');
+      const label = chip.textContent.trim();
+      currentGroupe = label === 'Tous' ? '' : label;
+      renderExerciseList();
+    });
+  });
 }
 
 /* ── Formulaire : créer une séance ── */

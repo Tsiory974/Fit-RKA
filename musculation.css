@@ -18,6 +18,8 @@
   --color-dos:       #3b9eff;   /* bleu  */
   --color-epaules:   #a855f7;   /* violet */
   --color-bras:      #f97316;   /* orange */
+  --color-biceps:    #f97316;   /* orange */
+  --color-triceps:   #fb923c;   /* orange clair */
   --color-jambes:    #ef4444;   /* rouge  */
   --color-abdos:     #eab308;   /* jaune  */
 }
@@ -231,6 +233,12 @@ body {
   touch-action: pan-y;   /* bloque le swipe horizontal dans chaque panneau */
 }
 
+/* La zone de chips a son propre scroll horizontal —
+   on doit lui redonner les deux axes pour ne pas bloquer pan-x */
+.tab-panel .filter-chips {
+  touch-action: pan-x pan-y;
+}
+
 /* ============================================================
    EN-TÊTE DU PANNEAU
    ============================================================ */
@@ -415,10 +423,12 @@ body {
   display: flex;
   gap: 0.5rem;
   overflow-x: auto;
+  overflow-y: hidden;
   padding-bottom: 0.5rem;
   margin-bottom: 1rem;
-  /* Masquer la scrollbar des chips */
   scrollbar-width: none;
+  touch-action: pan-x;        /* scroll horizontal natif sur mobile */
+  -webkit-overflow-scrolling: touch;
 }
 
 .filter-chips::-webkit-scrollbar { display: none; }
@@ -452,7 +462,15 @@ body {
   display: flex;
   flex-direction: column;
   gap: 0.625rem;
+  /* 6 cartes × ~62px + 5 gaps × 10px = ~422px */
+  max-height: 430px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: none;        /* Firefox */
+  -webkit-overflow-scrolling: touch;
 }
+
+.exercises-list::-webkit-scrollbar { display: none; }
 
 /* --- Card exercice --- */
 .exercise-card {
@@ -505,10 +523,16 @@ body {
   background: rgba(168, 85, 247, 0.1);
   border-color: rgba(168, 85, 247, 0.25);
 }
-.exercise-card__muscle-tag--bras {
-  color: var(--color-bras);
+.exercise-card__muscle-tag--bras,
+.exercise-card__muscle-tag--biceps {
+  color: var(--color-biceps);
   background: rgba(249, 115, 22, 0.1);
   border-color: rgba(249, 115, 22, 0.25);
+}
+.exercise-card__muscle-tag--triceps {
+  color: var(--color-triceps);
+  background: rgba(251, 146, 60, 0.1);
+  border-color: rgba(251, 146, 60, 0.25);
 }
 .exercise-card__muscle-tag--jambes {
   color: var(--color-jambes);
@@ -993,7 +1017,9 @@ body {
 
 .today-exercise-row__tag--dos      { color: var(--color-dos);     background: rgba(59,158,255,0.1); border-color: rgba(59,158,255,0.2); }
 .today-exercise-row__tag--epaules  { color: var(--color-epaules); background: rgba(168,85,247,0.1); border-color: rgba(168,85,247,0.2); }
-.today-exercise-row__tag--bras     { color: var(--color-bras);    background: rgba(249,115,22,0.1); border-color: rgba(249,115,22,0.2); }
+.today-exercise-row__tag--bras,
+.today-exercise-row__tag--biceps   { color: var(--color-biceps);   background: rgba(249,115,22,0.1); border-color: rgba(249,115,22,0.2); }
+.today-exercise-row__tag--triceps  { color: var(--color-triceps);  background: rgba(251,146,60,0.1); border-color: rgba(251,146,60,0.2); }
 .today-exercise-row__tag--jambes   { color: var(--color-jambes);  background: rgba(239,68,68,0.1);  border-color: rgba(239,68,68,0.2); }
 .today-exercise-row__tag--abdos    { color: var(--color-abdos);   background: rgba(234,179,8,0.1);  border-color: rgba(234,179,8,0.2); }
 
@@ -1170,7 +1196,9 @@ body {
 
 .session-card__exo-chip--dos      { color: var(--color-dos);     background: rgba(59,158,255,0.1); border-color: rgba(59,158,255,0.2); }
 .session-card__exo-chip--epaules  { color: var(--color-epaules); background: rgba(168,85,247,0.1); border-color: rgba(168,85,247,0.2); }
-.session-card__exo-chip--bras     { color: var(--color-bras);    background: rgba(249,115,22,0.1); border-color: rgba(249,115,22,0.2); }
+.session-card__exo-chip--bras,
+.session-card__exo-chip--biceps   { color: var(--color-biceps);   background: rgba(249,115,22,0.1); border-color: rgba(249,115,22,0.2); }
+.session-card__exo-chip--triceps  { color: var(--color-triceps);  background: rgba(251,146,60,0.1); border-color: rgba(251,146,60,0.2); }
 .session-card__exo-chip--jambes   { color: var(--color-jambes);  background: rgba(239,68,68,0.1);  border-color: rgba(239,68,68,0.2); }
 .session-card__exo-chip--abdos    { color: var(--color-abdos);   background: rgba(234,179,8,0.1);  border-color: rgba(234,179,8,0.2); }
 

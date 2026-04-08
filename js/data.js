@@ -26,15 +26,56 @@ const KEYS = {
   SESSION_LIST:   'ft_sessions',
   SESSION_PREFIX: 'ft_session_',
   ACTIVE_SESSION: 'ft_active_session',
+  DB_VERSION:     'ft_db_version',
 };
 
+// Incrémenter DB_VERSION_CURRENT force la réinitialisation des exercices par défaut
+const DB_VERSION_CURRENT = 4;
+
 const DEFAULT_EXERCISES = [
-  { id: 'developpe-couche',    nom: 'Développé couché',    groupe: 'Pectoraux', couleur: 'pecto'   },
-  { id: 'tractions',           nom: 'Tractions',           groupe: 'Dos',       couleur: 'dos'     },
-  { id: 'developpe-militaire', nom: 'Développé militaire', groupe: 'Épaules',   couleur: 'epaules' },
-  { id: 'curl-biceps',         nom: 'Curl biceps',         groupe: 'Bras',      couleur: 'bras'    },
-  { id: 'squat',               nom: 'Squat',               groupe: 'Jambes',    couleur: 'jambes'  },
-  { id: 'crunchs',             nom: 'Crunchs',             groupe: 'Abdos',     couleur: 'abdos'   },
+  // Pectoraux
+  { id: 'developpe-couche',          nom: 'Développé couché',                      groupe: 'Pectoraux', couleur: 'pecto'   },
+  { id: 'developpe-incline',         nom: 'Développé incliné',                     groupe: 'Pectoraux', couleur: 'pecto'   },
+  { id: 'developpe-decline',         nom: 'Développé décliné',                     groupe: 'Pectoraux', couleur: 'pecto'   },
+  { id: 'ecarte-halteres',           nom: 'Écarté haltères',                       groupe: 'Pectoraux', couleur: 'pecto'   },
+  { id: 'ecarte-machine',            nom: 'Écarté à la machine',                   groupe: 'Pectoraux', couleur: 'pecto'   },
+  { id: 'pompes',                    nom: 'Pompes',                                groupe: 'Pectoraux', couleur: 'pecto'   },
+  // Dos
+  { id: 'tractions',                 nom: 'Tractions',                             groupe: 'Dos',       couleur: 'dos'     },
+  { id: 'tirage-vertical',           nom: 'Tirage vertical',                       groupe: 'Dos',       couleur: 'dos'     },
+  { id: 'tirage-horizontal',         nom: 'Tirage horizontal',                     groupe: 'Dos',       couleur: 'dos'     },
+  { id: 'rowing-barre',              nom: 'Rowing barre',                          groupe: 'Dos',       couleur: 'dos'     },
+  { id: 'rowing-haltere',            nom: 'Rowing haltère',                        groupe: 'Dos',       couleur: 'dos'     },
+  { id: 'souleve-de-terre',          nom: 'Soulevé de terre',                      groupe: 'Dos',       couleur: 'dos'     },
+  // Jambes
+  { id: 'squat',                     nom: 'Squat',                                 groupe: 'Jambes',    couleur: 'jambes'  },
+  { id: 'presse-cuisses',            nom: 'Presse à cuisses',                      groupe: 'Jambes',    couleur: 'jambes'  },
+  { id: 'fentes',                    nom: 'Fentes',                                groupe: 'Jambes',    couleur: 'jambes'  },
+  { id: 'leg-extension',             nom: 'Leg extension',                         groupe: 'Jambes',    couleur: 'jambes'  },
+  { id: 'leg-curl',                  nom: 'Leg curl',                              groupe: 'Jambes',    couleur: 'jambes'  },
+  { id: 'mollets-debout',            nom: 'Mollets debout',                        groupe: 'Jambes',    couleur: 'jambes'  },
+  // Épaules
+  { id: 'developpe-militaire',       nom: 'Développé militaire',                   groupe: 'Épaules',   couleur: 'epaules' },
+  { id: 'elevations-laterales',      nom: 'Élévations latérales',                  groupe: 'Épaules',   couleur: 'epaules' },
+  { id: 'elevations-frontales',      nom: 'Élévations frontales',                  groupe: 'Épaules',   couleur: 'epaules' },
+  { id: 'oiseau-reverse-fly',        nom: 'Oiseau (reverse fly)',                  groupe: 'Épaules',   couleur: 'epaules' },
+  { id: 'shrugs',                    nom: 'Shrugs',                                groupe: 'Épaules',   couleur: 'epaules' },
+  // Biceps
+  { id: 'curl-barre',                nom: 'Curl barre',                              groupe: 'Biceps',    couleur: 'biceps'  },
+  { id: 'curl-halteres',             nom: 'Curl haltères',                           groupe: 'Biceps',    couleur: 'biceps'  },
+  { id: 'curl-incline',              nom: 'Curl incliné',                            groupe: 'Biceps',    couleur: 'biceps'  },
+  { id: 'curl-marteau',              nom: 'Curl marteau',                            groupe: 'Biceps',    couleur: 'biceps'  },
+  // Triceps
+  { id: 'dips',                      nom: 'Dips',                                    groupe: 'Triceps',   couleur: 'triceps' },
+  { id: 'extension-triceps-poulie',  nom: 'Extension triceps poulie',                groupe: 'Triceps',   couleur: 'triceps' },
+  { id: 'extension-haltere-tete',    nom: 'Extension haltère au-dessus de la tête',  groupe: 'Triceps',   couleur: 'triceps' },
+  { id: 'barre-au-front',            nom: 'Barre au front',                          groupe: 'Triceps',   couleur: 'triceps' },
+  // Abdos
+  { id: 'crunch',                    nom: 'Crunch',                                groupe: 'Abdos',     couleur: 'abdos'   },
+  { id: 'releves-jambes',            nom: 'Relevés de jambes',                     groupe: 'Abdos',     couleur: 'abdos'   },
+  { id: 'gainage',                   nom: 'Gainage',                               groupe: 'Abdos',     couleur: 'abdos'   },
+  { id: 'russian-twist',             nom: 'Russian twist',                         groupe: 'Abdos',     couleur: 'abdos'   },
+  { id: 'mountain-climbers',         nom: 'Mountain climbers',                     groupe: 'Abdos',     couleur: 'abdos'   },
 ];
 
 const DB = {
@@ -44,17 +85,32 @@ const DB = {
   ───────────────────────────────────────────────────────────── */
 
   init() {
-    // Exercices par défaut (premier lancement)
-    if (!localStorage.getItem(KEYS.EXO_LIST)) {
-      localStorage.setItem(KEYS.EXO_LIST, JSON.stringify(DEFAULT_EXERCISES.map(e => e.id)));
-      DEFAULT_EXERCISES.forEach(e => {
-        if (!localStorage.getItem(KEYS.EXO_PREFIX + e.id)) {
-          localStorage.setItem(KEYS.EXO_PREFIX + e.id, JSON.stringify({
-            ...e, rm: null, rmDate: null, historique: [],
-          }));
-        }
+    const storedVersion = parseInt(localStorage.getItem(KEYS.DB_VERSION) || '0', 10);
+
+    if (storedVersion < DB_VERSION_CURRENT) {
+      // Supprimer tous les anciens exercices par défaut
+      const oldIds = JSON.parse(localStorage.getItem(KEYS.EXO_LIST) || '[]');
+      const defaultIds = DEFAULT_EXERCISES.map(e => e.id);
+      oldIds.forEach(id => {
+        if (!defaultIds.includes(id)) localStorage.removeItem(KEYS.EXO_PREFIX + id);
       });
+
+      // Écrire la nouvelle liste complète
+      localStorage.setItem(KEYS.EXO_LIST, JSON.stringify(defaultIds));
+      DEFAULT_EXERCISES.forEach(e => {
+        // Conserver rm/historique mais forcer nom, groupe, couleur à jour
+        const raw      = localStorage.getItem(KEYS.EXO_PREFIX + e.id);
+        const existing = raw ? JSON.parse(raw) : null;
+        localStorage.setItem(KEYS.EXO_PREFIX + e.id, JSON.stringify({
+          rm: null, rmDate: null, historique: [],
+          ...(existing || {}),
+          id: e.id, nom: e.nom, groupe: e.groupe, couleur: e.couleur,
+        }));
+      });
+
+      localStorage.setItem(KEYS.DB_VERSION, String(DB_VERSION_CURRENT));
     }
+
     // Liste des séances (peut être vide)
     if (!localStorage.getItem(KEYS.SESSION_LIST)) {
       localStorage.setItem(KEYS.SESSION_LIST, JSON.stringify([]));

@@ -329,10 +329,16 @@
   background: rgba(168,85,247,0.1);
   border-color: rgba(168,85,247,0.25);
 }
-.exercise-header__muscle--bras {
+.exercise-header__muscle--bras,
+.exercise-header__muscle--biceps {
   color: #f97316;
   background: rgba(249,115,22,0.1);
   border-color: rgba(249,115,22,0.25);
+}
+.exercise-header__muscle--triceps {
+  color: #fb923c;
+  background: rgba(251,146,60,0.1);
+  border-color: rgba(251,146,60,0.25);
 }
 .exercise-header__muscle--jambes {
   color: #ef4444;

@@ -190,8 +190,8 @@
             <line x1="21" y1="21" x2="16.65" y2="16.65"/>
           </svg>
         </span>
-        <input class="search-bar__input" type="search"
-               placeholder="Rechercher un exercice…" aria-label="Rechercher" disabled>
+        <input class="search-bar__input" type="search" id="exercise-search"
+               placeholder="Rechercher un exercice…" aria-label="Rechercher">
       </div>
 
       <div class="filter-chips" role="group" aria-label="Filtrer par groupe musculaire">
@@ -199,18 +199,20 @@
         <span class="chip">Pectoraux</span>
         <span class="chip">Dos</span>
         <span class="chip">Épaules</span>
-        <span class="chip">Bras</span>
+        <span class="chip">Biceps</span>
+        <span class="chip">Triceps</span>
         <span class="chip">Jambes</span>
         <span class="chip">Abdos</span>
       </div>
 
       <!-- Liste rendue par musculation.js -->
-      <div class="exercises-list">
-        <div class="add-exercise-placeholder">
-          <label for="show-add-exercise" style="cursor:pointer;display:contents">
-            ＋ Ajouter un exercice
-          </label>
-        </div>
+      <div class="exercises-list"></div>
+
+      <!-- Toujours visible, hors du scroll -->
+      <div class="add-exercise-placeholder">
+        <label for="show-add-exercise" style="cursor:pointer;display:contents">
+          ＋ Ajouter un exercice
+        </label>
       </div>
 
     </section>
@@ -312,7 +314,8 @@
             <option value="Pectoraux" data-couleur="pecto">Pectoraux</option>
             <option value="Dos"       data-couleur="dos">Dos</option>
             <option value="Épaules"   data-couleur="epaules">Épaules</option>
-            <option value="Bras"      data-couleur="bras">Bras</option>
+            <option value="Biceps"    data-couleur="biceps">Biceps</option>
+            <option value="Triceps"   data-couleur="triceps">Triceps</option>
             <option value="Jambes"    data-couleur="jambes">Jambes</option>
             <option value="Abdos"     data-couleur="abdos">Abdos</option>
             <option value="Autre"     data-couleur="autre">Autre</option>
