@@ -414,6 +414,94 @@ body {
 }
 
 /* ============================================================
+   ÉCRAN 3b : POIDS UTILISÉ
+   ============================================================ */
+.ws-weight-header {
+  text-align: center;
+  padding: 1.5rem 1rem 0.5rem;
+}
+
+.ws-weight-label {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #e5e7eb;
+  margin: 0 0 0.35rem;
+}
+
+.ws-weight-serie {
+  font-size: 0.82rem;
+  color: #6b7280;
+  margin: 0;
+}
+
+.ws-weight-center {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.ws-weight-input-row {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.ws-weight-val-wrap {
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
+}
+
+.ws-weight-input {
+  width: 100px;
+  text-align: center;
+  font-size: 2.75rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid #2a3038;
+  color: #e5e7eb;
+  outline: none;
+  padding: 0.25rem 0;
+  -moz-appearance: textfield;
+}
+
+.ws-weight-input::-webkit-outer-spin-button,
+.ws-weight-input::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+.ws-weight-input:focus { border-bottom-color: var(--accent); }
+
+.ws-weight-unit {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #6b7280;
+}
+
+.ws-weight-hint {
+  font-size: 0.78rem;
+  color: var(--accent);
+  opacity: 0.8;
+  margin: 0;
+  text-align: center;
+}
+
+/* Poids dans le récap */
+.ws-recap-serie__poids {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #3b9eff;
+  background: rgba(59, 158, 255, 0.08);
+  border: 1px solid rgba(59, 158, 255, 0.2);
+  border-radius: 6px;
+  padding: 2px 7px;
+}
+
+/* ============================================================
    ÉCRAN 4 : REPOS (ring SVG)
    ============================================================ */
 .ws-rest-label {

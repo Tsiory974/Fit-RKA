@@ -30,6 +30,8 @@ let restTimer        = null;
 let pendingLastSerie = false;
 
 let stepperVal       = 0;
+let pendingSerieReps = 0;   // reps validés, en attente du poids
+let weightVal        = 0;   // valeur courante de l'input poids
 
 /* ═══════════════════════════════════════════════════════════
    INIT
@@ -112,6 +114,13 @@ function init() {
   document.getElementById('btn-rep-minus').addEventListener('click', () => changeStepper(-1));
   document.getElementById('btn-rep-plus').addEventListener('click',  () => changeStepper(+1));
   document.getElementById('btn-skip-rest').addEventListener('click', skipRest);
+  document.getElementById('btn-weight-confirm').addEventListener('click', confirmWeight);
+  document.getElementById('btn-weight-skip').addEventListener('click', () => commitSerie(pendingSerieReps, null));
+  document.getElementById('btn-weight-minus').addEventListener('click', () => changeWeight(-2.5));
+  document.getElementById('btn-weight-plus').addEventListener('click',  () => changeWeight(+2.5));
+  document.getElementById('weight-input').addEventListener('input', e => {
+    weightVal = parseFloat(e.target.value) || 0;
+  });
 
   showReady();
 }
@@ -230,15 +239,69 @@ function changeStepper(delta) {
 }
 
 function validateReps(actual) {
-  const { block }   = exercises[currentExoIdx];
+  const { block, exo } = exercises[currentExoIdx];
+  const planned    = parseInt(block.reps) || 10;
+  const actualReps = (actual === null) ? planned : actual;
+
+  pendingSerieReps = actualReps;
+
+  // Exercice poids du corps → pas de saisie poids
+  if (exo.materiel === 'Poids du corps') {
+    commitSerie(actualReps, null);
+    return;
+  }
+
+  showWeightScreen(actualReps, block);
+}
+
+function showWeightScreen(actualReps, block) {
+  const { exo } = exercises[currentExoIdx];
+
+  // Pré-remplir avec le poids du bloc de séance, ou dernière valeur, ou 0
+  const suggested = block.poids || weightVal || 0;
+  weightVal = suggested;
+
+  document.getElementById('weight-serie-info').textContent =
+    `Série ${currentSerie} · ${actualReps} reps`;
+
+  const input = document.getElementById('weight-input');
+  input.value = suggested || '';
+
+  // Hint poids conseillé hypertrophie (si 1RM connu)
+  const hintEl = document.getElementById('weight-hint');
+  const rm = calculerRMLocal(exo);
+  if (rm) {
+    const conseille = Math.round(rm * 0.75 / 2.5) * 2.5;
+    hintEl.textContent = `Poids conseillé hypertrophie : ${conseille} kg`;
+    hintEl.style.display = '';
+  } else {
+    hintEl.style.display = 'none';
+  }
+
+  showScreen('screen-weight');
+}
+
+function changeWeight(delta) {
+  weightVal = Math.max(0, Math.round((weightVal + delta) * 2) / 2);
+  document.getElementById('weight-input').value = weightVal || '';
+}
+
+function confirmWeight() {
+  const inputVal = parseFloat(document.getElementById('weight-input').value);
+  weightVal = inputVal > 0 ? inputVal : 0;
+  commitSerie(pendingSerieReps, weightVal || null);
+}
+
+function commitSerie(actualReps, poids) {
+  const { block } = exercises[currentExoIdx];
   const planned     = parseInt(block.reps)   || 10;
   const totalSeries = parseInt(block.series) || 1;
-  const actualReps  = (actual === null) ? planned : actual;
 
   results[currentExoIdx].series.push({
     planned:  planned,
     actual:   actualReps,
     duration: stopwatchSecs,
+    poids:    poids,
   });
 
   const isLastSerie = currentSerie >= totalSeries;
@@ -252,6 +315,15 @@ function validateReps(actual) {
 
   pendingLastSerie = isLastSerie;
   startRest(parseRepos(block.repos), isLastSerie);
+}
+
+/** Calcul 1RM local (Epley, meilleure série) — même logique qu'exercice.js */
+function calculerRMLocal(exo) {
+  if (!exo || exo.materiel === 'Poids du corps') return null;
+  const entries = (exo.historique || []).filter(e => e.poids > 0 && e.reps > 0);
+  if (!entries.length) return null;
+  const best = Math.max(...entries.map(e => e.poids * (1 + e.reps / 30)));
+  return Math.round(best * 2) / 2;
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -328,6 +400,7 @@ function showRecap() {
             <span class="${miss ? 'miss' : 'ok'}">${s.actual}</span>
             <span class="planned"> / ${s.planned} reps</span>
           </span>
+          ${s.poids ? `<span class="ws-recap-serie__poids">${s.poids} kg</span>` : ''}
           <span class="ws-recap-serie__time">${formatTime(s.duration)}</span>
         </div>`;
     }).join('');
@@ -349,15 +422,21 @@ function showRecap() {
    SAUVEGARDE
 ═══════════════════════════════════════════════════════════ */
 function saveAllResults() {
+  const now = new Date().toISOString();
   results.forEach((r, i) => {
     if (!r.series.length) return;
     const block = (session.exercices || [])[i] || {};
-    DB.addHistoriqueEntry(r.exoId, {
-      titre:  session.nom,
-      series: r.series.length,
-      reps:   r.series.map(s => s.actual).join('/'),
-      repos:  block.repos || '',
-      poids:  null,
+    const exo   = exercises[i]?.exo;
+
+    // Sauvegarder chaque série individuellement pour un 1RM précis
+    r.series.forEach((s, idx) => {
+      DB.addHistoriqueEntry(r.exoId, {
+        titre:  session.nom,
+        series: idx + 1,           // numéro de la série
+        reps:   s.actual,          // nombre (pas string)
+        repos:  block.repos || '',
+        poids:  s.poids ?? null,   // nombre ou null (poids du corps)
+      });
     });
   });
   DB.clearActiveSession();

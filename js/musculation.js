@@ -307,11 +307,12 @@ function updateSousGroupeChips() {
 /* ── Calcul 1RM estimé (formule Epley, même logique qu'exercice.js) ── */
 function calculerRMDepuisHistorique(exo) {
   if (exo.materiel === 'Poids du corps') return null;
-  const entries = (exo.historique || []).filter(e => e.poids > 0 && e.reps > 0);
+  const entries = (exo.historique || []).filter(
+    e => e.poids > 0 && typeof e.reps === 'number' && e.reps > 0
+  );
   if (entries.length === 0) return null;
-  const avgPoids = entries.reduce((s, e) => s + e.poids, 0) / entries.length;
-  const avgReps  = entries.reduce((s, e) => s + e.reps,  0) / entries.length;
-  return Math.round(avgPoids * (1 + avgReps / 30) * 2) / 2;
+  const best = Math.max(...entries.map(e => e.poids * (1 + e.reps / 30)));
+  return Math.round(best * 2) / 2;
 }
 
 /* ── Formulaire : créer une séance ── */

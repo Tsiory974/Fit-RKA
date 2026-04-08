@@ -147,6 +147,47 @@
 
 
     <!-- ══════════════════════════════════════════
+         ÉCRAN 3b : POIDS UTILISÉ
+         Saisie ou confirmation du poids par série
+         (masqué pour les exercices poids du corps)
+    ══════════════════════════════════════════ -->
+    <div class="ws-screen" id="screen-weight">
+
+      <div class="ws-weight-header">
+        <p class="ws-weight-label">Quel poids as-tu utilisé ?</p>
+        <p class="ws-weight-serie" id="weight-serie-info">Série 1</p>
+      </div>
+
+      <div class="ws-weight-center">
+        <div class="ws-weight-input-row">
+          <button class="ws-stepper__btn" id="btn-weight-minus" aria-label="Moins 2.5 kg">−</button>
+          <div class="ws-weight-val-wrap">
+            <input class="ws-weight-input" type="number" id="weight-input"
+                   step="0.5" min="0" max="500" inputmode="decimal" aria-label="Poids en kg">
+            <span class="ws-weight-unit">kg</span>
+          </div>
+          <button class="ws-stepper__btn" id="btn-weight-plus" aria-label="Plus 2.5 kg">＋</button>
+        </div>
+        <p class="ws-weight-hint" id="weight-hint"></p>
+      </div>
+
+      <div class="ws-screen__cta">
+        <button class="ws-btn ws-btn--primary" id="btn-weight-confirm">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
+               width="20" height="20" aria-hidden="true">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+          Confirmer
+        </button>
+        <button class="ws-btn ws-btn--ghost" id="btn-weight-skip">
+          Sans poids / ignorer
+        </button>
+      </div>
+    </div>
+
+
+    <!-- ══════════════════════════════════════════
          ÉCRAN 4 : REPOS
          Ring SVG countdown + exercice suivant
     ══════════════════════════════════════════ -->

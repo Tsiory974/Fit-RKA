@@ -67,17 +67,23 @@ const OBJECTIF_PRESETS = {
  * @param {object} exo
  * @returns {number|null}
  */
+/**
+ * Calcule le 1RM estimé via la formule d'Epley : poids × (1 + reps / 30)
+ * Utilise la MEILLEURE série (max Epley) pour être le plus représentatif.
+ * Retourne null si poids du corps ou aucune donnée utilisable.
+ * Pour changer la formule : modifier uniquement cette fonction.
+ */
 function calculateRM(exo) {
   if (exo.materiel === 'Poids du corps') return null;
 
-  const entries = (exo.historique || []).filter(e => e.poids > 0 && e.reps > 0);
+  const entries = (exo.historique || []).filter(
+    e => e.poids > 0 && typeof e.reps === 'number' && e.reps > 0
+  );
   if (entries.length === 0) return null;
 
-  const avgPoids = entries.reduce((s, e) => s + e.poids, 0) / entries.length;
-  const avgReps  = entries.reduce((s, e) => s + e.reps,  0) / entries.length;
-
-  // Arrondi au 0,5 kg le plus proche pour l'affichage
-  return Math.round(avgPoids * (1 + avgReps / 30) * 2) / 2;
+  // Meilleure série = celle qui donne l'estimé 1RM le plus élevé
+  const best = Math.max(...entries.map(e => e.poids * (1 + e.reps / 30)));
+  return Math.round(best * 2) / 2;  // arrondi au 0,5 kg
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -322,14 +328,19 @@ document.addEventListener('DOMContentLoaded', () => {
               <div class="history-entry__title">${entry.titre || 'Séance'}</div>
               <div class="history-entry__stats">
                 <span class="history-entry__stat">
-                  <span class="history-entry__stat-icon">⚡</span>${entry.series} séries
+                  <span class="history-entry__stat-icon">📋</span>Série ${entry.series}
                 </span>
                 <span class="history-entry__stat">
                   <span class="history-entry__stat-icon">↩</span>${entry.reps} reps
                 </span>
+                ${entry.poids ? `
+                <span class="history-entry__stat history-entry__stat--poids">
+                  <span class="history-entry__stat-icon">🏋️</span>${entry.poids} kg
+                </span>` : ''}
+                ${entry.repos ? `
                 <span class="history-entry__stat">
                   <span class="history-entry__stat-icon">⏱</span>${entry.repos}
-                </span>
+                </span>` : ''}
               </div>
               ${entry.poids
                 ? `<div class="history-entry__weight-badge ${badgeClass}">${entry.poids} kg</div>`
