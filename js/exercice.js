@@ -7,6 +7,79 @@
  * 4. Met à jour toutes les valeurs dynamiques : zones, graphique, historique
  */
 
+/**
+ * Table des préconisations par objectif et type d'exercice.
+ * Pour ajouter un objectif (force, endurance…) : ajouter une entrée ici.
+ *
+ * Chaque preset contient :
+ *   reps       : plage de répétitions recommandée
+ *   intensite  : plage % du 1RM
+ *   repos      : temps de récupération entre séries
+ *   series     : nombre de séries recommandé
+ */
+const OBJECTIF_PRESETS = {
+  hypertrophie: {
+    label: 'Hypertrophie',
+    types: {
+      polyarticulaire: {
+        reps:      '6–10 reps',
+        intensite: '70–85 % du 1RM',
+        repos:     '2–3 min',
+        series:    '3–5 séries',
+        note:      'Exercice polyarticulaire — charge lourde, recrutement musculaire maximal.',
+      },
+      isolation: {
+        reps:      '10–20 reps',
+        intensite: '50–70 % du 1RM',
+        repos:     '45–90 s',
+        series:    '3–4 séries',
+        note:      'Exercice d\'isolation — volume élevé, tension musculaire prolongée.',
+      },
+    },
+    fallback: {
+      reps:      '8–15 reps',
+      intensite: '60–80 % du 1RM',
+      repos:     '60–120 s',
+      series:    '3–4 séries',
+      note:      'Valeurs générales — définis le type d\'exercice pour affiner.',
+    },
+  },
+
+  // Extensible : force, endurance, etc.
+  // force: {
+  //   label: 'Force',
+  //   types: {
+  //     polyarticulaire: { reps: '1–5 reps', intensite: '85–100 %', repos: '3–5 min', series: '3–5 séries', note: '...' },
+  //     isolation:       { reps: '4–6 reps', intensite: '80–90 %', repos: '2–3 min', series: '3–4 séries', note: '...' },
+  //   },
+  //   fallback: { ... },
+  // },
+};
+
+/**
+ * Calcule le 1RM estimé à partir de l'historique via la formule d'Epley :
+ *   1RM ≈ poids × (1 + reps / 30)
+ *
+ * Utilise la moyenne du poids et la moyenne des reps sur toutes les entrées.
+ * Retourne null si l'exercice est au poids du corps ou si l'historique est vide.
+ * La formule est isolée ici pour pouvoir l'échanger facilement plus tard.
+ *
+ * @param {object} exo
+ * @returns {number|null}
+ */
+function calculateRM(exo) {
+  if (exo.materiel === 'Poids du corps') return null;
+
+  const entries = (exo.historique || []).filter(e => e.poids > 0 && e.reps > 0);
+  if (entries.length === 0) return null;
+
+  const avgPoids = entries.reduce((s, e) => s + e.poids, 0) / entries.length;
+  const avgReps  = entries.reduce((s, e) => s + e.reps,  0) / entries.length;
+
+  // Arrondi au 0,5 kg le plus proche pour l'affichage
+  return Math.round(avgPoids * (1 + avgReps / 30) * 2) / 2;
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   DB.init();
 
@@ -14,80 +87,101 @@ document.addEventListener('DOMContentLoaded', () => {
   const params = new URLSearchParams(location.search);
   const id     = params.get('id');
 
-  // Pas d'ID → retour à la liste
   if (!id) { location.href = 'musculation.html'; return; }
 
   const exo = DB.getExercice(id);
   if (!exo) { location.href = 'musculation.html'; return; }
 
   /* ── 2. Peupler les champs statiques ────────────────────── */
-  // Nom (onboarding + header)
   document.querySelectorAll('[data-exo-name]')
     .forEach(el => el.textContent = exo.nom);
 
-  // Groupe musculaire + couleur
   const muscleEl = document.querySelector('[data-exo-muscle]');
   if (muscleEl) {
     muscleEl.textContent = exo.groupe;
-    // Retire toute classe de couleur existante puis applique la bonne
-    muscleEl.className = muscleEl.className
+    muscleEl.className   = muscleEl.className
       .replace(/exercise-header__muscle--\S+/g, '').trim();
-    if (exo.couleur) {
-      muscleEl.classList.add('exercise-header__muscle--' + exo.couleur);
-    }
+    if (exo.couleur) muscleEl.classList.add('exercise-header__muscle--' + exo.couleur);
   }
 
-  /* ── 3. Décider quel écran afficher ─────────────────────── */
-  const onboardingEl = document.getElementById('onboarding-screen');
-  const pageEl       = document.getElementById('exercise-page');
+  /* ── 3. Afficher directement la page principale ─────────── */
+  const pageEl = document.getElementById('exercise-page');
+  pageEl.style.display = 'flex';
+  showPage(exo);
 
-  if (exo.rm) {
-    // 1RM déjà connu → page principale directement
-    showPage(exo);
-  } else {
-    // Première visite → onboarding
-    onboardingEl.style.display = 'flex';
-    pageEl.style.display       = 'none';
-  }
-
-  /* ── 4. Validation du formulaire 1RM ────────────────────── */
-  const rmForm = document.getElementById('rm-form');
-  if (rmForm) {
-    rmForm.addEventListener('submit', e => {
-      e.preventDefault();
-      const val = parseFloat(document.getElementById('rm-value').value);
-      if (!val || val <= 0) return;
-
-      const updated = DB.setRM(id, val);
-      showPage(updated);
-    });
-  }
-
-  /* ── 5. Fonctions d'affichage ────────────────────────────── */
+  /* ── 4. Fonctions d'affichage ────────────────────────────── */
 
   function showPage(exo) {
-    onboardingEl.style.display = 'none';
-    pageEl.style.display       = 'flex';
+    const rm = calculateRM(exo);
+    const isPoidsDuCorps = exo.materiel === 'Poids du corps';
 
-    // RM dans le header
+    /* RM dans le header */
+    document.querySelectorAll('[data-exo-rm]').forEach(el => {
+      el.style.display = (!isPoidsDuCorps) ? '' : 'none';
+    });
     document.querySelectorAll('[data-exo-rm] .rm-value')
-      .forEach(el => el.textContent = exo.rm);
+      .forEach(el => el.textContent = rm ?? '—');
 
-    // RM + date dans le bloc stats
+    /* Bloc stat-hero */
+    const heroBlock = document.querySelector('.stat-hero');
+    if (heroBlock) heroBlock.style.display = isPoidsDuCorps ? 'none' : '';
+
     const rmStatEl = document.querySelector('.stat-hero .rm-value');
-    if (rmStatEl) rmStatEl.textContent = exo.rm;
+    if (rmStatEl) rmStatEl.textContent = rm ?? '—';
 
     const rmDateEl = document.querySelector('[data-rm-date]');
-    if (rmDateEl && exo.rmDate) {
-      rmDateEl.textContent = 'Mis à jour le ' +
-        new Date(exo.rmDate).toLocaleDateString('fr-FR', {
-          day: 'numeric', month: 'long', year: 'numeric'
-        });
+    if (rmDateEl) {
+      rmDateEl.textContent = rm
+        ? `Estimé sur ${(exo.historique || []).filter(e => e.poids > 0).length} séance(s)`
+        : 'Aucune donnée — réalise des séances pour estimer ton 1RM';
     }
 
-    updateZones(exo.rm);
+    /* Zone d'entraînement — masquée si pas de 1RM */
+    const zoneBlock = document.querySelector('.zone-selector-wrapper');
+    if (zoneBlock) zoneBlock.style.display = rm ? '' : 'none';
+    if (rm) updateZones(rm);
+
+    renderRecommandations(exo);
     renderChart(exo);
     renderHistorique(exo);
+  }
+
+  /**
+   * Affiche les recommandations hypertrophie adaptées au type de l'exercice.
+   * Extensible via OBJECTIF_PRESETS pour d'autres objectifs.
+   */
+  function renderRecommandations(exo) {
+    const block   = document.getElementById('reco-block');
+    const gridEl  = document.getElementById('reco-grid');
+    const labelEl = document.getElementById('reco-type-label');
+    if (!block || !gridEl) return;
+
+    const preset = OBJECTIF_PRESETS.hypertrophie;
+    const data   = preset.types[exo.type] || preset.fallback;
+
+    labelEl.textContent = data.note;
+
+    const items = [
+      { icon: '🔁', label: 'Répétitions', value: data.reps      },
+      { icon: '📊', label: 'Intensité',   value: data.intensite },
+      { icon: '⏱',  label: 'Repos',       value: data.repos     },
+      { icon: '📦', label: 'Séries',      value: data.series    },
+    ];
+
+    gridEl.innerHTML = items.map(item => `
+      <div class="reco-card">
+        <span class="reco-card__icon" aria-hidden="true">${item.icon}</span>
+        <span class="reco-card__label">${item.label}</span>
+        <span class="reco-card__value">${item.value}</span>
+      </div>`).join('');
+
+    // Badge type sur le titre
+    const typeBadge = exo.type
+      ? `<span class="reco-badge reco-badge--${exo.type}">${exo.type}</span>`
+      : '';
+    block.querySelector('.section-title').innerHTML = `Recommandations Hypertrophie ${typeBadge}`;
+
+    block.style.display = 'block';
   }
 
   /**

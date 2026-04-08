@@ -480,6 +480,81 @@
    ONGLET 1 — MES STATS
    ============================================================ */
 
+/* ============================================================
+   RECOMMANDATIONS HYPERTROPHIE
+   ============================================================ */
+.reco-block {
+  margin-bottom: 1.5rem;
+}
+
+.reco-block .section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.reco-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 3px 9px;
+  border-radius: 20px;
+}
+
+.reco-badge--polyarticulaire {
+  background: rgba(59, 158, 255, 0.12);
+  color: #3b9eff;
+  border: 1px solid rgba(59, 158, 255, 0.3);
+}
+
+.reco-badge--isolation {
+  background: rgba(168, 85, 247, 0.12);
+  color: #a855f7;
+  border: 1px solid rgba(168, 85, 247, 0.3);
+}
+
+.reco-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.625rem;
+  margin-top: 0.75rem;
+}
+
+.reco-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  background: #141820;
+  border: 1px solid #1f2428;
+  border-radius: 14px;
+  padding: 0.875rem 0.5rem;
+  text-align: center;
+}
+
+.reco-card__icon {
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.reco-card__label {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--text-idle, #6b7280);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.reco-card__value {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #e5e7eb;
+  line-height: 1.2;
+}
+
 /* Card héro : 1RM affiché en grand */
 .stat-hero {
   background: linear-gradient(135deg, #141820 0%, #162014 100%);
@@ -511,6 +586,22 @@
   text-transform: uppercase;
   color: var(--text-idle);
   margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.stat-hero__badge {
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: 20px;
+  background: rgba(57, 224, 122, 0.1);
+  color: var(--accent, #39e07a);
+  border: 1px solid rgba(57, 224, 122, 0.25);
 }
 
 .stat-hero__value {

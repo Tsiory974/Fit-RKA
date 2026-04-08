@@ -194,15 +194,35 @@
                placeholder="Rechercher un exercice…" aria-label="Rechercher">
       </div>
 
-      <div class="filter-chips" role="group" aria-label="Filtrer par groupe musculaire">
-        <span class="chip chip--active">Tous</span>
-        <span class="chip">Pectoraux</span>
-        <span class="chip">Dos</span>
-        <span class="chip">Épaules</span>
-        <span class="chip">Biceps</span>
-        <span class="chip">Triceps</span>
-        <span class="chip">Jambes</span>
-        <span class="chip">Abdos</span>
+      <!-- Rangée 1 : groupes musculaires -->
+      <div class="filter-chips" id="chips-groupe" role="group" aria-label="Filtrer par groupe musculaire">
+        <span class="chip chip--active" data-filter-groupe="">Tous</span>
+        <span class="chip" data-filter-groupe="Pectoraux">Pectoraux</span>
+        <span class="chip" data-filter-groupe="Dos">Dos</span>
+        <span class="chip" data-filter-groupe="Épaules">Épaules</span>
+        <span class="chip" data-filter-groupe="Biceps">Biceps</span>
+        <span class="chip" data-filter-groupe="Triceps">Triceps</span>
+        <span class="chip" data-filter-groupe="Jambes">Jambes</span>
+        <span class="chip" data-filter-groupe="Abdos">Abdos</span>
+      </div>
+
+      <!-- Rangée 2 : sous-groupes (injectée dynamiquement) -->
+      <div class="filter-chips filter-chips--sub" id="chips-sous-groupe" role="group"
+           aria-label="Filtrer par zone" style="display:none"></div>
+
+      <!-- Rangée 3 : type + matériel -->
+      <div class="filter-chips filter-chips--meta" id="chips-meta" role="group" aria-label="Filtrer par type et matériel">
+        <span class="chip chip--meta chip--active" data-filter-type="">Tous types</span>
+        <span class="chip chip--meta" data-filter-type="polyarticulaire">Polyarticulaire</span>
+        <span class="chip chip--meta" data-filter-type="isolation">Isolation</span>
+        <span class="chip chip--sep" aria-hidden="true">|</span>
+        <span class="chip chip--meta chip--active" data-filter-materiel="">Tout matériel</span>
+        <span class="chip chip--meta" data-filter-materiel="Poids du corps">Poids du corps</span>
+        <span class="chip chip--meta" data-filter-materiel="Haltères">Haltères</span>
+        <span class="chip chip--meta" data-filter-materiel="Barre">Barre</span>
+        <span class="chip chip--meta" data-filter-materiel="Machine">Machine</span>
+        <span class="chip chip--meta" data-filter-materiel="Élastique">Élastique</span>
+        <span class="chip chip--meta" data-filter-materiel="Kettlebell">Kettlebell</span>
       </div>
 
       <!-- Liste rendue par musculation.js -->
@@ -293,7 +313,7 @@
 
     <label for="show-add-exercise" class="session-modal__overlay" aria-label="Fermer"></label>
 
-    <div class="session-modal__sheet">
+    <div class="session-modal__sheet session-modal__sheet--tall">
       <div class="session-modal__handle" aria-hidden="true"></div>
 
       <h2 class="session-modal__title">Nouvel exercice</h2>
@@ -301,12 +321,14 @@
 
       <form id="add-exercise-form" novalidate>
 
+        <!-- Nom -->
         <div class="form-field">
           <label class="form-field__label" for="new-exo-nom">Nom de l'exercice</label>
           <input type="text" id="new-exo-nom" class="form-field__input"
                  placeholder="Ex : Soulevé de terre" autocomplete="off" required>
         </div>
 
+        <!-- Groupe musculaire -->
         <div class="form-field">
           <label class="form-field__label" for="new-exo-groupe">Groupe musculaire</label>
           <select id="new-exo-groupe" class="form-field__select" required>
@@ -322,7 +344,43 @@
           </select>
         </div>
 
-        <button type="submit" class="btn-cta" style="width:100%;justify-content:center;margin-top:0.5rem">
+        <!-- Sous-groupe (conditionnel) -->
+        <div class="form-field form-field--conditional" id="field-sous-groupe" style="display:none">
+          <label class="form-field__label" for="new-exo-sous-groupe">Zone ciblée</label>
+          <select id="new-exo-sous-groupe" class="form-field__select">
+            <option value="">Indifférent</option>
+          </select>
+        </div>
+
+        <!-- Type d'exercice -->
+        <div class="form-field">
+          <span class="form-field__label">Type</span>
+          <div class="exo-type-picker">
+            <label class="exo-type-chip">
+              <input type="radio" name="new-exo-type" value="polyarticulaire">
+              <span>Polyarticulaire</span>
+            </label>
+            <label class="exo-type-chip">
+              <input type="radio" name="new-exo-type" value="isolation">
+              <span>Isolation</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Matériel -->
+        <div class="form-field">
+          <span class="form-field__label">Matériel</span>
+          <div class="exo-materiel-picker">
+            <label class="exo-materiel-chip"><input type="radio" name="new-exo-materiel" value="Poids du corps"><span>Poids du corps</span></label>
+            <label class="exo-materiel-chip"><input type="radio" name="new-exo-materiel" value="Haltères"><span>Haltères</span></label>
+            <label class="exo-materiel-chip"><input type="radio" name="new-exo-materiel" value="Barre"><span>Barre</span></label>
+            <label class="exo-materiel-chip"><input type="radio" name="new-exo-materiel" value="Machine"><span>Machine</span></label>
+            <label class="exo-materiel-chip"><input type="radio" name="new-exo-materiel" value="Élastique"><span>Élastique</span></label>
+            <label class="exo-materiel-chip"><input type="radio" name="new-exo-materiel" value="Kettlebell"><span>Kettlebell</span></label>
+          </div>
+        </div>
+
+        <button type="submit" class="btn-cta" style="width:100%;justify-content:center;margin-top:0.75rem">
           <span class="btn-cta__icon" aria-hidden="true">＋</span>
           Ajouter l'exercice
         </button>
@@ -330,6 +388,22 @@
       </form>
 
       <label for="show-add-exercise" class="session-modal__cancel" role="button">Annuler</label>
+    </div>
+  </div>
+
+
+  <!-- ══════════════════════════════════════════════════════════
+       MODALE : CONFIRMATION SUPPRESSION EXERCICE
+       ══════════════════════════════════════════════════════════ -->
+  <div class="confirm-modal" id="modal-delete-exo" role="dialog" aria-modal="true" aria-label="Confirmer la suppression">
+    <div class="confirm-modal__overlay" id="confirm-overlay"></div>
+    <div class="confirm-modal__box">
+      <p class="confirm-modal__title">Supprimer cet exercice ?</p>
+      <p class="confirm-modal__name" id="confirm-exo-name"></p>
+      <div class="confirm-modal__actions">
+        <button class="confirm-modal__btn confirm-modal__btn--cancel" id="confirm-cancel">Annuler</button>
+        <button class="confirm-modal__btn confirm-modal__btn--delete" id="confirm-delete">Supprimer</button>
+      </div>
     </div>
   </div>
 

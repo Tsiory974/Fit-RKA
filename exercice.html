@@ -10,82 +10,6 @@
 </head>
 <body>
 
-  <!-- ============================================================
-       ÉCRAN 1 — ONBOARDING : SAISIE DU POIDS MAX (1RM)
-       Affiché par JS si l'exercice n'a pas encore de 1RM.
-       Masqué (display:none) par défaut ; JS le montre si besoin.
-       ============================================================ -->
-  <div class="onboarding-screen" id="onboarding-screen" style="display:none" role="main">
-
-    <a href="musculation.html" class="back-link" aria-label="Retour aux exercices">
-      <span class="back-link__arrow" aria-hidden="true">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
-             stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="15 18 9 12 15 6"/>
-        </svg>
-      </span>
-      Exercices
-    </a>
-
-    <div class="onboarding-card">
-
-      <div class="onboarding-icon" aria-hidden="true">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none"
-             stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="4"  y="26" width="10" height="12" rx="3"/>
-          <rect x="50" y="26" width="10" height="12" rx="3"/>
-          <rect x="14" y="19" width="9"  height="26" rx="3"/>
-          <rect x="41" y="19" width="9"  height="26" rx="3"/>
-          <line x1="23" y1="32" x2="41" y2="32" stroke-width="3.5"/>
-        </svg>
-      </div>
-
-      <span class="badge-first">✦ Première visite</span>
-
-      <!-- data-exo-name : peuplé par exercice.js -->
-      <h1 class="onboarding-title" data-exo-name></h1>
-      <p  class="onboarding-desc">
-        Indique ton poids maximal (1RM) pour personnaliser
-        tes zones d'entraînement.
-      </p>
-
-      <!-- Formulaire de saisie du 1RM — soumis par JS (exercice.js) -->
-      <form id="rm-form">
-        <div class="rm-input-group" role="group" aria-labelledby="rm-label">
-          <label id="rm-label" class="rm-input-label" for="rm-value">Poids maximal</label>
-          <div class="rm-input-row">
-            <input
-              type="number"
-              id="rm-value"
-              class="rm-input"
-              placeholder="100"
-              min="1"
-              max="500"
-              step="0.5"
-              required
-              aria-label="Poids maximal en kilogrammes"
-            >
-            <span class="rm-input-unit" aria-hidden="true">kg</span>
-          </div>
-          <p class="rm-input-hint">
-            Ton 1RM est le poids que tu peux soulever en 1 répétition maximum.
-          </p>
-        </div>
-
-        <button type="submit" class="btn-validate">
-          <span class="btn-validate__icon" aria-hidden="true">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
-                 stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="20 6 9 17 4 12"/>
-            </svg>
-          </span>
-          Valider et commencer
-        </button>
-      </form>
-
-    </div>
-  </div>
-  <!-- ===== FIN ÉCRAN 1 ===== -->
 
 
   <!-- ============================================================
@@ -94,7 +18,7 @@
        Les radio inputs sont enfants directs de .exercise-page :
        sélecteurs CSS ~ (tab-header, tabs-track) fonctionnent.
        ============================================================ -->
-  <div class="exercise-page" id="exercise-page" style="display:none">
+  <div class="exercise-page" id="exercise-page" style="display:none" aria-live="polite">
 
     <input type="radio" id="tab-stats"   name="exercise-tabs" checked>
     <input type="radio" id="tab-history" name="exercise-tabs">
@@ -159,17 +83,21 @@
       <!-- ── ONGLET 1 : MES STATS ── -->
       <section class="tab-panel stats-tab" id="panel-stats" role="tabpanel" aria-labelledby="tab-stats">
 
-        <!-- BLOC 1 : CARTE 1RM -->
+        <!-- BLOC 1 : CARTE 1RM (calculé automatiquement via l'historique) -->
         <div class="stat-hero">
-          <div class="stat-hero__label">Poids maximal (1RM)</div>
-          <!-- .rm-value peuplé par exercice.js -->
+          <div class="stat-hero__label">1RM estimé <span class="stat-hero__badge">automatique</span></div>
           <div class="stat-hero__value">
             <span class="rm-value">—</span><span class="stat-hero__unit">kg</span>
           </div>
-          <!-- data-rm-date peuplé par exercice.js -->
-          <div class="stat-hero__meta" data-rm-date>—</div>
-          <button class="stat-hero__edit-btn" type="button" disabled
-                  title="Modification disponible prochainement">Modifier</button>
+          <div class="stat-hero__meta" data-rm-date>Réalise des séances pour estimer ton 1RM</div>
+        </div>
+
+        <!-- BLOC 1b : RECOMMANDATIONS PAR OBJECTIF
+             Injecté par exercice.js selon exo.type -->
+        <div id="reco-block" class="reco-block" style="display:none">
+          <h2 class="section-title">Recommandations Hypertrophie</h2>
+          <p  class="section-sub" id="reco-type-label"></p>
+          <div class="reco-grid" id="reco-grid"></div>
         </div>
 
         <!-- BLOC 2 : SÉLECTEUR DE ZONE D'ENTRAÎNEMENT

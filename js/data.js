@@ -30,52 +30,55 @@ const KEYS = {
 };
 
 // Incrémenter DB_VERSION_CURRENT force la réinitialisation des exercices par défaut
-const DB_VERSION_CURRENT = 4;
+const DB_VERSION_CURRENT = 5;
 
+// sousGroupe : zone ciblée (optionnel selon le groupe)
+// type       : 'polyarticulaire' | 'isolation'
+// materiel   : 'Poids du corps' | 'Haltères' | 'Barre' | 'Machine' | 'Élastique' | 'Kettlebell'
 const DEFAULT_EXERCISES = [
-  // Pectoraux
-  { id: 'developpe-couche',          nom: 'Développé couché',                      groupe: 'Pectoraux', couleur: 'pecto'   },
-  { id: 'developpe-incline',         nom: 'Développé incliné',                     groupe: 'Pectoraux', couleur: 'pecto'   },
-  { id: 'developpe-decline',         nom: 'Développé décliné',                     groupe: 'Pectoraux', couleur: 'pecto'   },
-  { id: 'ecarte-halteres',           nom: 'Écarté haltères',                       groupe: 'Pectoraux', couleur: 'pecto'   },
-  { id: 'ecarte-machine',            nom: 'Écarté à la machine',                   groupe: 'Pectoraux', couleur: 'pecto'   },
-  { id: 'pompes',                    nom: 'Pompes',                                groupe: 'Pectoraux', couleur: 'pecto'   },
-  // Dos
-  { id: 'tractions',                 nom: 'Tractions',                             groupe: 'Dos',       couleur: 'dos'     },
-  { id: 'tirage-vertical',           nom: 'Tirage vertical',                       groupe: 'Dos',       couleur: 'dos'     },
-  { id: 'tirage-horizontal',         nom: 'Tirage horizontal',                     groupe: 'Dos',       couleur: 'dos'     },
-  { id: 'rowing-barre',              nom: 'Rowing barre',                          groupe: 'Dos',       couleur: 'dos'     },
-  { id: 'rowing-haltere',            nom: 'Rowing haltère',                        groupe: 'Dos',       couleur: 'dos'     },
-  { id: 'souleve-de-terre',          nom: 'Soulevé de terre',                      groupe: 'Dos',       couleur: 'dos'     },
-  // Jambes
-  { id: 'squat',                     nom: 'Squat',                                 groupe: 'Jambes',    couleur: 'jambes'  },
-  { id: 'presse-cuisses',            nom: 'Presse à cuisses',                      groupe: 'Jambes',    couleur: 'jambes'  },
-  { id: 'fentes',                    nom: 'Fentes',                                groupe: 'Jambes',    couleur: 'jambes'  },
-  { id: 'leg-extension',             nom: 'Leg extension',                         groupe: 'Jambes',    couleur: 'jambes'  },
-  { id: 'leg-curl',                  nom: 'Leg curl',                              groupe: 'Jambes',    couleur: 'jambes'  },
-  { id: 'mollets-debout',            nom: 'Mollets debout',                        groupe: 'Jambes',    couleur: 'jambes'  },
-  // Épaules
-  { id: 'developpe-militaire',       nom: 'Développé militaire',                   groupe: 'Épaules',   couleur: 'epaules' },
-  { id: 'elevations-laterales',      nom: 'Élévations latérales',                  groupe: 'Épaules',   couleur: 'epaules' },
-  { id: 'elevations-frontales',      nom: 'Élévations frontales',                  groupe: 'Épaules',   couleur: 'epaules' },
-  { id: 'oiseau-reverse-fly',        nom: 'Oiseau (reverse fly)',                  groupe: 'Épaules',   couleur: 'epaules' },
-  { id: 'shrugs',                    nom: 'Shrugs',                                groupe: 'Épaules',   couleur: 'epaules' },
-  // Biceps
-  { id: 'curl-barre',                nom: 'Curl barre',                              groupe: 'Biceps',    couleur: 'biceps'  },
-  { id: 'curl-halteres',             nom: 'Curl haltères',                           groupe: 'Biceps',    couleur: 'biceps'  },
-  { id: 'curl-incline',              nom: 'Curl incliné',                            groupe: 'Biceps',    couleur: 'biceps'  },
-  { id: 'curl-marteau',              nom: 'Curl marteau',                            groupe: 'Biceps',    couleur: 'biceps'  },
-  // Triceps
-  { id: 'dips',                      nom: 'Dips',                                    groupe: 'Triceps',   couleur: 'triceps' },
-  { id: 'extension-triceps-poulie',  nom: 'Extension triceps poulie',                groupe: 'Triceps',   couleur: 'triceps' },
-  { id: 'extension-haltere-tete',    nom: 'Extension haltère au-dessus de la tête',  groupe: 'Triceps',   couleur: 'triceps' },
-  { id: 'barre-au-front',            nom: 'Barre au front',                          groupe: 'Triceps',   couleur: 'triceps' },
-  // Abdos
-  { id: 'crunch',                    nom: 'Crunch',                                groupe: 'Abdos',     couleur: 'abdos'   },
-  { id: 'releves-jambes',            nom: 'Relevés de jambes',                     groupe: 'Abdos',     couleur: 'abdos'   },
-  { id: 'gainage',                   nom: 'Gainage',                               groupe: 'Abdos',     couleur: 'abdos'   },
-  { id: 'russian-twist',             nom: 'Russian twist',                         groupe: 'Abdos',     couleur: 'abdos'   },
-  { id: 'mountain-climbers',         nom: 'Mountain climbers',                     groupe: 'Abdos',     couleur: 'abdos'   },
+  // ── Pectoraux ──
+  { id: 'developpe-couche',         nom: 'Développé couché',                       groupe: 'Pectoraux', couleur: 'pecto',   sousGroupe: 'milieu',     type: 'polyarticulaire', materiel: 'Barre'         },
+  { id: 'developpe-incline',        nom: 'Développé incliné',                      groupe: 'Pectoraux', couleur: 'pecto',   sousGroupe: 'haut',       type: 'polyarticulaire', materiel: 'Barre'         },
+  { id: 'developpe-decline',        nom: 'Développé décliné',                      groupe: 'Pectoraux', couleur: 'pecto',   sousGroupe: 'bas',        type: 'polyarticulaire', materiel: 'Barre'         },
+  { id: 'ecarte-halteres',          nom: 'Écarté haltères',                        groupe: 'Pectoraux', couleur: 'pecto',   sousGroupe: 'milieu',     type: 'isolation',       materiel: 'Haltères'      },
+  { id: 'ecarte-machine',           nom: 'Écarté à la machine',                    groupe: 'Pectoraux', couleur: 'pecto',   sousGroupe: 'milieu',     type: 'isolation',       materiel: 'Machine'       },
+  { id: 'pompes',                   nom: 'Pompes',                                 groupe: 'Pectoraux', couleur: 'pecto',   sousGroupe: 'milieu',     type: 'polyarticulaire', materiel: 'Poids du corps' },
+  // ── Dos ──
+  { id: 'tractions',                nom: 'Tractions',                              groupe: 'Dos',       couleur: 'dos',     sousGroupe: 'largeur',    type: 'polyarticulaire', materiel: 'Poids du corps' },
+  { id: 'tirage-vertical',          nom: 'Tirage vertical',                        groupe: 'Dos',       couleur: 'dos',     sousGroupe: 'largeur',    type: 'polyarticulaire', materiel: 'Machine'       },
+  { id: 'tirage-horizontal',        nom: 'Tirage horizontal',                      groupe: 'Dos',       couleur: 'dos',     sousGroupe: 'épaisseur',  type: 'polyarticulaire', materiel: 'Machine'       },
+  { id: 'rowing-barre',             nom: 'Rowing barre',                           groupe: 'Dos',       couleur: 'dos',     sousGroupe: 'épaisseur',  type: 'polyarticulaire', materiel: 'Barre'         },
+  { id: 'rowing-haltere',           nom: 'Rowing haltère',                         groupe: 'Dos',       couleur: 'dos',     sousGroupe: 'épaisseur',  type: 'polyarticulaire', materiel: 'Haltères'      },
+  { id: 'souleve-de-terre',         nom: 'Soulevé de terre',                       groupe: 'Dos',       couleur: 'dos',     sousGroupe: 'épaisseur',  type: 'polyarticulaire', materiel: 'Barre'         },
+  // ── Jambes ──
+  { id: 'squat',                    nom: 'Squat',                                  groupe: 'Jambes',    couleur: 'jambes',  sousGroupe: 'quadriceps', type: 'polyarticulaire', materiel: 'Barre'         },
+  { id: 'presse-cuisses',           nom: 'Presse à cuisses',                       groupe: 'Jambes',    couleur: 'jambes',  sousGroupe: 'quadriceps', type: 'polyarticulaire', materiel: 'Machine'       },
+  { id: 'fentes',                   nom: 'Fentes',                                 groupe: 'Jambes',    couleur: 'jambes',  sousGroupe: 'quadriceps', type: 'polyarticulaire', materiel: 'Poids du corps' },
+  { id: 'leg-extension',            nom: 'Leg extension',                          groupe: 'Jambes',    couleur: 'jambes',  sousGroupe: 'quadriceps', type: 'isolation',       materiel: 'Machine'       },
+  { id: 'leg-curl',                 nom: 'Leg curl',                               groupe: 'Jambes',    couleur: 'jambes',  sousGroupe: 'ischios',    type: 'isolation',       materiel: 'Machine'       },
+  { id: 'mollets-debout',           nom: 'Mollets debout',                         groupe: 'Jambes',    couleur: 'jambes',  sousGroupe: 'mollets',    type: 'isolation',       materiel: 'Machine'       },
+  // ── Épaules ──
+  { id: 'developpe-militaire',      nom: 'Développé militaire',                    groupe: 'Épaules',   couleur: 'epaules', sousGroupe: '',           type: 'polyarticulaire', materiel: 'Barre'         },
+  { id: 'elevations-laterales',     nom: 'Élévations latérales',                   groupe: 'Épaules',   couleur: 'epaules', sousGroupe: '',           type: 'isolation',       materiel: 'Haltères'      },
+  { id: 'elevations-frontales',     nom: 'Élévations frontales',                   groupe: 'Épaules',   couleur: 'epaules', sousGroupe: '',           type: 'isolation',       materiel: 'Haltères'      },
+  { id: 'oiseau-reverse-fly',       nom: 'Oiseau (reverse fly)',                   groupe: 'Épaules',   couleur: 'epaules', sousGroupe: '',           type: 'isolation',       materiel: 'Haltères'      },
+  { id: 'shrugs',                   nom: 'Shrugs',                                 groupe: 'Épaules',   couleur: 'epaules', sousGroupe: '',           type: 'isolation',       materiel: 'Barre'         },
+  // ── Biceps ──
+  { id: 'curl-barre',               nom: 'Curl barre',                             groupe: 'Biceps',    couleur: 'biceps',  sousGroupe: '',           type: 'isolation',       materiel: 'Barre'         },
+  { id: 'curl-halteres',            nom: 'Curl haltères',                          groupe: 'Biceps',    couleur: 'biceps',  sousGroupe: '',           type: 'isolation',       materiel: 'Haltères'      },
+  { id: 'curl-incline',             nom: 'Curl incliné',                           groupe: 'Biceps',    couleur: 'biceps',  sousGroupe: '',           type: 'isolation',       materiel: 'Haltères'      },
+  { id: 'curl-marteau',             nom: 'Curl marteau',                           groupe: 'Biceps',    couleur: 'biceps',  sousGroupe: '',           type: 'isolation',       materiel: 'Haltères'      },
+  // ── Triceps ──
+  { id: 'dips',                     nom: 'Dips',                                   groupe: 'Triceps',   couleur: 'triceps', sousGroupe: '',           type: 'polyarticulaire', materiel: 'Poids du corps' },
+  { id: 'extension-triceps-poulie', nom: 'Extension triceps poulie',               groupe: 'Triceps',   couleur: 'triceps', sousGroupe: '',           type: 'isolation',       materiel: 'Machine'       },
+  { id: 'extension-haltere-tete',   nom: 'Extension haltère au-dessus de la tête', groupe: 'Triceps',   couleur: 'triceps', sousGroupe: '',           type: 'isolation',       materiel: 'Haltères'      },
+  { id: 'barre-au-front',           nom: 'Barre au front',                         groupe: 'Triceps',   couleur: 'triceps', sousGroupe: '',           type: 'isolation',       materiel: 'Barre'         },
+  // ── Abdos ──
+  { id: 'crunch',                   nom: 'Crunch',                                 groupe: 'Abdos',     couleur: 'abdos',   sousGroupe: '',           type: 'isolation',       materiel: 'Poids du corps' },
+  { id: 'releves-jambes',           nom: 'Relevés de jambes',                      groupe: 'Abdos',     couleur: 'abdos',   sousGroupe: '',           type: 'isolation',       materiel: 'Poids du corps' },
+  { id: 'gainage',                  nom: 'Gainage',                                groupe: 'Abdos',     couleur: 'abdos',   sousGroupe: '',           type: 'isolation',       materiel: 'Poids du corps' },
+  { id: 'russian-twist',            nom: 'Russian twist',                          groupe: 'Abdos',     couleur: 'abdos',   sousGroupe: '',           type: 'isolation',       materiel: 'Poids du corps' },
+  { id: 'mountain-climbers',        nom: 'Mountain climbers',                      groupe: 'Abdos',     couleur: 'abdos',   sousGroupe: '',           type: 'isolation',       materiel: 'Poids du corps' },
 ];
 
 const DB = {
@@ -126,7 +129,7 @@ const DB = {
   getAllExercices()  { return this.getExoIds().map(id => this.getExercice(id)).filter(Boolean); },
   saveExercice(exo) { localStorage.setItem(KEYS.EXO_PREFIX + exo.id, JSON.stringify(exo)); },
 
-  addExercice({ nom, groupe, couleur }) {
+  addExercice({ nom, groupe, couleur, sousGroupe = '', type = '', materiel = '' }) {
     const id = nom.toLowerCase()
       .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
       .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
@@ -134,7 +137,7 @@ const DB = {
     if (ids.includes(id)) return null;
     ids.push(id);
     localStorage.setItem(KEYS.EXO_LIST, JSON.stringify(ids));
-    const exo = { id, nom, groupe, couleur, rm: null, rmDate: null, historique: [] };
+    const exo = { id, nom, groupe, couleur, sousGroupe, type, materiel, rm: null, rmDate: null, historique: [] };
     this.saveExercice(exo);
     return exo;
   },

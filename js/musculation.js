@@ -11,8 +11,18 @@ const JOURS_FR = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
 const JOURS_LONG = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
 
 // État partagé des filtres exercices
-let currentSearch = '';
-let currentGroupe = '';
+let currentSearch    = '';
+let currentGroupe    = '';
+let currentSousGroupe = '';
+let currentType      = '';
+let currentMateriel  = '';
+
+// Table des sous-groupes par groupe musculaire
+const SOUS_GROUPES = {
+  'Pectoraux': ['haut', 'milieu', 'bas'],
+  'Dos':       ['largeur', 'épaisseur'],
+  'Jambes':    ['quadriceps', 'ischios', 'mollets'],
+};
 
 document.addEventListener('DOMContentLoaded', () => {
   DB.init();
@@ -178,9 +188,12 @@ function renderExerciseList() {
 
   const q = currentSearch.trim().toLowerCase();
   const exercises = DB.getAllExercices().filter(exo => {
-    const matchSearch = !q || exo.nom.toLowerCase().includes(q) || exo.groupe.toLowerCase().includes(q);
-    const matchGroupe = !currentGroupe || exo.groupe === currentGroupe;
-    return matchSearch && matchGroupe;
+    const matchSearch     = !q || exo.nom.toLowerCase().includes(q) || exo.groupe.toLowerCase().includes(q);
+    const matchGroupe     = !currentGroupe     || exo.groupe      === currentGroupe;
+    const matchSousGroupe = !currentSousGroupe || exo.sousGroupe  === currentSousGroupe;
+    const matchType       = !currentType       || exo.type        === currentType;
+    const matchMateriel   = !currentMateriel   || exo.materiel    === currentMateriel;
+    return matchSearch && matchGroupe && matchSousGroupe && matchType && matchMateriel;
   });
 
   exercises.forEach(exo => {
@@ -197,7 +210,15 @@ function renderExerciseList() {
           ${exo.rm ? exo.rm + ' kg max' : 'Pas encore de 1RM'}
         </p>
       </div>
-      <span class="exercise-card__arrow" aria-hidden="true">›</span>`;
+      <button class="exercise-card__delete" data-delete-exo="${exo.id}"
+              aria-label="Supprimer ${exo.nom}" title="Supprimer">✕</button>`;
+
+    card.querySelector('[data-delete-exo]').addEventListener('click', e => {
+      e.preventDefault();
+      e.stopPropagation();
+      openDeleteConfirm(exo.id, exo.nom);
+    });
+
     container.appendChild(card);
   });
 }
@@ -223,13 +244,61 @@ function bindExerciseSearch() {
 }
 
 function bindFilterChips() {
-  const chips = document.querySelectorAll('.filter-chips .chip');
-  chips.forEach(chip => {
+  // ── Rangée 1 : groupes ──
+  document.querySelectorAll('#chips-groupe .chip').forEach(chip => {
     chip.addEventListener('click', () => {
-      chips.forEach(c => c.classList.remove('chip--active'));
+      document.querySelectorAll('#chips-groupe .chip').forEach(c => c.classList.remove('chip--active'));
       chip.classList.add('chip--active');
-      const label = chip.textContent.trim();
-      currentGroupe = label === 'Tous' ? '' : label;
+      currentGroupe     = chip.dataset.filterGroupe;
+      currentSousGroupe = '';
+      updateSousGroupeChips();
+      renderExerciseList();
+    });
+  });
+
+  // ── Rangée 3 : type ──
+  document.querySelectorAll('[data-filter-type]').forEach(chip => {
+    chip.addEventListener('click', () => {
+      document.querySelectorAll('[data-filter-type]').forEach(c => c.classList.remove('chip--active'));
+      chip.classList.add('chip--active');
+      currentType = chip.dataset.filterType;
+      renderExerciseList();
+    });
+  });
+
+  // ── Rangée 3 : matériel ──
+  document.querySelectorAll('[data-filter-materiel]').forEach(chip => {
+    chip.addEventListener('click', () => {
+      document.querySelectorAll('[data-filter-materiel]').forEach(c => c.classList.remove('chip--active'));
+      chip.classList.add('chip--active');
+      currentMateriel = chip.dataset.filterMateriel;
+      renderExerciseList();
+    });
+  });
+}
+
+function updateSousGroupeChips() {
+  const container = document.getElementById('chips-sous-groupe');
+  if (!container) return;
+
+  const sousGroupes = SOUS_GROUPES[currentGroupe] || [];
+  if (sousGroupes.length === 0) {
+    container.style.display = 'none';
+    container.innerHTML = '';
+    return;
+  }
+
+  container.style.display = 'flex';
+  container.innerHTML = `<span class="chip chip--sub chip--active" data-filter-sg="">Tous</span>` +
+    sousGroupes.map(sg =>
+      `<span class="chip chip--sub" data-filter-sg="${sg}">${sg.charAt(0).toUpperCase() + sg.slice(1)}</span>`
+    ).join('');
+
+  container.querySelectorAll('[data-filter-sg]').forEach(chip => {
+    chip.addEventListener('click', () => {
+      container.querySelectorAll('[data-filter-sg]').forEach(c => c.classList.remove('chip--active'));
+      chip.classList.add('chip--active');
+      currentSousGroupe = chip.dataset.filterSg;
       renderExerciseList();
     });
   });
@@ -318,21 +387,42 @@ function bindAddSessionForm() {
 
 /* ── Formulaire : ajouter un exercice ── */
 function bindAddExerciseForm() {
-  const form = document.getElementById('add-exercise-form');
+  const form         = document.getElementById('add-exercise-form');
+  const groupeSelect = document.getElementById('new-exo-groupe');
   if (!form) return;
+
+  // Champ sous-groupe conditionnel selon le groupe choisi
+  groupeSelect.addEventListener('change', () => {
+    const fieldSG    = document.getElementById('field-sous-groupe');
+    const selectSG   = document.getElementById('new-exo-sous-groupe');
+    const sousGroupes = SOUS_GROUPES[groupeSelect.value] || [];
+
+    if (sousGroupes.length > 0) {
+      selectSG.innerHTML = '<option value="">Indifférent</option>' +
+        sousGroupes.map(sg =>
+          `<option value="${sg}">${sg.charAt(0).toUpperCase() + sg.slice(1)}</option>`
+        ).join('');
+      fieldSG.style.display = 'block';
+    } else {
+      fieldSG.style.display = 'none';
+      selectSG.innerHTML    = '';
+    }
+  });
 
   form.addEventListener('submit', e => {
     e.preventDefault();
 
-    const nomInput     = document.getElementById('new-exo-nom');
-    const groupeSelect = document.getElementById('new-exo-groupe');
-    const nom          = nomInput.value.trim();
-    const groupe       = groupeSelect.value;
-    const couleur      = groupeSelect.selectedOptions[0]?.dataset.couleur;
+    const nomInput  = document.getElementById('new-exo-nom');
+    const nom       = nomInput.value.trim();
+    const groupe    = groupeSelect.value;
+    const couleur   = groupeSelect.selectedOptions[0]?.dataset.couleur || 'autre';
+    const sousGroupe = (document.getElementById('new-exo-sous-groupe')?.value) || '';
+    const type      = form.querySelector('[name="new-exo-type"]:checked')?.value     || '';
+    const materiel  = form.querySelector('[name="new-exo-materiel"]:checked')?.value || '';
 
     if (!nom || !groupe) return;
 
-    const result = DB.addExercice({ nom, groupe, couleur });
+    const result = DB.addExercice({ nom, groupe, couleur, sousGroupe, type, materiel });
     if (!result) {
       nomInput.setCustomValidity('Un exercice avec ce nom existe déjà.');
       nomInput.reportValidity();
@@ -343,6 +433,7 @@ function bindAddExerciseForm() {
     const toggle = document.getElementById('show-add-exercise');
     if (toggle) toggle.checked = false;
     form.reset();
+    document.getElementById('field-sous-groupe').style.display = 'none';
     renderExerciseList();
   });
 }
@@ -350,6 +441,38 @@ function bindAddExerciseForm() {
 /* ═══════════════════════════════════════════════════════════════
    UTILITAIRES
 ═══════════════════════════════════════════════════════════════ */
+
+function openDeleteConfirm(exoId, exoNom) {
+  const modal    = document.getElementById('modal-delete-exo');
+  const nameEl   = document.getElementById('confirm-exo-name');
+  const btnDel   = document.getElementById('confirm-delete');
+  const btnCanel = document.getElementById('confirm-cancel');
+  const overlay  = document.getElementById('confirm-overlay');
+
+  nameEl.textContent = exoNom;
+  modal.classList.add('confirm-modal--open');
+
+  const close = () => modal.classList.remove('confirm-modal--open');
+
+  const onDelete = () => {
+    DB.deleteExercice(exoId);
+    renderExerciseList();
+    close();
+    cleanup();
+  };
+
+  const onCancel = () => { close(); cleanup(); };
+
+  const cleanup = () => {
+    btnDel.removeEventListener('click', onDelete);
+    btnCanel.removeEventListener('click', onCancel);
+    overlay.removeEventListener('click', onCancel);
+  };
+
+  btnDel.addEventListener('click', onDelete);
+  btnCanel.addEventListener('click', onCancel);
+  overlay.addEventListener('click', onCancel);
+}
 
 function updateHeaderDate() {
   const el = document.querySelector('.page-header__subtitle');
