@@ -1169,6 +1169,30 @@
   padding: 3px 8px;
 }
 
+.session-card__start {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  margin-top: 0.75rem;
+  padding: 0.625rem;
+  background: rgba(57, 224, 122, 0.08);
+  border: 1.5px solid rgba(57, 224, 122, 0.25);
+  border-radius: 10px;
+  color: var(--accent);
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.session-card__start:hover {
+  background: rgba(57, 224, 122, 0.15);
+  border-color: rgba(57, 224, 122, 0.45);
+}
+
 /* ============================================================
    MODALE SÉANCE — composants du formulaire
    ============================================================ */

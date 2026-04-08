@@ -74,8 +74,7 @@ function renderTodayPanel() {
   if (startBtn) {
     startBtn.onclick = () => {
       DB.setActiveSession(session.id);
-      // Futur : rediriger vers la vue d'exécution de séance
-      alert(`Séance "${session.nom}" démarrée ! (vue d'exécution à venir)`);
+      window.location.href = `seance.html?id=${session.id}`;
     };
   }
 }
@@ -104,6 +103,7 @@ function renderSessionsList() {
       ? s.jours.map(j => JOURS_FR[j]).join(' · ')
       : 'Non planifiée';
     const exoCount = s.exercices.length;
+    const canStart = exoCount > 0;
 
     return `
       <div class="session-card" data-session-id="${s.id}">
@@ -126,6 +126,14 @@ function renderSessionsList() {
           }).join('')}
           ${s.exercices.length > 4 ? `<span class="session-card__exo-more">+${s.exercices.length - 4}</span>` : ''}
         </div>` : ''}
+        ${canStart ? `
+        <button class="session-card__start" data-start-session="${s.id}" type="button">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
+               width="14" height="14" aria-hidden="true">
+            <polygon points="5 3 19 12 5 21 5 3"/>
+          </svg>
+          Démarrer
+        </button>` : ''}
       </div>`;
   }).join('');
 
@@ -140,6 +148,16 @@ function renderSessionsList() {
         renderSessionsList();
         renderTodayPanel();
       }
+    });
+  });
+
+  // Boutons "Démarrer"
+  container.querySelectorAll('[data-start-session]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      const id = btn.dataset.startSession;
+      DB.setActiveSession(id);
+      window.location.href = `seance.html?id=${id}`;
     });
   });
 }
