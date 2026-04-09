@@ -23,6 +23,14 @@
   padding: 0;
 }
 
+/* === Bloquer le zoom double-tap iOS (Safari + PWA) === */
+html {
+  touch-action: manipulation;
+}
+body {
+  touch-action: manipulation;
+}
+
 /* === Body : padding-bottom pour ne pas masquer le contenu === */
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
