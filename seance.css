@@ -279,6 +279,42 @@ body {
 }
 
 /* ============================================================
+   SECTION POIDS PRÉ-SÉRIE (dans l'écran READY)
+   ============================================================ */
+.ws-ready-weight {
+  background: #141820;
+  border: 1px solid #1f2428;
+  border-radius: 16px;
+  padding: 0.875rem 1.25rem 0.75rem;
+  margin-bottom: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.625rem;
+}
+
+.ws-ready-weight__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.ws-ready-weight__title {
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #4b5563;
+}
+
+.ws-ready-weight__last {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #6b7280;
+}
+
+/* ============================================================
    ÉCRAN 2 : SÉRIE EN COURS
    ============================================================ */
 .ws-active-top {

@@ -32,7 +32,8 @@ let pendingLastSerie = false;
 
 let stepperVal       = 0;
 let pendingSerieReps = 0;   // reps validés, en attente du poids
-let weightVal        = 0;   // valeur courante de l'input poids
+let preWeightVal     = 0;   // poids décidé sur l'écran READY avant de commencer la série
+let weightVal        = 0;   // valeur courante de l'input poids (écran WEIGHT post-série)
 let ressentiVal      = 'ok'; // ressenti de la série en cours : 'facile' | 'ok' | 'dur'
 
 /* ═══════════════════════════════════════════════════════════
@@ -118,6 +119,13 @@ function init() {
     weightVal = parseFloat(e.target.value) || 0;
   });
 
+  // Poids pré-série (écran READY)
+  document.getElementById('btn-pre-weight-minus').addEventListener('click', () => changePreWeight(-2.5));
+  document.getElementById('btn-pre-weight-plus').addEventListener('click',  () => changePreWeight(+2.5));
+  document.getElementById('pre-weight-input').addEventListener('input', e => {
+    preWeightVal = parseFloat(e.target.value) || 0;
+  });
+
   // Ressenti chips
   document.querySelectorAll('.ws-ressenti__chip').forEach(chip => {
     chip.addEventListener('click', () => {
@@ -186,16 +194,64 @@ function showReady() {
   if (done.length) {
     prevEl.innerHTML = done.map((s, i) => {
       const miss = s.actual < s.planned;
+      const poidsStr = s.poids ? ` · ${s.poids} kg` : '';
       return `
         <div class="ws-prev-row">
           <span class="ws-prev-row__label">Série ${i + 1}</span>
           <span class="ws-prev-row__reps${miss ? ' ws-prev-row__reps--miss' : ''}">
-            ${s.actual} reps${miss ? ` (obj. ${s.planned})` : ' ✓'}
+            ${s.actual} reps${miss ? ` (obj. ${s.planned})` : ' ✓'}${poidsStr}
           </span>
         </div>`;
     }).join('');
   } else {
     prevEl.innerHTML = '';
+  }
+
+  // ── Section poids pré-série ──────────────────────────────
+  const RESSENTI_ICON = { facile: '💪', ok: '👍', dur: '😰' };
+  const weightSection = document.getElementById('ready-weight-section');
+  const isBodyweight  = exo.materiel === 'Poids du corps';
+
+  if (isBodyweight) {
+    weightSection.style.display = 'none';
+  } else {
+    weightSection.style.display = '';
+    const lastEl = document.getElementById('ready-last-session');
+    const hintEl = document.getElementById('pre-weight-hint');
+
+    if (done.length > 0) {
+      // Séries 2+ : utiliser le poids de la série précédente dans cette séance
+      const lastDone = done[done.length - 1];
+      preWeightVal = lastDone.poids || 0;
+      if (lastDone.poids) {
+        const icon = RESSENTI_ICON[lastDone.ressenti] || '';
+        lastEl.textContent = `Série ${done.length} · ${lastDone.poids} kg · ${lastDone.actual} reps ${icon}`.trim();
+        lastEl.style.display = '';
+      } else {
+        lastEl.style.display = 'none';
+      }
+      hintEl.style.display = 'none';
+    } else {
+      // Première série : suggestion depuis l'historique + objectif
+      const lastHist = (exo.historique || []).find(e => e.poids > 0);
+      if (lastHist) {
+        const icon = RESSENTI_ICON[lastHist.ressenti] || '';
+        lastEl.textContent = `Dernière séance · ${lastHist.poids} kg · ${lastHist.reps} reps ${icon}`.trim();
+        lastEl.style.display = '';
+      } else {
+        lastEl.style.display = 'none';
+      }
+      const { poids, raison } = calculerSuggestionPoids(exo, block);
+      preWeightVal = poids;
+      if (raison) {
+        hintEl.textContent = raison;
+        hintEl.style.display = '';
+      } else {
+        hintEl.style.display = 'none';
+      }
+    }
+
+    document.getElementById('pre-weight-input').value = preWeightVal || '';
   }
 
   showScreen('screen-ready');
@@ -205,6 +261,13 @@ function showReady() {
    ÉCRAN 2 : ACTIVE
 ═══════════════════════════════════════════════════════════ */
 function startSerie() {
+  // Capturer le poids saisi sur l'écran READY avant de passer en ACTIVE
+  const preInput = document.getElementById('pre-weight-input');
+  if (preInput) {
+    const v = parseFloat(preInput.value);
+    preWeightVal = v > 0 ? v : preWeightVal;
+  }
+
   currentState = 'active';
   const { block, exo } = exercises[currentExoIdx];
 
@@ -274,20 +337,21 @@ function showWeightScreen(actualReps, block) {
     c.setAttribute('aria-pressed', isOk ? 'true' : 'false');
   });
 
-  // Suggestion intelligente : historique + ressenti + objectif
-  const { poids: suggested, raison } = calculerSuggestionPoids(exo, block);
-  weightVal = suggested;
+  // Utiliser le poids pré-décidé sur l'écran READY (ou fallback suggestion)
+  weightVal = preWeightVal > 0
+    ? preWeightVal
+    : calculerSuggestionPoids(exo, block).poids;
 
   document.getElementById('weight-serie-info').textContent =
     `Série ${currentSerie} · ${actualReps} reps`;
 
   const input = document.getElementById('weight-input');
-  input.value = suggested || '';
+  input.value = weightVal || '';
 
-  // Hint contextuel
+  // Hint : confirmer le poids prévu
   const hintEl = document.getElementById('weight-hint');
-  if (raison) {
-    hintEl.textContent = raison;
+  if (weightVal > 0) {
+    hintEl.textContent = `Prévu : ${weightVal} kg — ajuste si tu as utilisé autre chose`;
     hintEl.style.display = '';
   } else {
     hintEl.style.display = 'none';
@@ -299,6 +363,11 @@ function showWeightScreen(actualReps, block) {
 function changeWeight(delta) {
   weightVal = Math.max(0, Math.round((weightVal + delta) * 2) / 2);
   document.getElementById('weight-input').value = weightVal || '';
+}
+
+function changePreWeight(delta) {
+  preWeightVal = Math.max(0, Math.round((preWeightVal + delta) * 2) / 2);
+  document.getElementById('pre-weight-input').value = preWeightVal || '';
 }
 
 function confirmWeight() {

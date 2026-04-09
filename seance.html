@@ -64,6 +64,24 @@
       <!-- Résultats des séries déjà faites (injecté par JS) -->
       <div class="ws-prev-series" id="ready-prev-series" aria-label="Séries précédentes"></div>
 
+      <!-- Charge prévue pour cette série (masquée pour Poids du corps) -->
+      <div id="ready-weight-section" class="ws-ready-weight">
+        <div class="ws-ready-weight__header">
+          <span class="ws-ready-weight__title">Charge prévue</span>
+          <span class="ws-ready-weight__last" id="ready-last-session"></span>
+        </div>
+        <div class="ws-weight-input-row">
+          <button class="ws-stepper__btn" id="btn-pre-weight-minus" aria-label="Moins 2.5 kg">−</button>
+          <div class="ws-weight-val-wrap">
+            <input class="ws-weight-input" type="number" id="pre-weight-input"
+                   step="0.5" min="0" max="500" inputmode="decimal" aria-label="Poids en kg">
+            <span class="ws-weight-unit">kg</span>
+          </div>
+          <button class="ws-stepper__btn" id="btn-pre-weight-plus" aria-label="Plus 2.5 kg">＋</button>
+        </div>
+        <p class="ws-weight-hint" id="pre-weight-hint"></p>
+      </div>
+
       <div class="ws-screen__cta">
         <button class="ws-btn ws-btn--primary" id="btn-start-serie">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
