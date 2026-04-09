@@ -606,7 +606,164 @@ function showRecap() {
       </div>`;
   }).join('');
 
+  // ── Suggestions bilan ──────────────────────────────────
+  const suggestionsEl = document.getElementById('recap-suggestions');
+  const suggestions   = buildRecapSuggestions();
+
+  const SUGGESTION_ICONS = {
+    'reps-up':     '💡',
+    'reps-down':   '📉',
+    'volume-low':  '🔴',
+    'volume-ok':   '🟢',
+    'volume-high': '⚠️',
+  };
+
+  if (suggestions.length > 0) {
+    suggestionsEl.innerHTML = `
+      <p class="ws-recap-section-title">Bilan &amp; suggestions</p>
+      ${suggestions.map(s => `
+        <div class="ws-recap-suggestion ws-recap-suggestion--${s.type}">
+          <span class="ws-recap-suggestion__icon">${SUGGESTION_ICONS[s.type] || '💡'}</span>
+          <div class="ws-recap-suggestion__body">
+            <div class="ws-recap-suggestion__label">${s.label}</div>
+            <div class="ws-recap-suggestion__text">${s.text}</div>
+          </div>
+        </div>`).join('')}`;
+  } else {
+    suggestionsEl.innerHTML = '';
+  }
+
   showScreen('screen-recap');
+}
+
+/* ═══════════════════════════════════════════════════════════
+   AUTO-AJUSTEMENT : ANALYSE REPS & VOLUME
+═══════════════════════════════════════════════════════════ */
+
+/**
+ * Analyse la tendance reps pour un exercice sur les 3 dernières sessions.
+ * Nécessite au moins 3 entrées avec repsObjectif renseigné.
+ *
+ * @returns {{ type: 'increase'|'decrease', target: number, suggested: number }|null}
+ */
+function analyzeRepsProgression(exo, block) {
+  const hist = (exo.historique || []).filter(e =>
+    typeof e.reps === 'number' && e.repsObjectif
+  );
+  if (hist.length < 3) return null;
+
+  // Grouper par date de session (YYYY-MM-DD) pour éviter les biais intra-séance
+  const byDate = {};
+  hist.forEach(e => {
+    const d = e.date ? e.date.slice(0, 10) : 'unknown';
+    if (!byDate[d]) byDate[d] = [];
+    byDate[d].push(e);
+  });
+  const dates = Object.keys(byDate).sort().reverse(); // plus récent en premier
+  if (dates.length < 2) return null;                  // besoin d'au moins 2 sessions
+
+  // Entrées des 3 dernières sessions distinctes
+  const recent = dates.slice(0, 3).flatMap(d => byDate[d]);
+  if (recent.length < 3) return null;
+
+  const target       = parseInt(block.reps) || 10;
+  const ratioHitting = recent.filter(e => e.reps >= e.repsObjectif).length / recent.length;
+  const ratioFacile  = recent.filter(e => e.ressenti === 'facile').length   / recent.length;
+  const ratioMissing = recent.filter(e => e.reps < e.repsObjectif).length   / recent.length;
+
+  // 70 %+ touchent l'objectif ET 35 %+ ressentent "facile" → suggérer d'augmenter
+  if (ratioHitting >= 0.70 && ratioFacile >= 0.35) {
+    return { type: 'increase', target, suggested: target + 2 };
+  }
+  // 60 %+ ratent l'objectif → suggérer de diminuer
+  if (ratioMissing >= 0.60) {
+    return { type: 'decrease', target, suggested: Math.max(1, target - 1) };
+  }
+  return null;
+}
+
+/**
+ * Calcule le nombre de séries par groupe musculaire sur les 7 derniers jours.
+ * @returns {{ [groupe: string]: number }}
+ */
+function calculateWeeklyVolume() {
+  const allExos  = DB.getAllExercices();
+  const weekMs   = 7 * 24 * 60 * 60 * 1000;
+  const nowMs    = Date.now();
+  const volume   = {};
+
+  allExos.forEach(exo => {
+    (exo.historique || []).forEach(e => {
+      if (!e.date) return;
+      if (nowMs - new Date(e.date).getTime() <= weekMs) {
+        volume[exo.groupe] = (volume[exo.groupe] || 0) + 1;
+      }
+    });
+  });
+  return volume;
+}
+
+/**
+ * Construit les suggestions à afficher dans le récap.
+ * Appelé après saveAllResults() — les historiques sont déjà mis à jour.
+ *
+ * @returns {Array<{ type: string, label: string, text: string }>}
+ */
+function buildRecapSuggestions() {
+  const suggestions = [];
+
+  // ── 1. Reps : analyse par exercice ──────────────────────
+  exercises.forEach(({ block, exo }) => {
+    if (exo.materiel === 'Poids du corps') return; // reps libres, pas de suggestions
+    const freshExo = DB.getExercice(exo.id) || exo;
+    const analysis = analyzeRepsProgression(freshExo, block);
+    if (!analysis) return;
+
+    if (analysis.type === 'increase') {
+      suggestions.push({
+        type:  'reps-up',
+        label: exo.nom,
+        text:  `Tu atteins facilement ${analysis.target} reps depuis plusieurs séances. Essaie ${analysis.suggested} la prochaine fois.`,
+      });
+    } else {
+      suggestions.push({
+        type:  'reps-down',
+        label: exo.nom,
+        text:  `Tu rates souvent l'objectif de ${analysis.target} reps. Essaie ${analysis.suggested} pour consolider.`,
+      });
+    }
+  });
+
+  // ── 2. Volume hebdomadaire par groupe musculaire ─────────
+  const weeklyVol      = calculateWeeklyVolume();
+  const groupesTrained = [...new Set(exercises.map(({ exo }) => exo.groupe))];
+  const VOL_LOW  = 8;
+  const VOL_HIGH = 20;
+
+  groupesTrained.forEach(groupe => {
+    const count = weeklyVol[groupe] || 0;
+    if (count < VOL_LOW) {
+      suggestions.push({
+        type:  'volume-low',
+        label: groupe,
+        text:  `${count} série${count > 1 ? 's' : ''} cette semaine — vise ${VOL_LOW}–${VOL_HIGH} pour progresser.`,
+      });
+    } else if (count > VOL_HIGH) {
+      suggestions.push({
+        type:  'volume-high',
+        label: groupe,
+        text:  `${count} séries cette semaine — volume élevé, pense à récupérer.`,
+      });
+    } else {
+      suggestions.push({
+        type:  'volume-ok',
+        label: groupe,
+        text:  `${count} séries cette semaine — volume optimal, continue !`,
+      });
+    }
+  });
+
+  return suggestions;
 }
 
 /* ═══════════════════════════════════════════════════════════
