@@ -5,36 +5,38 @@
  * Chaque page importe ce fichier AVANT son propre script.
  *
  * Clés localStorage :
- *   ft_exercises          → string[] — IDs des exercices (ordre)
+ *   ft_exercises          → string[] — IDs des exercices
  *   ft_exo_<id>           → Exercice
- *   ft_sessions           → string[] — IDs des séances (ordre)
- *   ft_session_<id>       → Session
- *   ft_active_session     → string|null — ID de la séance en cours
+ *   ft_templates          → string[] — IDs des modèles de séance
+ *   ft_template_<id>      → SessionTemplate
+ *   ft_planned            → string[] — IDs des séances planifiées
+ *   ft_planned_<id>       → PlannedSession
+ *   ft_active_session     → string|null — ID de la séance active (legacy)
  *
  * Types :
- *   Exercice  { id, nom, groupe, couleur, rm, rmDate, historique[] }
- *   Session   { id, nom, jours: number[], exercices: ExoBlock[] }
- *   ExoBlock  { exoId, series, reps, repos }
- *   HistEntry { titre, series, reps, repos, poids, date }
+ *   Exercice        { id, nom, groupe, couleur, sousGroupe, type, materiel, rm, rmDate, historique[] }
+ *   SessionTemplate { id, nom, exercices: ExoBlock[], createdAt }
+ *   PlannedSession  { id, templateId, date: 'YYYY-MM-DD', completed, completedAt, createdAt }
+ *   ExoBlock        { exoId, series, reps, repos, poids }
+ *   HistEntry       { titre, series, reps, repos, poids, date }
  *
  * Jours (0 = lundi … 6 = dimanche, semaine FR)
  */
 
 const KEYS = {
-  EXO_LIST:       'ft_exercises',
-  EXO_PREFIX:     'ft_exo_',
-  SESSION_LIST:   'ft_sessions',
-  SESSION_PREFIX: 'ft_session_',
-  ACTIVE_SESSION: 'ft_active_session',
-  DB_VERSION:     'ft_db_version',
+  EXO_LIST:        'ft_exercises',
+  EXO_PREFIX:      'ft_exo_',
+  TEMPLATE_LIST:   'ft_templates',
+  TEMPLATE_PREFIX: 'ft_template_',
+  PLANNED_LIST:    'ft_planned',
+  PLANNED_PREFIX:  'ft_planned_',
+  ACTIVE_SESSION:  'ft_active_session',
+  DB_VERSION:      'ft_db_version',
 };
 
-// Incrémenter DB_VERSION_CURRENT force la réinitialisation des exercices par défaut
-const DB_VERSION_CURRENT = 5;
+// Incrémenter force la migration au rechargement
+const DB_VERSION_CURRENT = 6;
 
-// sousGroupe : zone ciblée (optionnel selon le groupe)
-// type       : 'polyarticulaire' | 'isolation'
-// materiel   : 'Poids du corps' | 'Haltères' | 'Barre' | 'Machine' | 'Élastique' | 'Kettlebell'
 const DEFAULT_EXERCISES = [
   // ── Pectoraux ──
   { id: 'developpe-couche',         nom: 'Développé couché',                       groupe: 'Pectoraux', couleur: 'pecto',   sousGroupe: 'milieu',     type: 'polyarticulaire', materiel: 'Barre'         },
@@ -84,39 +86,67 @@ const DEFAULT_EXERCISES = [
 const DB = {
 
   /* ─────────────────────────────────────────────────────────────
-     INITIALISATION
+     INITIALISATION & MIGRATION
   ───────────────────────────────────────────────────────────── */
 
   init() {
     const storedVersion = parseInt(localStorage.getItem(KEYS.DB_VERSION) || '0', 10);
 
     if (storedVersion < DB_VERSION_CURRENT) {
-      // Supprimer tous les anciens exercices par défaut
-      const oldIds = JSON.parse(localStorage.getItem(KEYS.EXO_LIST) || '[]');
+
+      // ── Exercices : écrase les defaults, préserve historique ──
+      const oldEids    = JSON.parse(localStorage.getItem(KEYS.EXO_LIST) || '[]');
       const defaultIds = DEFAULT_EXERCISES.map(e => e.id);
-      oldIds.forEach(id => {
+      oldEids.forEach(id => {
         if (!defaultIds.includes(id)) localStorage.removeItem(KEYS.EXO_PREFIX + id);
       });
-
-      // Écrire la nouvelle liste complète
       localStorage.setItem(KEYS.EXO_LIST, JSON.stringify(defaultIds));
       DEFAULT_EXERCISES.forEach(e => {
-        // Conserver rm/historique mais forcer nom, groupe, couleur à jour
         const raw      = localStorage.getItem(KEYS.EXO_PREFIX + e.id);
         const existing = raw ? JSON.parse(raw) : null;
         localStorage.setItem(KEYS.EXO_PREFIX + e.id, JSON.stringify({
           rm: null, rmDate: null, historique: [],
           ...(existing || {}),
           id: e.id, nom: e.nom, groupe: e.groupe, couleur: e.couleur,
+          sousGroupe: e.sousGroupe, type: e.type, materiel: e.materiel,
         }));
       });
+
+      // ── Migration v5→v6 : Sessions → Modèles ──
+      // Les anciennes séances (ft_sessions / ft_session_<id>) deviennent
+      // des modèles (ft_templates / ft_template_<id>). Les jours planifiés
+      // sont abandonnés (on repart d'un planning vide).
+      const legacyIds = JSON.parse(localStorage.getItem('ft_sessions') || '[]');
+      const migratedTemplateIds = [];
+      legacyIds.forEach(oldId => {
+        const raw = localStorage.getItem('ft_session_' + oldId);
+        if (!raw) return;
+        const old = JSON.parse(raw);
+        const tpl = {
+          id:        old.id,
+          nom:       old.nom,
+          exercices: old.exercices || [],
+          createdAt: old.createdAt || new Date().toISOString(),
+        };
+        localStorage.setItem(KEYS.TEMPLATE_PREFIX + tpl.id, JSON.stringify(tpl));
+        migratedTemplateIds.push(tpl.id);
+        localStorage.removeItem('ft_session_' + oldId);
+      });
+      // Écrire la liste des modèles (seulement si elle n'existait pas déjà)
+      if (!localStorage.getItem(KEYS.TEMPLATE_LIST)) {
+        localStorage.setItem(KEYS.TEMPLATE_LIST, JSON.stringify(migratedTemplateIds));
+      }
+      localStorage.removeItem('ft_sessions');
 
       localStorage.setItem(KEYS.DB_VERSION, String(DB_VERSION_CURRENT));
     }
 
-    // Liste des séances (peut être vide)
-    if (!localStorage.getItem(KEYS.SESSION_LIST)) {
-      localStorage.setItem(KEYS.SESSION_LIST, JSON.stringify([]));
+    // Garantir l'existence des listes
+    if (!localStorage.getItem(KEYS.TEMPLATE_LIST)) {
+      localStorage.setItem(KEYS.TEMPLATE_LIST, JSON.stringify([]));
+    }
+    if (!localStorage.getItem(KEYS.PLANNED_LIST)) {
+      localStorage.setItem(KEYS.PLANNED_LIST, JSON.stringify([]));
     }
   },
 
@@ -172,65 +202,134 @@ const DB = {
   },
 
   /* ─────────────────────────────────────────────────────────────
-     SÉANCES PROGRAMMÉES
-     Une séance = un programme récurrent (ex: "Push A") assigné
-     à un ou plusieurs jours de la semaine.
-     jours[] : 0=Lun, 1=Mar, 2=Mer, 3=Jeu, 4=Ven, 5=Sam, 6=Dim
+     MODÈLES DE SÉANCE (SessionTemplate)
+     Un modèle = blueprint réutilisable sans date ni jours.
+     Modifier un modèle n'affecte pas l'historique déjà enregistré.
   ───────────────────────────────────────────────────────────── */
 
-  getSessionIds()       { return JSON.parse(localStorage.getItem(KEYS.SESSION_LIST) || '[]'); },
-  getSession(id)        { const r = localStorage.getItem(KEYS.SESSION_PREFIX + id); return r ? JSON.parse(r) : null; },
-  getAllSessions()       { return this.getSessionIds().map(id => this.getSession(id)).filter(Boolean); },
-  saveSession(session)  { localStorage.setItem(KEYS.SESSION_PREFIX + session.id, JSON.stringify(session)); },
+  getTemplateIds()    { return JSON.parse(localStorage.getItem(KEYS.TEMPLATE_LIST) || '[]'); },
+  getTemplate(id)     { const r = localStorage.getItem(KEYS.TEMPLATE_PREFIX + id); return r ? JSON.parse(r) : null; },
+  getAllTemplates()    { return this.getTemplateIds().map(id => this.getTemplate(id)).filter(Boolean); },
+  saveTemplate(t)     { localStorage.setItem(KEYS.TEMPLATE_PREFIX + t.id, JSON.stringify(t)); },
+
+  addTemplate({ nom, exercices = [] }) {
+    const id  = 'tpl-' + Date.now();
+    const ids = this.getTemplateIds();
+    ids.push(id);
+    localStorage.setItem(KEYS.TEMPLATE_LIST, JSON.stringify(ids));
+    const tpl = { id, nom, exercices, createdAt: new Date().toISOString() };
+    this.saveTemplate(tpl);
+    return tpl;
+  },
+
+  updateTemplate(tpl) {
+    if (!this.getTemplateIds().includes(tpl.id)) return null;
+    this.saveTemplate(tpl);
+    return tpl;
+  },
+
+  deleteTemplate(id) {
+    const ids = this.getTemplateIds().filter(i => i !== id);
+    localStorage.setItem(KEYS.TEMPLATE_LIST, JSON.stringify(ids));
+    localStorage.removeItem(KEYS.TEMPLATE_PREFIX + id);
+    // Supprimer les instances futures non complétées liées à ce modèle
+    this.getAllPlanned()
+      .filter(p => p.templateId === id && !p.completed)
+      .forEach(p => this.deletePlanned(p.id));
+  },
+
+  // Compatibilité descendante pour seance.js (getSession → getTemplate)
+  getSession(id)    { return this.getTemplate(id); },
+  getAllSessions()   { return this.getAllTemplates(); },
+
+  /* ─────────────────────────────────────────────────────────────
+     SÉANCES PLANIFIÉES (PlannedSession)
+     Une instance = modèle + date concrète (YYYY-MM-DD).
+     Figée une fois completed = true.
+  ───────────────────────────────────────────────────────────── */
+
+  getPlannedIds()     { return JSON.parse(localStorage.getItem(KEYS.PLANNED_LIST) || '[]'); },
+  getPlanned(id)      { const r = localStorage.getItem(KEYS.PLANNED_PREFIX + id); return r ? JSON.parse(r) : null; },
+  getAllPlanned()      { return this.getPlannedIds().map(id => this.getPlanned(id)).filter(Boolean); },
+  savePlanned(p)      { localStorage.setItem(KEYS.PLANNED_PREFIX + p.id, JSON.stringify(p)); },
+
+  addPlanned({ templateId, date }) {
+    const id  = 'plan-' + Date.now();
+    const ids = this.getPlannedIds();
+    ids.push(id);
+    localStorage.setItem(KEYS.PLANNED_LIST, JSON.stringify(ids));
+    const planned = {
+      id, templateId, date,
+      completed: false, completedAt: null,
+      createdAt: new Date().toISOString(),
+    };
+    this.savePlanned(planned);
+    return planned;
+  },
+
+  deletePlanned(id) {
+    const ids = this.getPlannedIds().filter(i => i !== id);
+    localStorage.setItem(KEYS.PLANNED_LIST, JSON.stringify(ids));
+    localStorage.removeItem(KEYS.PLANNED_PREFIX + id);
+  },
 
   /**
-   * Crée une nouvelle séance programmée.
-   * @param {Object} p
-   * @param {string}   p.nom      — Nom de la séance
-   * @param {number[]} p.jours    — Jours de la semaine (0–6)
-   * @param {Array}    p.exercices — [{exoId, series, reps, repos}]
+   * Marque une séance planifiée comme terminée.
+   * Appelé par seance.js à la fin de saveAllResults().
    */
-  addSession({ nom, jours = [], exercices = [] }) {
-    const id  = 'session-' + Date.now();
-    const ids = this.getSessionIds();
-    ids.push(id);
-    localStorage.setItem(KEYS.SESSION_LIST, JSON.stringify(ids));
-    const session = { id, nom, jours, exercices, createdAt: new Date().toISOString() };
-    this.saveSession(session);
-    return session;
+  completePlanned(id) {
+    const p = this.getPlanned(id);
+    if (!p) return null;
+    p.completed   = true;
+    p.completedAt = new Date().toISOString();
+    this.savePlanned(p);
+    return p;
   },
 
-  updateSession(session) {
-    const ids = this.getSessionIds();
-    if (!ids.includes(session.id)) return null;
-    this.saveSession(session);
-    return session;
+  /**
+   * Retourne les séances planifiées pour aujourd'hui (toutes, y compris terminées).
+   */
+  getTodayPlanned() {
+    const today = new Date().toISOString().slice(0, 10);
+    return this.getAllPlanned().filter(p => p.date === today);
   },
 
-  deleteSession(id) {
-    const ids = this.getSessionIds().filter(i => i !== id);
-    localStorage.setItem(KEYS.SESSION_LIST, JSON.stringify(ids));
-    localStorage.removeItem(KEYS.SESSION_PREFIX + id);
-    // Si c'était la séance active, on l'efface
-    if (this.getActiveSessionId() === id) this.clearActiveSession();
+  /**
+   * Retourne les séances planifiées dans un intervalle de dates (inclus).
+   * @param {string} startDate — 'YYYY-MM-DD'
+   * @param {string} endDate   — 'YYYY-MM-DD'
+   */
+  getPlannedForRange(startDate, endDate) {
+    return this.getAllPlanned().filter(p => p.date >= startDate && p.date <= endDate);
+  },
+
+  /**
+   * Retourne les N modèles les plus récemment utilisés (d'après completedAt).
+   * @param {number} n
+   * @returns {{ template: SessionTemplate, completedAt: string }[]}
+   */
+  getRecentTemplates(n = 3) {
+    const completed = this.getAllPlanned()
+      .filter(p => p.completed && p.completedAt)
+      .sort((a, b) => b.completedAt.localeCompare(a.completedAt));
+
+    const seen   = new Set();
+    const recent = [];
+    for (const p of completed) {
+      if (!seen.has(p.templateId)) {
+        seen.add(p.templateId);
+        const tpl = this.getTemplate(p.templateId);
+        if (tpl) recent.push({ template: tpl, completedAt: p.completedAt });
+        if (recent.length >= n) break;
+      }
+    }
+    return recent;
   },
 
   /* ─────────────────────────────────────────────────────────────
-     SÉANCE DU JOUR
+     SÉANCE ACTIVE (legacy — conservé pour compatibilité)
   ───────────────────────────────────────────────────────────── */
 
-  /**
-   * Retourne la séance programmée pour aujourd'hui, ou null.
-   * Si plusieurs séances sont assignées au même jour, retourne la première.
-   */
-  getTodaySession() {
-    // JS getDay() : 0=dim … 6=sam → on convertit en 0=lun … 6=dim
-    const jsDay   = new Date().getDay();
-    const frDay   = jsDay === 0 ? 6 : jsDay - 1;
-    return this.getAllSessions().find(s => s.jours.includes(frDay)) || null;
-  },
-
-  /* Séance active (en cours d'exécution) */
   getActiveSessionId()  { return localStorage.getItem(KEYS.ACTIVE_SESSION) || null; },
   setActiveSession(id)  { localStorage.setItem(KEYS.ACTIVE_SESSION, id); },
   clearActiveSession()  { localStorage.removeItem(KEYS.ACTIVE_SESSION); },

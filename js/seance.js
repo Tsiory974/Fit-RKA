@@ -14,7 +14,8 @@ const CIRC = 2 * Math.PI * 54;
 
 /* ── État global ─────────────────────────────────────────────
    Toutes les variables mutables de la séance                  */
-let session          = null;
+let session          = null;   // SessionTemplate courant
+let plannedId        = null;   // PlannedSession.id si démarré depuis le planning (null si direct)
 let exercises        = [];     // [{ block, exo }]
 let results          = [];     // [{ exoId, nom, groupe, couleur, series[] }]
 let currentExoIdx    = 0;
@@ -46,34 +47,28 @@ function init() {
 
   if (!id) { showError('Aucun identifiant de séance dans l\'URL.'); return; }
 
-  session = DB.getSession(id);
-
-  // Fallback : scan direct de toutes les clés localStorage
-  if (!session) {
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      try {
-        const data = JSON.parse(localStorage.getItem(key));
-        if (data && data.id === id) { session = data; break; }
-      } catch(e) {}
+  // ── Résolution de l'ID ──
+  // Cas 1 : séance planifiée (id = 'plan-…') → charger le modèle associé
+  // Cas 2 : modèle direct (id = 'tpl-…' ou legacy 'session-…')
+  if (id.startsWith('plan-')) {
+    const planned = DB.getPlanned(id);
+    if (!planned) {
+      showError('Séance planifiée introuvable.<br><small>ID : ' + id + '</small>');
+      return;
     }
-  }
-
-  // Debug : affiche toutes les clés liées aux séances dans la console
-  console.group('FitTrack — debug seance init');
-  console.log('ID recherché :', id);
-  console.log('Session trouvée :', session);
-  console.log('Toutes les clés localStorage :',
-    Array.from({ length: localStorage.length }, (_, i) => localStorage.key(i)));
-  console.groupEnd();
-
-  if (!session) {
-    const allKeys = Array.from({ length: localStorage.length }, (_, i) => localStorage.key(i))
-      .filter(k => k.startsWith('ft_session')).join(', ') || '(aucune)';
-    showError(
-      `Séance introuvable.<br><small style="font-weight:400;color:#9ca3af">ID : ${id}<br>Clés session en mémoire : ${allKeys}</small>`
-    );
-    return;
+    plannedId = id;
+    session   = DB.getTemplate(planned.templateId);
+    if (!session) {
+      showError('Modèle de séance introuvable.<br><small>Template ID : ' + planned.templateId + '</small>');
+      return;
+    }
+  } else {
+    // Modèle direct (nouveau format 'tpl-…' ou legacy 'session-…' migré)
+    session = DB.getTemplate(id);
+    if (!session) {
+      showError(`Séance introuvable.<br><small style="font-weight:400;color:#9ca3af">ID : ${id}</small>`);
+      return;
+    }
   }
 
   // Construire le tableau d'exercices — on garde les blocs même si l'exo est introuvable
@@ -439,6 +434,10 @@ function saveAllResults() {
       });
     });
   });
+  // Marquer la séance planifiée comme terminée (si démarrée depuis le planning)
+  if (plannedId) {
+    DB.completePlanned(plannedId);
+  }
   DB.clearActiveSession();
 }
 

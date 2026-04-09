@@ -41,7 +41,8 @@ body {
    pour que les sélecteurs CSS ~ (sibling) fonctionnent
    ============================================================ */
 #tab-seance,
-#tab-seances,
+#tab-planning,
+#tab-modeles,
 #tab-exercices {
   position: absolute;
   width: 1px;
@@ -157,7 +158,7 @@ body {
   position: absolute;
   bottom: 0;
   left: 0;
-  width: 33.333%;       /* couvre 1 onglet sur 3 */
+  width: 25%;           /* couvre 1 onglet sur 4 */
   height: 3px;
   background: var(--accent);
   border-radius: 3px 3px 0 0;
@@ -168,29 +169,33 @@ body {
    ÉTAT DES ONGLETS — piloté par les radio inputs (~ sibling CSS)
    ============================================================ */
 
-/* Onglet 1 actif (par défaut, "checked" dans le HTML) */
+/* Onglet 1 actif (par défaut) */
 #tab-seance:checked ~ .tabs-header label[for="tab-seance"] {
   color: var(--accent);
 }
 
 /* Onglet 2 actif */
-#tab-seances:checked ~ .tabs-header label[for="tab-seances"] {
+#tab-planning:checked ~ .tabs-header label[for="tab-planning"] {
   color: var(--accent);
 }
-
-/* Déplace l'indicateur vers le 2e onglet */
-#tab-seances:checked ~ .tabs-header .tab-indicator {
+#tab-planning:checked ~ .tabs-header .tab-indicator {
   transform: translateX(100%);
 }
 
 /* Onglet 3 actif */
+#tab-modeles:checked ~ .tabs-header label[for="tab-modeles"] {
+  color: var(--accent);
+}
+#tab-modeles:checked ~ .tabs-header .tab-indicator {
+  transform: translateX(200%);
+}
+
+/* Onglet 4 actif */
 #tab-exercices:checked ~ .tabs-header label[for="tab-exercices"] {
   color: var(--accent);
 }
-
-/* Déplace l'indicateur vers le 3e onglet */
 #tab-exercices:checked ~ .tabs-header .tab-indicator {
-  transform: translateX(200%);
+  transform: translateX(300%);
 }
 
 /* ============================================================
@@ -198,39 +203,41 @@ body {
    ============================================================ */
 .tabs-track {
   display: flex;
-  /* Le track fait 300% (3 panneaux côte à côte) */
-  width: 300%;
-  /* Transition de glissement entre les onglets */
+  /* 4 panneaux côte à côte */
+  width: 400%;
   transition: transform 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-  /* Hauteur min : tout l'écran moins les zones fixes */
   min-height: calc(
     100vh
     - var(--header-height)
     - var(--tabs-height)
     - var(--nav-height)
   );
-  /* Bloque le swipe horizontal — seul le clic sur les onglets change de panneau */
   touch-action: pan-y;
 }
 
-/* Glisser vers le 2e panneau quand tab-seances est coché */
-#tab-seances:checked ~ .tabs-track {
-  transform: translateX(-33.333%);
+/* Glisser vers le panneau 2 (Planning) */
+#tab-planning:checked ~ .tabs-track {
+  transform: translateX(-25%);
 }
 
-/* Glisser vers le 3e panneau quand tab-exercices est coché */
+/* Glisser vers le panneau 3 (Séances) */
+#tab-modeles:checked ~ .tabs-track {
+  transform: translateX(-50%);
+}
+
+/* Glisser vers le panneau 4 (Exercices) */
 #tab-exercices:checked ~ .tabs-track {
-  transform: translateX(-66.666%);
+  transform: translateX(-75%);
 }
 
-/* --- Chaque panneau occupe 33.333% du track = 100% de l'écran --- */
+/* --- Chaque panneau occupe 25% du track = 100% de l'écran --- */
 .tab-panel {
-  width: 33.333%;
-  min-width: 33.333%;
+  width: 25%;
+  min-width: 25%;
   padding: 1.25rem 1rem 2rem;
   overflow-y: auto;
   overflow-x: hidden;
-  touch-action: pan-y;   /* bloque le swipe horizontal dans chaque panneau */
+  touch-action: pan-y;
 }
 
 /* La zone de chips a son propre scroll horizontal —
@@ -786,7 +793,7 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
-/* Visible seulement quand l'onglet Exercices est actif */
+/* Visible seulement quand l'onglet Exercices est actif (tab 4) */
 #tab-exercices:checked ~ .fab-add-exercise {
   opacity: 1;
   pointer-events: auto;
@@ -826,7 +833,7 @@ body {
 }
 
 /* Afficher quand le checkbox est coché */
-#show-add-session:checked  ~ #modal-add-session,
+#show-add-template:checked ~ #modal-add-template,
 #show-add-exercise:checked ~ #modal-add-exercise {
   visibility: visible;
   transition: visibility 0s 0s;
@@ -842,7 +849,7 @@ body {
   transition: background 0.35s ease;
 }
 
-#show-add-session:checked  ~ #modal-add-session  .session-modal__overlay,
+#show-add-template:checked ~ #modal-add-template .session-modal__overlay,
 #show-add-exercise:checked ~ #modal-add-exercise .session-modal__overlay {
   background: rgba(0, 0, 0, 0.78);
 }
@@ -872,7 +879,7 @@ body {
   overflow-y: auto;
 }
 
-#show-add-session:checked  ~ #modal-add-session  .session-modal__sheet,
+#show-add-template:checked ~ #modal-add-template .session-modal__sheet,
 #show-add-exercise:checked ~ #modal-add-exercise .session-modal__sheet {
   transform: translateY(0);
 }
@@ -1049,7 +1056,7 @@ body {
     border-radius: 24px 24px 0 0;
   }
 
-  #show-add-session:checked  ~ #modal-add-session  .session-modal__sheet,
+  #show-add-template:checked ~ #modal-add-template .session-modal__sheet,
   #show-add-exercise:checked ~ #modal-add-exercise .session-modal__sheet {
     transform: translateX(-50%) translateY(0);
   }
@@ -1063,9 +1070,9 @@ body {
    ============================================================ */
 @media (min-width: 480px) {
 
-  /* Le track = 3 × 480px (largeur fixe, pas relative au viewport) */
+  /* Le track = 4 × 480px */
   .tabs-track {
-    width: calc(480px * 3);
+    width: calc(480px * 4);
   }
 
   /* Chaque panneau = 480px */
@@ -1613,4 +1620,481 @@ body {
 
 .session-exo-block__fields input:focus {
   border-color: var(--accent);
+}
+
+/* ============================================================
+   PANNEAU 1 — AUJOURD'HUI : plusieurs séances planifiées
+   ============================================================ */
+
+/* Bloc séance individuelle dans "Aujourd'hui" */
+.today-session-block {
+  background: #141820;
+  border: 1px solid rgba(57, 224, 122, 0.2);
+  border-radius: 14px;
+  padding: 1rem;
+  margin-bottom: 0.875rem;
+}
+
+.today-session-block--done {
+  border-color: #1f2428;
+  opacity: 0.6;
+}
+
+/* "+N exercices" overflow */
+.today-more {
+  font-size: 0.72rem;
+  color: var(--text-idle);
+  margin-top: 0.375rem;
+  padding-left: 0.25rem;
+}
+
+/* Bouton "Ajouter une séance aujourd'hui" */
+.btn-add-today {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  margin-top: 0.5rem;
+  padding: 0.75rem;
+  background: transparent;
+  border: 1.5px dashed #2a3038;
+  border-radius: 12px;
+  color: var(--text-idle);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.btn-add-today:hover,
+.btn-add-today:active {
+  border-color: rgba(57, 224, 122, 0.4);
+  color: var(--accent);
+}
+
+/* ============================================================
+   PANNEAU 2 — PLANNING (14 jours)
+   ============================================================ */
+
+.planning-day {
+  border-bottom: 1px solid #1a1f26;
+  padding: 0.875rem 0;
+}
+
+.planning-day:last-child { border-bottom: none; }
+
+/* Aujourd'hui */
+.planning-day--today .planning-day__weekday {
+  color: var(--accent);
+  font-weight: 800;
+}
+
+/* Jours passés : label grisé */
+.planning-day--past .planning-day__label {
+  opacity: 0.45;
+}
+
+.planning-day__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.planning-day__label {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.planning-day__weekday {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #e5e7eb;
+}
+
+.planning-day__num {
+  font-size: 0.72rem;
+  color: var(--text-idle);
+}
+
+/* Bouton "+" par jour */
+.planning-day__add {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  border: 1px solid #2a3038;
+  background: transparent;
+  color: var(--text-idle);
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.planning-day__add:hover,
+.planning-day__add:active {
+  background: rgba(57, 224, 122, 0.1);
+  border-color: rgba(57, 224, 122, 0.4);
+  color: var(--accent);
+}
+
+/* Zone des séances du jour */
+.planning-day__sessions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+/* Carte séance dans le planning */
+.planning-session {
+  background: #141820;
+  border: 1px solid #1f2428;
+  border-radius: 12px;
+  padding: 0.75rem;
+}
+
+.planning-session--done {
+  opacity: 0.55;
+}
+
+.planning-session__top {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.375rem;
+}
+
+.planning-session__name {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #e5e7eb;
+  flex: 1;
+}
+
+.planning-session__count {
+  font-size: 0.68rem;
+  color: var(--text-idle);
+  background: #1f2428;
+  padding: 2px 7px;
+  border-radius: 20px;
+}
+
+.planning-session__badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--accent);
+  background: rgba(57, 224, 122, 0.1);
+  border: 1px solid rgba(57, 224, 122, 0.25);
+  padding: 2px 7px;
+  border-radius: 20px;
+}
+
+.planning-session__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin-bottom: 0.5rem;
+}
+
+.planning-session__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+.planning-session__start {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0.4rem 0.875rem;
+  background: rgba(57, 224, 122, 0.08);
+  border: 1.5px solid rgba(57, 224, 122, 0.25);
+  border-radius: 8px;
+  color: var(--accent);
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.planning-session__start:hover {
+  background: rgba(57, 224, 122, 0.15);
+  border-color: rgba(57, 224, 122, 0.45);
+}
+
+.planning-session__delete {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  border: 1px solid #2a3038;
+  background: transparent;
+  color: #4b5563;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.planning-session__delete:hover {
+  background: rgba(239, 68, 68, 0.12);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: #ef4444;
+}
+
+/* ============================================================
+   PANNEAU 3 — SÉANCES (MODÈLES)
+   ============================================================ */
+
+/* Titre de section */
+.modeles-section-title {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-idle);
+  margin: 0.5rem 0 0.625rem;
+}
+
+/* Carte modèle */
+.template-card {
+  background: #141820;
+  border: 1px solid #1f2428;
+  border-radius: 14px;
+  padding: 1rem;
+  margin-bottom: 0.625rem;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.template-card:hover {
+  background: #1a2028;
+  border-color: #2a3540;
+}
+
+.template-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.25rem;
+}
+
+.template-card__name {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #e5e7eb;
+}
+
+.template-card__delete {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: transparent;
+  border: 1px solid #2a3038;
+  border-radius: 8px;
+  color: #4b5563;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.template-card__delete:hover {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.4);
+  color: #ef4444;
+}
+
+/* Label "Utilisée hier / lundi…" */
+.template-card__recent {
+  font-size: 0.68rem;
+  color: var(--accent);
+  margin-bottom: 0.375rem;
+}
+
+.template-card__meta {
+  margin-bottom: 0.5rem;
+}
+
+.template-card__count {
+  font-size: 0.68rem;
+  color: var(--text-idle);
+  background: #1f2428;
+  padding: 2px 8px;
+  border-radius: 20px;
+}
+
+.template-card__exercises {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  margin-bottom: 0.75rem;
+}
+
+.template-card__actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.template-card__plan {
+  flex: 1;
+  padding: 0.55rem 0.75rem;
+  background: transparent;
+  border: 1.5px solid #2a3038;
+  border-radius: 10px;
+  color: #9ca3af;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s, background 0.2s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.template-card__plan:hover {
+  border-color: rgba(57, 224, 122, 0.4);
+  color: var(--accent);
+  background: rgba(57, 224, 122, 0.05);
+}
+
+.template-card__start {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 0.55rem 0.75rem;
+  background: rgba(57, 224, 122, 0.08);
+  border: 1.5px solid rgba(57, 224, 122, 0.25);
+  border-radius: 10px;
+  color: var(--accent);
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.template-card__start:hover {
+  background: rgba(57, 224, 122, 0.15);
+  border-color: rgba(57, 224, 122, 0.45);
+}
+
+/* ============================================================
+   MODAL — PLANIFIER UNE SÉANCE (JS-controlled)
+   ============================================================ */
+
+.plan-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  visibility: hidden;
+  transition: visibility 0s 0.4s;
+}
+
+.plan-modal--open {
+  visibility: visible;
+  transition: visibility 0s 0s;
+}
+
+.plan-modal__overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0);
+  cursor: pointer;
+  transition: background 0.35s ease;
+}
+
+.plan-modal--open .plan-modal__overlay {
+  background: rgba(0, 0, 0, 0.78);
+}
+
+.plan-modal__sheet {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #1a1e23;
+  border-radius: 24px 24px 0 0;
+  border-top: 1px solid #252b33;
+  padding: 0.75rem 1.25rem;
+  padding-bottom: calc(1.5rem + var(--nav-height));
+  max-height: 85vh;
+  overflow-y: auto;
+  transform: translateY(100%);
+  transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.plan-modal--open .plan-modal__sheet {
+  transform: translateY(0);
+}
+
+/* Date affichée en sous-titre */
+.plan-date-display {
+  font-size: 0.85rem;
+  color: var(--accent);
+  font-weight: 600;
+  margin-bottom: 1.25rem;
+  text-transform: capitalize;
+}
+
+/* Liste de modèles dans la modale plan */
+.plan-template-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  background: #111417;
+  border: 1.5px solid #1f2428;
+  border-radius: 12px;
+  margin-bottom: 0.5rem;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.plan-template-item:hover {
+  background: #1a2028;
+  border-color: #2a3540;
+}
+
+.plan-template-item--selected {
+  border-color: var(--accent);
+  background: rgba(57, 224, 122, 0.06);
+}
+
+.plan-template-item__name {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #e5e7eb;
+}
+
+.plan-template-item__count {
+  font-size: 0.68rem;
+  color: var(--text-idle);
+  background: #1f2428;
+  padding: 2px 8px;
+  border-radius: 20px;
+}
+
+@media (min-width: 768px) {
+  .plan-modal__sheet {
+    max-width: 480px;
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%) translateY(100%);
+    border-radius: 24px 24px 0 0;
+  }
+  .plan-modal--open .plan-modal__sheet {
+    transform: translateX(-50%) translateY(0);
+  }
 }
