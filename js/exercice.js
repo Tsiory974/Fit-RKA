@@ -303,7 +303,7 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    listEl.innerHTML = entries.map(entry => {
+    listEl.innerHTML = entries.map((entry, idx) => {
       const d      = new Date(entry.date);
       const day    = d.toLocaleDateString('fr-FR', { day: '2-digit' });
       const month  = d.toLocaleDateString('fr-FR', { month: 'short' });
@@ -346,9 +346,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 ? `<div class="history-entry__weight-badge ${badgeClass}">${entry.poids} kg</div>`
                 : ''}
             </div>
+            <button class="history-entry__delete" data-index="${idx}"
+                    aria-label="Supprimer cette entrée" title="Supprimer">✕</button>
           </article>
         </li>`;
     }).join('');
+
+    // Boutons de suppression individuels
+    listEl.querySelectorAll('.history-entry__delete').forEach(btn => {
+      btn.addEventListener('click', e => {
+        e.stopPropagation();
+        if (confirm('Supprimer cette entrée ?')) {
+          DB.deleteHistoriqueEntry(id, parseInt(btn.dataset.index));
+          showPage(DB.getExercice(id));
+        }
+      });
+    });
   }
 
 });

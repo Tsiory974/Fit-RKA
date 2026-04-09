@@ -164,6 +164,13 @@ const DB = {
     this.saveExercice(exo);
   },
 
+  deleteHistoriqueEntry(id, index) {
+    const exo = this.getExercice(id);
+    if (!exo) return;
+    exo.historique.splice(index, 1);
+    this.saveExercice(exo);
+  },
+
   /* ─────────────────────────────────────────────────────────────
      SÉANCES PROGRAMMÉES
      Une séance = un programme récurrent (ex: "Push A") assigné

@@ -761,23 +761,41 @@ body {
 }
 
 /* Placeholder ajout exercice */
-.add-exercise-placeholder {
+/* ── FAB — Ajouter un exercice ─────────────────────────────
+   Masqué par défaut, visible uniquement sur l'onglet Exercices.
+   Positionné au-dessus de la navbar.
+   ─────────────────────────────────────────────────────────── */
+.fab-add-exercise {
+  position: fixed;
+  bottom: calc(var(--nav-height) + 1rem);
+  right: 1.25rem;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #0a0e12;
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 52px;
-  border: 1.5px dashed #2a3038;
-  border-radius: 14px;
-  color: var(--text-idle);
-  font-size: 0.82rem;
-  font-weight: 600;
   cursor: pointer;
-  transition: border-color 0.2s, color 0.2s;
+  box-shadow: 0 4px 20px rgba(57, 224, 122, 0.4);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.2s ease;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 50;
+  -webkit-tap-highlight-color: transparent;
 }
 
-.add-exercise-placeholder:hover {
-  border-color: var(--accent);
-  color: var(--accent);
+/* Visible seulement quand l'onglet Exercices est actif */
+#tab-exercices:checked ~ .fab-add-exercise {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.fab-add-exercise:hover,
+.fab-add-exercise:active {
+  transform: scale(1.08);
+  box-shadow: 0 6px 28px rgba(57, 224, 122, 0.55);
 }
 
 /* ============================================================

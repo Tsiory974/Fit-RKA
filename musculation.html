@@ -228,13 +228,6 @@
       <!-- Liste rendue par musculation.js -->
       <div class="exercises-list"></div>
 
-      <!-- Toujours visible, hors du scroll -->
-      <div class="add-exercise-placeholder">
-        <label for="show-add-exercise" style="cursor:pointer;display:contents">
-          ＋ Ajouter un exercice
-        </label>
-      </div>
-
     </section>
 
   </div>
@@ -407,6 +400,16 @@
     </div>
   </div>
 
+
+  <!-- FAB : visible uniquement sur l'onglet Exercices (#tab-exercices:checked ~ .fab-add-exercise) -->
+  <label for="show-add-exercise" class="fab-add-exercise" aria-label="Ajouter un exercice">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+         stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
+         width="22" height="22" aria-hidden="true">
+      <line x1="12" y1="5" x2="12" y2="19"/>
+      <line x1="5"  y1="12" x2="19" y2="12"/>
+    </svg>
+  </label>
 
   <!-- ===== NAVBAR FIXE EN BAS ===== -->
   <nav class="bottom-nav" role="navigation" aria-label="Navigation principale">
