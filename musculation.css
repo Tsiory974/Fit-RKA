@@ -1570,26 +1570,21 @@ body {
   gap: 0.5rem;
 }
 
-/* Champ poids : pleine largeur, avec le hint conseillé */
-.session-exo-block__poids-label {
-  grid-column: 1 / -1;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+/* Sélecteur d'objectif dans le bloc exercice */
+.session-exo-block__objectif {
+  margin-top: 0.625rem;
+  padding-top: 0.625rem;
+  border-top: 1px solid #1f2428;
+}
+
+.session-exo-block__objectif-label {
+  display: block;
   font-size: 0.65rem;
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--text-idle);
-}
-
-.session-exo-block__poids-hint {
-  font-size: 0.62rem;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  text-transform: none;
-  color: var(--accent, #39e07a);
-  opacity: 0.8;
+  margin-bottom: 0.35rem;
 }
 
 .session-exo-block__fields label {

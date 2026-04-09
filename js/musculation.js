@@ -129,9 +129,9 @@ function renderPlanningPanel() {
   const container = document.getElementById('planning-list');
   if (!container) return;
 
-  // Aujourd'hui à minuit (heure locale)
+  // Aujourd'hui à midi (heure locale) — midi évite les ambiguïtés DST à minuit
   const todayMs  = new Date();
-  todayMs.setHours(0, 0, 0, 0);
+  todayMs.setHours(12, 0, 0, 0);
   const todayStr = localDateStr();
 
   // 3 jours passés + aujourd'hui + 10 jours futurs = 14 jours
@@ -397,12 +397,12 @@ function openPlanModal(dateStr, preselectedTemplateId = null) {
   planModalTemplateId = preselectedTemplateId;
 
   // Affichage de la date
-  const d           = new Date(dateStr + 'T12:00:00');
   const dateDisplay = document.getElementById('plan-date-display');
   const dateInput   = document.getElementById('plan-date-input');
 
   const updateDateDisplay = () => {
     if (!dateDisplay || !planModalDate) return;
+    // T12:00:00 → midi heure locale, évite le décalage UTC sur iOS Safari
     const nd = new Date(planModalDate + 'T12:00:00');
     dateDisplay.textContent = nd.toLocaleDateString('fr-FR', {
       weekday: 'long', day: 'numeric', month: 'long',
@@ -411,12 +411,17 @@ function openPlanModal(dateStr, preselectedTemplateId = null) {
 
   if (dateDisplay) updateDateDisplay();
   if (dateInput) {
-    dateInput.value = dateStr;
-    // Remplacer le listener précédent
+    // Cloner AVANT d'assigner .value — cloneNode ne copie pas les propriétés JS,
+    // seulement les attributs HTML. Assigner après le remplacement garantit que
+    // Safari voit la bonne valeur dans l'input.
     const newInput = dateInput.cloneNode(true);
     dateInput.parentNode.replaceChild(newInput, dateInput);
+    newInput.value = dateStr;   // ← APRÈS le replaceChild
     newInput.addEventListener('change', () => {
-      planModalDate = newInput.value;
+      if (newInput.value) {
+        // Normaliser via T12:00:00 pour éviter tout glissement UTC sur iOS
+        planModalDate = localDateStr(new Date(newInput.value + 'T12:00:00'));
+      }
       updateDateDisplay();
     });
   }
@@ -611,11 +616,11 @@ function bindAddTemplateForm() {
     if (!nom) return;
 
     const exercices = [...form.querySelectorAll('.session-exo-block')].map(block => ({
-      exoId:  block.dataset.exoId,
-      series: parseInt(block.querySelector('[data-field="series"]').value)  || 3,
-      reps:   parseInt(block.querySelector('[data-field="reps"]').value)    || 10,
-      repos:  block.querySelector('[data-field="repos"]').value              || '90 s',
-      poids:  parseFloat(block.querySelector('[data-field="poids"]')?.value) || null,
+      exoId:   block.dataset.exoId,
+      series:  parseInt(block.querySelector('[data-field="series"]').value) || 3,
+      reps:    parseInt(block.querySelector('[data-field="reps"]').value)   || 10,
+      repos:   block.querySelector('[data-field="repos"]').value             || '90 s',
+      objectif: block.querySelector('[data-field="objectif"]:checked')?.value ?? 'hypertrophie',
     }));
 
     DB.addTemplate({ nom, exercices });
@@ -637,21 +642,8 @@ function bindAddTemplateForm() {
       const exo = DB.getExercice(exoId);
       if (!exo) return;
 
-      const container      = document.getElementById('template-exo-blocks');
-      const isPoidsDuCorps = exo.materiel === 'Poids du corps';
-      const rmEstime       = calculerRMDepuisHistorique(exo);
-      const poidsConseille = (!isPoidsDuCorps && rmEstime)
-        ? Math.round(rmEstime * 0.75 / 2.5) * 2.5
-        : null;
-
-      const poidsHTML = isPoidsDuCorps ? '' : `
-        <label class="session-exo-block__poids-label">
-          Poids (kg)
-          ${poidsConseille ? `<span class="session-exo-block__poids-hint">conseillé : ${poidsConseille} kg</span>` : ''}
-          <input type="number" data-field="poids"
-                 value="${poidsConseille || ''}"
-                 placeholder="${poidsConseille || '—'}" min="0" max="500" step="0.5">
-        </label>`;
+      const container    = document.getElementById('template-exo-blocks');
+      const objectifName = `objectif-${container.children.length}-${exoId}`;
 
       const block = document.createElement('div');
       block.className     = 'session-exo-block';
@@ -671,7 +663,27 @@ function bindAddTemplateForm() {
           <label>Repos
             <input type="text" data-field="repos" value="90 s" placeholder="90 s">
           </label>
-          ${poidsHTML}
+        </div>
+        <div class="session-exo-block__objectif">
+          <span class="session-exo-block__objectif-label">Objectif</span>
+          <div class="exo-type-picker">
+            <label class="exo-type-chip">
+              <input type="radio" name="${objectifName}" data-field="objectif" value="hypertrophie" checked>
+              <span>Hypertrophie</span>
+            </label>
+            <label class="exo-type-chip">
+              <input type="radio" name="${objectifName}" data-field="objectif" value="force">
+              <span>Force</span>
+            </label>
+            <label class="exo-type-chip">
+              <input type="radio" name="${objectifName}" data-field="objectif" value="endurance">
+              <span>Endurance</span>
+            </label>
+            <label class="exo-type-chip">
+              <input type="radio" name="${objectifName}" data-field="objectif" value="">
+              <span>Libre</span>
+            </label>
+          </div>
         </div>`;
 
       block.querySelector('.session-exo-block__remove').addEventListener('click', () => block.remove());

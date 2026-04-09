@@ -490,6 +490,68 @@ body {
   text-align: center;
 }
 
+/* ============================================================
+   RESSENTI (écran poids)
+   ============================================================ */
+.ws-ressenti {
+  text-align: center;
+  padding: 0.25rem 0 0.75rem;
+}
+
+.ws-ressenti__label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #4b5563;
+  margin: 0 0 0.625rem;
+}
+
+.ws-ressenti__chips {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+}
+
+.ws-ressenti__chip {
+  flex: 1;
+  max-width: 120px;
+  padding: 0.55rem 0.5rem;
+  border-radius: 12px;
+  border: 1.5px solid #1f2428;
+  background: #0e1114;
+  color: #6b7280;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s, transform 0.1s;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+.ws-ressenti__chip:active { transform: scale(0.95); }
+
+/* Trop dur — orange */
+.ws-ressenti__chip--dur.ws-ressenti__chip--selected {
+  background: rgba(249, 115, 22, 0.12);
+  border-color: rgba(249, 115, 22, 0.45);
+  color: #f97316;
+}
+
+/* OK — bleu */
+.ws-ressenti__chip--ok.ws-ressenti__chip--selected {
+  background: rgba(59, 158, 255, 0.12);
+  border-color: rgba(59, 158, 255, 0.4);
+  color: #3b9eff;
+}
+
+/* Facile — vert */
+.ws-ressenti__chip--facile.ws-ressenti__chip--selected {
+  background: rgba(57, 224, 122, 0.12);
+  border-color: rgba(57, 224, 122, 0.4);
+  color: var(--accent);
+}
+
 /* Poids dans le récap */
 .ws-recap-serie__poids {
   font-size: 0.78rem;
@@ -676,6 +738,11 @@ body {
 .ws-recap-serie__reps .ok      { color: var(--accent); }
 .ws-recap-serie__reps .miss    { color: #f97316; }
 .ws-recap-serie__reps .planned { color: #4b5563; font-weight: 500; }
+
+.ws-recap-serie__ressenti {
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
 
 .ws-recap-serie__time {
   font-size: 0.7rem;

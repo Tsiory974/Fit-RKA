@@ -171,6 +171,19 @@
         <p class="ws-weight-hint" id="weight-hint"></p>
       </div>
 
+      <!-- Ressenti — inline sur l'écran poids -->
+      <div class="ws-ressenti" id="weight-ressenti">
+        <p class="ws-ressenti__label">Comment tu te sens ?</p>
+        <div class="ws-ressenti__chips">
+          <button class="ws-ressenti__chip ws-ressenti__chip--dur"
+                  data-ressenti="dur" type="button" aria-pressed="false">😰 Trop dur</button>
+          <button class="ws-ressenti__chip ws-ressenti__chip--ok ws-ressenti__chip--selected"
+                  data-ressenti="ok" type="button" aria-pressed="true">👍 OK</button>
+          <button class="ws-ressenti__chip ws-ressenti__chip--facile"
+                  data-ressenti="facile" type="button" aria-pressed="false">💪 Facile</button>
+        </div>
+      </div>
+
       <div class="ws-screen__cta">
         <button class="ws-btn ws-btn--primary" id="btn-weight-confirm">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"

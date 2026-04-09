@@ -33,6 +33,7 @@ let pendingLastSerie = false;
 let stepperVal       = 0;
 let pendingSerieReps = 0;   // reps validés, en attente du poids
 let weightVal        = 0;   // valeur courante de l'input poids
+let ressentiVal      = 'ok'; // ressenti de la série en cours : 'facile' | 'ok' | 'dur'
 
 /* ═══════════════════════════════════════════════════════════
    INIT
@@ -115,6 +116,19 @@ function init() {
   document.getElementById('btn-weight-plus').addEventListener('click',  () => changeWeight(+2.5));
   document.getElementById('weight-input').addEventListener('input', e => {
     weightVal = parseFloat(e.target.value) || 0;
+  });
+
+  // Ressenti chips
+  document.querySelectorAll('.ws-ressenti__chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      document.querySelectorAll('.ws-ressenti__chip').forEach(c => {
+        c.classList.remove('ws-ressenti__chip--selected');
+        c.setAttribute('aria-pressed', 'false');
+      });
+      chip.classList.add('ws-ressenti__chip--selected');
+      chip.setAttribute('aria-pressed', 'true');
+      ressentiVal = chip.dataset.ressenti;
+    });
   });
 
   showReady();
@@ -252,8 +266,16 @@ function validateReps(actual) {
 function showWeightScreen(actualReps, block) {
   const { exo } = exercises[currentExoIdx];
 
-  // Pré-remplir avec le poids du bloc de séance, ou dernière valeur, ou 0
-  const suggested = block.poids || weightVal || 0;
+  // Réinitialiser le ressenti → OK par défaut
+  ressentiVal = 'ok';
+  document.querySelectorAll('.ws-ressenti__chip').forEach(c => {
+    const isOk = c.dataset.ressenti === 'ok';
+    c.classList.toggle('ws-ressenti__chip--selected', isOk);
+    c.setAttribute('aria-pressed', isOk ? 'true' : 'false');
+  });
+
+  // Suggestion intelligente : historique + ressenti + objectif
+  const { poids: suggested, raison } = calculerSuggestionPoids(exo, block);
   weightVal = suggested;
 
   document.getElementById('weight-serie-info').textContent =
@@ -262,12 +284,10 @@ function showWeightScreen(actualReps, block) {
   const input = document.getElementById('weight-input');
   input.value = suggested || '';
 
-  // Hint poids conseillé hypertrophie (si 1RM connu)
+  // Hint contextuel
   const hintEl = document.getElementById('weight-hint');
-  const rm = calculerRMLocal(exo);
-  if (rm) {
-    const conseille = Math.round(rm * 0.75 / 2.5) * 2.5;
-    hintEl.textContent = `Poids conseillé hypertrophie : ${conseille} kg`;
+  if (raison) {
+    hintEl.textContent = raison;
     hintEl.style.display = '';
   } else {
     hintEl.style.display = 'none';
@@ -297,6 +317,7 @@ function commitSerie(actualReps, poids) {
     actual:   actualReps,
     duration: stopwatchSecs,
     poids:    poids,
+    ressenti: poids !== null ? ressentiVal : null, // ressenti uniquement si poids renseigné
   });
 
   const isLastSerie = currentSerie >= totalSeries;
@@ -312,6 +333,78 @@ function commitSerie(actualReps, poids) {
   startRest(parseRepos(block.repos), isLastSerie);
 }
 
+/**
+ * Pas d'ajustement selon le matériel.
+ * Barre / Machine / Haltères / Élastique → 2,5 kg
+ * Kettlebell → 4 kg (paliers standards KB)
+ */
+function getPasAjustement(materiel) {
+  return materiel === 'Kettlebell' ? 4 : 2.5;
+}
+
+/**
+ * Calcule le poids conseillé pour la série + une raison textuelle affichée à l'utilisateur.
+ *
+ * Priorité :
+ *   1. Si historique avec poids → ajustement selon ressenti + reps atteintes
+ *   2. Sinon → 1RM + objectif (première fois sur cet exercice)
+ *   3. Compat : si ancien bloc avec poids fixe et pas d'historique → block.poids
+ *
+ * @returns {{ poids: number, raison: string|null }}
+ */
+function calculerSuggestionPoids(exo, block) {
+  const step          = getPasAjustement(exo.materiel);
+  const lastAvecPoids = (exo.historique || []).find(e => e.poids > 0);
+
+  // ── Cas 1 : historique disponible ──
+  if (lastAvecPoids) {
+    const base         = lastAvecPoids.poids;
+    const repsOk       = !lastAvecPoids.repsObjectif
+                         || lastAvecPoids.reps >= lastAvecPoids.repsObjectif;
+
+    if (lastAvecPoids.ressenti === 'facile' && repsOk) {
+      const nouveau = Math.round((base + step) / 2.5) * 2.5;
+      return {
+        poids:  nouveau,
+        raison: `↑ +${step} kg · tu étais à l'aise (${base} → ${nouveau} kg)`,
+      };
+    }
+    if (lastAvecPoids.ressenti === 'dur' || !repsOk) {
+      const nouveau = Math.max(step, Math.round((base - step) / 2.5) * 2.5);
+      return {
+        poids:  nouveau,
+        raison: `↓ −${step} kg · charge allégée (${base} → ${nouveau} kg)`,
+      };
+    }
+    // 'ok' ou pas de ressenti → garder
+    return {
+      poids:  base,
+      raison: `= Même charge qu'à la dernière séance (${base} kg)`,
+    };
+  }
+
+  // ── Cas 2 : pas d'historique → 1RM + objectif ──
+  const baseObjectif = suggererPoidsObjectif(exo, block.objectif);
+  if (baseObjectif) {
+    const LABELS = { hypertrophie: 'Hypertrophie', force: 'Force', endurance: 'Endurance' };
+    const rm     = calculerRMLocal(exo);
+    const label  = LABELS[block.objectif] || '';
+    return {
+      poids:  baseObjectif,
+      raison: rm
+        ? `${label ? label + ' · ' : ''}1RM ≈ ${rm} kg → ${baseObjectif} kg conseillé`
+        : null,
+    };
+  }
+
+  // ── Cas 3 : compat anciens templates avec poids fixe ──
+  if (block.poids) {
+    return { poids: block.poids, raison: null };
+  }
+
+  return { poids: 0, raison: null };
+}
+
 /** Calcul 1RM local (Epley, meilleure série) — même logique qu'exercice.js */
 function calculerRMLocal(exo) {
   if (!exo || exo.materiel === 'Poids du corps') return null;
@@ -319,6 +412,38 @@ function calculerRMLocal(exo) {
   if (!entries.length) return null;
   const best = Math.max(...entries.map(e => e.poids * (1 + e.reps / 30)));
   return Math.round(best * 2) / 2;
+}
+
+/**
+ * Calcule le poids conseillé dynamiquement à partir du 1RM actuel et de l'objectif.
+ * Appelé à chaque démarrage de série — reflète toujours la progression réelle.
+ *
+ * Ratios :
+ *   hypertrophie poly  → 75 % (zone 70–85 %)
+ *   hypertrophie iso   → 60 % (zone 50–70 %)
+ *   force              → 87,5 % (zone 85–90 %)
+ *   endurance          → 50 %
+ *   libre ('')         → pas de suggestion (retourne 0)
+ *
+ * @param {object} exo      — exercice avec historique à jour
+ * @param {string} objectif — 'hypertrophie' | 'force' | 'endurance' | ''
+ * @returns {number} poids arrondi à 2,5 kg, ou 0 si aucun 1RM ou objectif libre
+ */
+function suggererPoidsObjectif(exo, objectif) {
+  if (!objectif) return 0;                    // objectif 'libre' → pas de suggestion
+  const rm = calculerRMLocal(exo);
+  if (!rm) return 0;
+
+  let ratio;
+  if (objectif === 'force') {
+    ratio = 0.875;
+  } else if (objectif === 'endurance') {
+    ratio = 0.50;
+  } else {
+    // hypertrophie (défaut)
+    ratio = (exo.type === 'isolation') ? 0.60 : 0.75;
+  }
+  return Math.round(rm * ratio / 2.5) * 2.5;
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -386,6 +511,7 @@ function showRecap() {
   listEl.innerHTML = results.map((r, i) => {
     const block = session.exercices[i] || {};
 
+    const RESSENTI_ICON = { facile: '💪', ok: '👍', dur: '😰' };
     const seriesHtml = r.series.map((s, idx) => {
       const miss = s.actual < s.planned;
       return `
@@ -396,6 +522,7 @@ function showRecap() {
             <span class="planned"> / ${s.planned} reps</span>
           </span>
           ${s.poids ? `<span class="ws-recap-serie__poids">${s.poids} kg</span>` : ''}
+          ${s.ressenti ? `<span class="ws-recap-serie__ressenti" title="${s.ressenti}">${RESSENTI_ICON[s.ressenti] || ''}</span>` : ''}
           <span class="ws-recap-serie__time">${formatTime(s.duration)}</span>
         </div>`;
     }).join('');
@@ -426,11 +553,13 @@ function saveAllResults() {
     // Sauvegarder chaque série individuellement pour un 1RM précis
     r.series.forEach((s, idx) => {
       DB.addHistoriqueEntry(r.exoId, {
-        titre:  session.nom,
-        series: idx + 1,           // numéro de la série
-        reps:   s.actual,          // nombre (pas string)
-        repos:  block.repos || '',
-        poids:  s.poids ?? null,   // nombre ou null (poids du corps)
+        titre:       session.nom,
+        series:      idx + 1,
+        reps:        s.actual,           // number (pas string)
+        repos:       block.repos || '',
+        poids:       s.poids ?? null,
+        ressenti:    s.ressenti || null, // 'facile' | 'ok' | 'dur' | null
+        repsObjectif: parseInt(block.reps) || null, // pour détecter si objectif atteint
       });
     });
   });
