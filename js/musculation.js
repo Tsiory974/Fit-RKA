@@ -48,7 +48,7 @@ function renderTodayPanel() {
   const listEl  = document.getElementById('today-sessions-list');
   if (!listEl) return;
 
-  const today   = new Date().toISOString().slice(0, 10);
+  const today   = localDateStr();
   const planned = DB.getTodayPlanned();
 
   if (planned.length === 0) {
@@ -132,7 +132,7 @@ function renderPlanningPanel() {
   // Aujourd'hui à minuit (heure locale)
   const todayMs  = new Date();
   todayMs.setHours(0, 0, 0, 0);
-  const todayStr = todayMs.toISOString().slice(0, 10);
+  const todayStr = localDateStr();
 
   // 3 jours passés + aujourd'hui + 10 jours futurs = 14 jours
   const days = [];
@@ -142,12 +142,12 @@ function renderPlanningPanel() {
     days.push(d);
   }
 
-  const startStr = days[0].toISOString().slice(0, 10);
-  const endStr   = days[days.length - 1].toISOString().slice(0, 10);
+  const startStr = localDateStr(days[0]);
+  const endStr   = localDateStr(days[days.length - 1]);
   const allPlanned = DB.getPlannedForRange(startStr, endStr);
 
   container.innerHTML = days.map(d => {
-    const dateStr  = d.toISOString().slice(0, 10);
+    const dateStr  = localDateStr(d);
     const isToday  = dateStr === todayStr;
     const isPast   = dateStr < todayStr;
     const jsDay    = d.getDay();            // 0=Dim, 1=Lun…
@@ -325,7 +325,7 @@ function bindTemplateCardActions(container) {
 
   container.querySelectorAll('[data-plan-template]').forEach(btn => {
     btn.addEventListener('click', () => {
-      const today = new Date().toISOString().slice(0, 10);
+      const today = localDateStr();
       openPlanModal(today, btn.dataset.planTemplate);
     });
   });

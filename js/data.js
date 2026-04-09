@@ -23,6 +23,21 @@
  * Jours (0 = lundi … 6 = dimanche, semaine FR)
  */
 
+/**
+ * Retourne la date locale au format 'YYYY-MM-DD'.
+ * Évite le décalage UTC de toISOString() (bug timezone iOS/Safari).
+ * @param {Date} [date=new Date()]
+ * @returns {string}
+ */
+function localDateStr(date = new Date()) {
+  return [
+    date.getFullYear(),
+    String(date.getMonth() + 1).padStart(2, '0'),
+    String(date.getDate()).padStart(2, '0'),
+  ].join('-');
+}
+window.localDateStr = localDateStr;
+
 const KEYS = {
   EXO_LIST:        'ft_exercises',
   EXO_PREFIX:      'ft_exo_',
@@ -290,7 +305,7 @@ const DB = {
    * Retourne les séances planifiées pour aujourd'hui (toutes, y compris terminées).
    */
   getTodayPlanned() {
-    const today = new Date().toISOString().slice(0, 10);
+    const today = localDateStr();
     return this.getAllPlanned().filter(p => p.date === today);
   },
 
