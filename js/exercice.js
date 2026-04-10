@@ -204,8 +204,9 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   /**
-   * Construit le graphique d'évolution du 1RM.
-   * Points = séances avec un poids enregistré + 1RM actuel.
+   * Construit le graphique d'évolution du 1RM estimé.
+   * Un point par jour d'entraînement = meilleur estimé Epley de ce jour.
+   * Source unique : l'historique réel — jamais exo.rm (deprecated).
    */
   function renderChart(exo) {
     const barsEl   = document.querySelector('.chart-bars');
@@ -213,37 +214,45 @@ document.addEventListener('DOMContentLoaded', () => {
     const gridEl   = document.querySelector('.chart-grid');
     if (!barsEl || !labelsEl) return;
 
-    // Construire les points du plus ancien au plus récent
-    const points = [...exo.historique]
-      .filter(e => e.poids)
-      .reverse()
-      .map(e => ({ date: new Date(e.date), poids: e.poids }));
+    // 1. Grouper par date — meilleur estimé 1RM Epley du jour
+    const byDate = {};
+    (exo.historique || []).forEach(e => {
+      if (!(e.poids > 0) || typeof e.reps !== 'number' || !(e.reps > 0)) return;
+      const dateKey = (e.date || '').slice(0, 10);
+      if (!dateKey) return;
+      const estRM = e.poids * (1 + e.reps / 30);
+      if (!byDate[dateKey] || estRM > byDate[dateKey].estRM) {
+        byDate[dateKey] = { dateKey, estRM };
+      }
+    });
 
-    // Ajouter le 1RM actuel comme dernier point s'il n'y est pas déjà
-    if (exo.rm) {
-      const lastPoids = points.length ? points[points.length - 1].poids : null;
-      if (lastPoids !== exo.rm) {
-        points.push({
-          date:   exo.rmDate ? new Date(exo.rmDate) : new Date(),
-          poids:  exo.rm,
-          isPeak: true,
-        });
-      } else {
-        points[points.length - 1].isPeak = true;
+    const points = Object.values(byDate)
+      .sort((a, b) => a.dateKey.localeCompare(b.dateKey))
+      .map(d => ({
+        date:  new Date(d.dateKey),
+        poids: Math.round(d.estRM * 2) / 2,  // arrondi 0,5 kg (identique à calculateRM)
+      }));
+
+    // 2. Marquer le record historique (préférence au plus récent en cas d'égalité)
+    if (points.length > 0) {
+      const maxPoids = Math.max(...points.map(p => p.poids));
+      for (let i = points.length - 1; i >= 0; i--) {
+        if (points[i].poids === maxPoids) { points[i].isPeak = true; break; }
       }
     }
 
     if (points.length === 0) {
       barsEl.innerHTML   = '<p class="chart-empty">Aucune donnée pour l\'instant.</p>';
       labelsEl.innerHTML = '';
+      if (gridEl) gridEl.innerHTML = '';
       return;
     }
 
     const maxPoids = Math.max(...points.map(p => p.poids));
 
-    // Mettre à jour les labels de grille Y
+    // Grille Y
     if (gridEl) {
-      const step = Math.ceil(maxPoids / 4 / 5) * 5; // paliers de 5 kg
+      const step = Math.ceil(maxPoids / 4 / 5) * 5;
       gridEl.innerHTML = [4, 3, 2, 1].map(i => {
         const val = i * step;
         const pos = Math.round(val / maxPoids * 100);
@@ -251,7 +260,6 @@ document.addEventListener('DOMContentLoaded', () => {
       }).join('');
     }
 
-    // Rendre les barres
     barsEl.innerHTML   = '';
     labelsEl.innerHTML = '';
 
@@ -259,10 +267,10 @@ document.addEventListener('DOMContentLoaded', () => {
       const h = Math.round(p.poids / maxPoids * 100);
 
       const bar = document.createElement('div');
-      bar.className   = 'chart-bar' + (p.isPeak ? ' chart-bar--peak' : '');
+      bar.className  = 'chart-bar' + (p.isPeak ? ' chart-bar--peak' : '');
       bar.style.setProperty('--h', h + '%');
       bar.dataset.weight = p.poids;
-      bar.innerHTML   = `<span class="chart-bar__tip">${p.poids}</span>`;
+      bar.innerHTML  = `<span class="chart-bar__tip">${p.poids}</span>`;
       barsEl.appendChild(bar);
 
       const lbl = document.createElement('span');
@@ -270,14 +278,15 @@ document.addEventListener('DOMContentLoaded', () => {
       labelsEl.appendChild(lbl);
     });
 
-    // Tendance
+    // Tendance premier → dernier point
     if (points.length >= 2) {
       const diff    = points[points.length - 1].poids - points[0].poids;
       const trendEl = document.querySelector('.rm-chart-block__trend');
       if (trendEl) {
         const up = diff >= 0;
-        trendEl.className  = 'rm-chart-block__trend rm-chart-block__trend--' + (up ? 'up' : 'down');
-        trendEl.textContent = (up ? '↑ +' : '↓ ') + Math.abs(diff) + ' kg';
+        const abs = Math.abs(diff);
+        trendEl.className   = 'rm-chart-block__trend rm-chart-block__trend--' + (up ? 'up' : 'down');
+        trendEl.textContent = (up ? '↑ +' : '↓ ') + (Number.isInteger(abs) ? abs : abs.toFixed(1)) + ' kg';
       }
     }
   }
@@ -290,6 +299,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const countEl = document.querySelector('.history-header__count');
     if (!listEl) return;
 
+    const rm      = calculateRM(exo);  // source unique — jamais exo.rm (deprecated)
     const entries = exo.historique;
     if (countEl) {
       countEl.textContent = entries.length + ' séance' + (entries.length !== 1 ? 's' : '');
@@ -309,11 +319,11 @@ document.addEventListener('DOMContentLoaded', () => {
       const month  = d.toLocaleDateString('fr-FR', { month: 'short' });
       const year   = d.getFullYear();
 
-      // Couleur du badge poids
+      // Couleur du badge poids — basée sur le 1RM calculé (pas exo.rm)
       let badgeClass = '';
-      if (exo.rm) {
-        if (entry.poids >= exo.rm * 0.9) badgeClass = 'history-entry__weight-badge--max';
-        else if (entry.poids >= exo.rm * 0.8) badgeClass = 'history-entry__weight-badge--heavy';
+      if (rm) {
+        if (entry.poids >= rm * 0.9) badgeClass = 'history-entry__weight-badge--max';
+        else if (entry.poids >= rm * 0.8) badgeClass = 'history-entry__weight-badge--heavy';
       }
 
       return `
