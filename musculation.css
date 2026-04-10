@@ -2329,3 +2329,152 @@ body {
     transform: translateX(-50%) translateY(0);
   }
 }
+
+/* ============================================================
+   SECTION INFOS OPTIONNELLE — formulaire création exercice
+   ============================================================ */
+
+.form-exo-info {
+  border: 1px solid #2a3140;
+  border-radius: 12px;
+  margin-bottom: 0.5rem;
+  overflow: hidden;
+}
+
+.form-exo-info__toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.7rem 0.9rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #9ca3af;
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+  touch-action: manipulation;
+}
+
+.form-exo-info__toggle::-webkit-details-marker { display: none; }
+
+.form-exo-info__toggle::after {
+  content: '›';
+  margin-left: auto;
+  font-size: 1rem;
+  transition: transform 0.2s;
+  line-height: 1;
+}
+
+.form-exo-info[open] .form-exo-info__toggle::after {
+  transform: rotate(90deg);
+}
+
+.form-exo-info__badge {
+  font-size: 0.68rem;
+  font-weight: 500;
+  color: #4b5563;
+  background: #1a1f28;
+  border-radius: 8px;
+  padding: 0.1rem 0.45rem;
+}
+
+.form-exo-info__body {
+  padding: 0 0.9rem 0.75rem;
+  border-top: 1px solid #1f2428;
+}
+
+/* Styles partagés .info-* — utilisés aussi dans exercice.css */
+.form-exo-info .info-add-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  background: none;
+  border: 1px solid #2a3140;
+  border-radius: 20px;
+  color: #9ca3af;
+  font-size: 0.75rem;
+  font-weight: 600;
+  font-family: inherit;
+  padding: 0.3rem 0.75rem;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: color 0.15s, border-color 0.15s;
+}
+.form-exo-info .info-add-btn:hover,
+.form-exo-info .info-add-btn:active {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+.form-exo-info .info-add-btn:disabled {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.form-exo-info .info-images-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+.form-exo-info .info-image-wrap {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #141820;
+  border: 1px solid #1f2428;
+}
+.form-exo-info .info-image-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.form-exo-info .info-image-del {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 22px;
+  height: 22px;
+  background: rgba(0, 0, 0, 0.65);
+  border: none;
+  border-radius: 50%;
+  color: #e5e7eb;
+  font-size: 0.75rem;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: background 0.15s;
+}
+.form-exo-info .info-image-del:hover { background: rgba(239, 68, 68, 0.8); }
+
+.form-exo-info .info-images-hint {
+  font-size: 0.7rem;
+  color: #374151;
+  margin: 0.25rem 0 0;
+}
+
+.form-exo-info .info-notes {
+  width: 100%;
+  box-sizing: border-box;
+  background: #0e1114;
+  border: 1px solid #2a3140;
+  border-radius: 12px;
+  color: #e5e7eb;
+  font-size: 0.875rem;
+  font-family: inherit;
+  line-height: 1.6;
+  padding: 0.75rem 0.9rem;
+  resize: vertical;
+  outline: none;
+  transition: border-color 0.2s;
+  margin-bottom: 0;
+}
+.form-exo-info .info-notes:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+.form-exo-info .info-notes::placeholder { color: #374151; }

@@ -803,11 +803,92 @@ function bindAddTemplateForm() {
   });
 }
 
+/* ─────────────────────────────────────────────────────────────
+   INFOS EXERCICE — photos optionnelles lors de la création
+───────────────────────────────────────────────────────────── */
+
+/** Images en cours d'ajout dans le formulaire de création */
+let newExoImages = [];
+
+/**
+ * Redimensionne un fichier image via canvas — max 800 px, JPEG 0.72.
+ * Identique à la version dans exercice.js.
+ */
+function resizeImage(file) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const MAX = 800;
+      let w = img.width, h = img.height;
+      if (w > MAX || h > MAX) {
+        if (w >= h) { h = Math.round(h * MAX / w); w = MAX; }
+        else        { w = Math.round(w * MAX / h); h = MAX; }
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      resolve(canvas.toDataURL('image/jpeg', 0.72));
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Lecture image échouée')); };
+    img.src = url;
+  });
+}
+
+/** Met à jour la grille de prévisualisation dans le formulaire de création. */
+function renderNewExoImages() {
+  const gridEl = document.getElementById('new-exo-images-grid');
+  const hintEl = document.getElementById('new-exo-images-hint');
+  const addBtn = document.getElementById('btn-new-exo-add-photo');
+  if (!gridEl) return;
+
+  gridEl.innerHTML = newExoImages.map((src, idx) => `
+    <div class="info-image-wrap">
+      <img src="${src}" alt="Photo ${idx + 1}" loading="lazy">
+      <button class="info-image-del" data-idx="${idx}" type="button" aria-label="Supprimer">✕</button>
+    </div>`).join('');
+
+  gridEl.querySelectorAll('.info-image-del').forEach(btn => {
+    btn.addEventListener('click', () => {
+      newExoImages.splice(parseInt(btn.dataset.idx), 1);
+      renderNewExoImages();
+    });
+  });
+
+  const n = newExoImages.length;
+  if (addBtn) addBtn.disabled = n >= 3;
+  if (hintEl) hintEl.textContent = n >= 3
+    ? 'Limite de 3 photos atteinte'
+    : `${n}/3 photo${n !== 1 ? 's' : ''} · stockées sur cet appareil`;
+}
+
 /* ── Formulaire : ajouter un exercice ── */
 function bindAddExerciseForm() {
   const form         = document.getElementById('add-exercise-form');
   const groupeSelect = document.getElementById('new-exo-groupe');
   if (!form) return;
+
+  // Photos optionnelles
+  const addPhotoBtn = document.getElementById('btn-new-exo-add-photo');
+  const photoInput  = document.getElementById('new-exo-photo-input');
+  if (addPhotoBtn && photoInput) {
+    addPhotoBtn.addEventListener('click', () => photoInput.click());
+    photoInput.addEventListener('change', async () => {
+      const files = Array.from(photoInput.files || []);
+      if (!files.length) return;
+      const slots = 3 - newExoImages.length;
+      if (slots <= 0) return;
+      try {
+        const resized = await Promise.all(files.slice(0, slots).map(resizeImage));
+        newExoImages = [...newExoImages, ...resized];
+        renderNewExoImages();
+      } catch (e) {
+        alert('Impossible de lire une ou plusieurs images.');
+      }
+      photoInput.value = '';
+    });
+  }
 
   groupeSelect.addEventListener('change', () => {
     const fieldSG     = document.getElementById('field-sous-groupe');
@@ -847,10 +928,21 @@ function bindAddExerciseForm() {
     }
     nomInput.setCustomValidity('');
 
+    // Sauvegarder les infos optionnelles (photos + notes)
+    const notes = (document.getElementById('new-exo-notes')?.value || '').trim();
+    if (newExoImages.length > 0 || notes) {
+      DB.saveExoInfo(result.id, { notes, images: newExoImages });
+    }
+
     const toggle = document.getElementById('show-add-exercise');
     if (toggle) toggle.checked = false;
     form.reset();
     document.getElementById('field-sous-groupe').style.display = 'none';
+    // Réinitialiser la section infos
+    newExoImages = [];
+    renderNewExoImages();
+    const infoSection = document.getElementById('exo-info-section');
+    if (infoSection) infoSection.removeAttribute('open');
     renderExerciseList();
   });
 }
