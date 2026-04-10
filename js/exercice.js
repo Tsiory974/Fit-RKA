@@ -479,10 +479,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (addBtn && photoInput) {
       const freshAdd = addBtn.cloneNode(true);
       addBtn.replaceWith(freshAdd);
-      freshAdd.addEventListener('click', () => photoInput.click());
 
       const freshInput = photoInput.cloneNode(false);
       photoInput.replaceWith(freshInput);
+      freshAdd.addEventListener('click', () => freshInput.click());
       freshInput.addEventListener('change', async () => {
         const files = Array.from(freshInput.files || []);
         if (!files.length) return;
