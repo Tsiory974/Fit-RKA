@@ -12,6 +12,12 @@
    Cercle r=54, viewBox 120×120 → 2π×54 ≈ 339.292             */
 const CIRC = 2 * Math.PI * 54;
 
+/* ── Volume hebdomadaire optimal par groupe musculaire ───────
+   En dessous de MIN → volume insuffisant → progression suspendue
+   Au-dessus de MAX → survolume → progression suspendue        */
+const VOL_OPTIMAL_MIN = 10;
+const VOL_OPTIMAL_MAX = 20;
+
 /* ── État global ─────────────────────────────────────────────
    Toutes les variables mutables de la séance                  */
 let session          = null;   // SessionTemplate courant
@@ -484,31 +490,40 @@ function calculerSuggestionPoids(exo, block) {
       return { poids: nouveau, raison };
     }
 
-    // Augmenter : toutes les séries réussies + ressenti facile (1 session suffit)
-    if (perf.allHit && perf.anyFacile) {
-      const nouveau = Math.round((base + step) / 2.5) * 2.5;
-      return {
-        poids:  nouveau,
-        raison: `↑ +${step} kg · tu as tout réussi facilement (${base} → ${nouveau} kg)`,
-      };
-    }
+    // Cooldown : compter le nombre de sessions effectuées à cette charge
+    // On n'augmente jamais lors de la 1ère séance à un nouveau poids
+    const sessionsABase = sessions.filter(s => (s.find(e => e.poids > 0)?.poids || 0) === base);
+    const stableCount   = sessionsABase.length; // inclut la session d'aujourd'hui
 
-    // Augmenter : toutes les séries réussies + ressenti ok sur 2 séances consécutives
-    if (perf.allHit && sessions.length >= 2) {
-      const prev = analyzeSessionEntries(sessions[1], target);
-      if (prev.allHit) {
+    if (perf.allHit && stableCount >= 2) {
+      // Vérifier que la session précédente à cette même charge était aussi complète
+      const prevABase = sessionsABase[1]; // 2ème session à cette charge (avant aujourd'hui)
+      const prevPerf  = analyzeSessionEntries(prevABase, target);
+      if (prevPerf?.allHit) {
+        // Vérifier le volume hebdomadaire avant d'autoriser la progression
+        const vol = getVolumeStatus(exo.groupe);
+        if (vol.status !== 'ok') {
+          return {
+            poids: base,
+            raison: vol.status === 'low'
+              ? `= ${base} kg · volume ${exo.groupe} insuffisant (${vol.count} sér./sem.) — ajoute du volume avant de progresser`
+              : `= ${base} kg · volume ${exo.groupe} élevé (${vol.count} sér./sem.) — récupère avant d'augmenter`,
+          };
+        }
         const nouveau = Math.round((base + step) / 2.5) * 2.5;
-        return {
-          poids:  nouveau,
-          raison: `↑ +${step} kg · 2 séances consécutives réussies (${base} → ${nouveau} kg)`,
-        };
+        const raison  = (perf.anyFacile || prevPerf.anyFacile)
+          ? `↑ +${step} kg · tu étais à l'aise (${base} → ${nouveau} kg)`
+          : `↑ +${step} kg · 2 séances réussies à ${base} kg (→ ${nouveau} kg)`;
+        return { poids: nouveau, raison };
       }
     }
 
-    // Garder : baisse progressive normale (fatigue) ou 1 seule séance complète sans facile
+    // Garder : 1ère séance à cette charge (cooldown) ou progression en cours
     return {
       poids:  base,
-      raison: `= Même charge · continue à progresser sur les séries (${base} kg)`,
+      raison: stableCount === 1
+        ? `= ${base} kg · séance de stabilisation avant d'augmenter`
+        : `= Même charge · continue à progresser sur les séries (${base} kg)`,
     };
   }
 
@@ -718,37 +733,64 @@ function showRecap() {
 ═══════════════════════════════════════════════════════════ */
 
 /**
- * Analyse la dernière session d'un exercice pour suggérer un ajustement des reps.
- * Déclenche dès 1 session disponible dans l'historique.
+ * Retourne la plage [min, max] de reps pour un objectif + type d'exercice donné.
+ * Aligner avec OBJECTIF_PRESETS dans exercice.js.
+ * Retourne null si l'objectif est "libre" (pas de contrainte).
+ */
+function getRepRange(block, exo) {
+  const obj  = block.objectif || '';
+  const type = exo.type       || '';
+  if (obj === 'hypertrophie') {
+    if (type === 'polyarticulaire') return { min: 6,  max: 10 };
+    if (type === 'isolation')       return { min: 10, max: 20 };
+    return { min: 6, max: 15 }; // défaut hypertrophie sans type précisé
+  }
+  if (obj === 'force')     return { min: 1,  max: 6  };
+  if (obj === 'endurance') return { min: 15, max: 30 };
+  return null; // 'libre' ou vide → pas de contrainte de plage
+}
+
+/**
+ * Analyse les sessions PRÉCÉDENTES (pas aujourd'hui) pour suggérer un ajustement des reps.
+ * Plus lent que le poids : nécessite 3 sessions passées pour augmenter, 2 pour diminuer.
+ * Respecte la plage cible selon l'objectif du bloc (ex: hypertrophie 6–10 reps).
  *
  * @returns {{ type: 'increase'|'decrease', target: number, suggested: number }|null}
  */
 function analyzeRepsProgression(exo, block) {
   const sessions = getHistByDate(exo);
-  if (!sessions.length) return null;
+  // On analyse les sessions PRÉCÉDENTES uniquement (sessions[0] = aujourd'hui)
+  const prev = sessions.slice(1);
+  if (!prev.length) return null;
 
   const target = parseInt(block.reps) || 10;
-  const perf   = analyzeSessionEntries(sessions[0], target);
+  const range  = getRepRange(block, exo);
 
-  // Diminuer : première série rate l'objectif, chute extrême, ou ressenti "trop dur"
-  if (!perf.firstHit || perf.extremeDrop || perf.anyDur) {
-    return { type: 'decrease', target, suggested: Math.max(1, target - 1) };
-  }
-
-  // Augmenter : toutes les séries réussies + ressenti facile (1 session suffit)
-  if (perf.allHit && perf.anyFacile) {
-    return { type: 'increase', target, suggested: target + 2 };
-  }
-
-  // Augmenter : toutes les séries réussies + ressenti ok sur 2 séances consécutives
-  if (perf.allHit && sessions.length >= 2) {
-    const prev = analyzeSessionEntries(sessions[1], target);
-    if (prev.allHit) {
-      return { type: 'increase', target, suggested: target + 2 };
+  // ── Augmenter : 3 sessions précédentes toutes complètes ──
+  if (prev.length >= 3) {
+    const allThreeHit = prev.slice(0, 3).every(s => analyzeSessionEntries(s, target)?.allHit);
+    if (allThreeHit) {
+      if (range && target >= range.max) return null; // déjà au plafond de l'objectif
+      // Vérifier le volume hebdomadaire avant d'autoriser l'augmentation de reps
+      const vol = getVolumeStatus(exo.groupe);
+      if (vol.status !== 'ok') return null; // volume insuffisant ou trop élevé → suspendu
+      // +1 rep par défaut (progression conservatrice) ; +2 pour les isolations
+      const step      = exo.type === 'isolation' ? 2 : 1;
+      const suggested = range ? Math.min(target + step, range.max) : target + step;
+      return { type: 'increase', target, suggested };
     }
   }
 
-  // Pas d'ajustement : baisse progressive normale due à la fatigue
+  // ── Diminuer : 2 sessions précédentes ont raté la première série ──
+  if (prev.length >= 2) {
+    const bothFailed = prev.slice(0, 2).every(s => !analyzeSessionEntries(s, target)?.firstHit);
+    if (bothFailed) {
+      if (range && target <= range.min) return null; // déjà au plancher de l'objectif
+      const suggested = range ? Math.max(target - 1, range.min) : Math.max(1, target - 1);
+      return { type: 'decrease', target, suggested };
+    }
+  }
+
   return null;
 }
 
@@ -771,6 +813,17 @@ function calculateWeeklyVolume() {
     });
   });
   return volume;
+}
+
+/**
+ * Retourne le statut du volume hebdomadaire d'un groupe musculaire.
+ * @returns {{ status: 'low'|'ok'|'high', count: number }}
+ */
+function getVolumeStatus(groupe) {
+  const vol   = calculateWeeklyVolume();
+  const count = vol[groupe] || 0;
+  const status = count < VOL_OPTIMAL_MIN ? 'low' : count > VOL_OPTIMAL_MAX ? 'high' : 'ok';
+  return { status, count };
 }
 
 /**
@@ -805,26 +858,37 @@ function buildRecapSuggestions() {
 
   // ── 1. Reps : analyse par exercice ──────────────────────
   exercises.forEach(({ block, exo }) => {
-    if (exo.materiel === 'Poids du corps') return; // reps libres, pas de suggestions
+    if (exo.materiel === 'Poids du corps') return;
     const freshExo = DB.getExercice(exo.id) || exo;
     const analysis = analyzeRepsProgression(freshExo, block);
     if (!analysis) return;
 
+    // Règle : ne jamais ajuster poids ET reps dans le même sens.
+    // Le poids a la priorité — si le poids est déjà ajusté dans la même direction,
+    // on supprime la suggestion reps pour éviter une double réduction (ou double hausse).
+    const sessionsAvecPoids = getHistByDate(freshExo).filter(s => s.some(e => e.poids > 0));
+    if (sessionsAvecPoids.length) {
+      const lastPoids           = sessionsAvecPoids[0].find(e => e.poids > 0)?.poids || 0;
+      const { poids: newPoids } = calculerSuggestionPoids(freshExo, block);
+      if (analysis.type === 'decrease' && newPoids < lastPoids) return; // poids baisse déjà → priorité poids
+      if (analysis.type === 'increase' && newPoids > lastPoids) return; // poids monte déjà → priorité poids
+    }
+
     if (analysis.type === 'increase') {
       suggestions.push({
-        type:     'reps-up',
-        exoId:    exo.id,
+        type:      'reps-up',
+        exoId:     exo.id,
         suggested: analysis.suggested,
-        label:    exo.nom,
-        text:     `Tu atteins facilement ${analysis.target} reps depuis plusieurs séances. Essaie ${analysis.suggested} la prochaine fois.`,
+        label:     exo.nom,
+        text:      `Tu atteins facilement ${analysis.target} reps. Essaie ${analysis.suggested} la prochaine fois.`,
       });
     } else {
       suggestions.push({
-        type:     'reps-down',
-        exoId:    exo.id,
+        type:      'reps-down',
+        exoId:     exo.id,
         suggested: analysis.suggested,
-        label:    exo.nom,
-        text:     `Tu rates souvent l'objectif de ${analysis.target} reps. Essaie ${analysis.suggested} pour consolider.`,
+        label:     exo.nom,
+        text:      `Tu rates l'objectif de ${analysis.target} reps. Essaie ${analysis.suggested} pour consolider.`,
       });
     }
   });
@@ -832,28 +896,26 @@ function buildRecapSuggestions() {
   // ── 2. Volume hebdomadaire par groupe musculaire ─────────
   const weeklyVol      = calculateWeeklyVolume();
   const groupesTrained = [...new Set(exercises.map(({ exo }) => exo.groupe))];
-  const VOL_LOW  = 8;
-  const VOL_HIGH = 20;
 
   groupesTrained.forEach(groupe => {
     const count = weeklyVol[groupe] || 0;
-    if (count < VOL_LOW) {
+    if (count < VOL_OPTIMAL_MIN) {
       suggestions.push({
         type:  'volume-low',
         label: groupe,
-        text:  `${count} série${count > 1 ? 's' : ''} cette semaine — vise ${VOL_LOW}–${VOL_HIGH} pour progresser.`,
+        text:  `${count} sér./sem. sur les ${groupe} (optimal : ${VOL_OPTIMAL_MIN}–${VOL_OPTIMAL_MAX}). Ajoute des séances ou des séries — les progressions poids/reps sont suspendues.`,
       });
-    } else if (count > VOL_HIGH) {
+    } else if (count > VOL_OPTIMAL_MAX) {
       suggestions.push({
         type:  'volume-high',
         label: groupe,
-        text:  `${count} séries cette semaine — volume élevé, pense à récupérer.`,
+        text:  `${count} sér./sem. sur les ${groupe} — volume élevé. Les progressions sont suspendues. Réduis le volume pour mieux récupérer.`,
       });
     } else {
       suggestions.push({
         type:  'volume-ok',
         label: groupe,
-        text:  `${count} séries cette semaine — volume optimal, continue !`,
+        text:  `${count}/${VOL_OPTIMAL_MAX} sér./sem. sur les ${groupe} — volume optimal, progression autorisée.`,
       });
     }
   });
