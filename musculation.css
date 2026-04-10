@@ -2093,3 +2093,156 @@ body {
     transform: translateX(-50%) translateY(0);
   }
 }
+
+/* ============================================================
+   CRÉATION MODÈLE — LISTE DRAFT (cartes read-only)
+   ============================================================ */
+
+/* Bouton "Ajouter un exercice" sous la liste */
+.btn-add-exo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.6rem 1rem;
+  margin-top: 0.5rem;
+  background: transparent;
+  border: 1.5px dashed #374151;
+  border-radius: 10px;
+  color: #9ca3af;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+.btn-add-exo:hover { border-color: var(--accent); color: var(--accent); }
+
+/* Carte exercice read-only dans la liste draft */
+.tpl-exo-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.65rem 0.75rem;
+  margin-bottom: 0.5rem;
+  background: #0e1114;
+  border: 1px solid #1f2428;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.tpl-exo-row:hover { border-color: #374151; background: #111418; }
+
+.tpl-exo-row__left {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.tpl-exo-row__name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #e5e7eb;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tpl-exo-row__meta {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-shrink: 0;
+}
+
+.tpl-exo-row__param {
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+.tpl-exo-row__obj {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--accent);
+  background: rgba(74, 222, 128, 0.08);
+  border: 1px solid rgba(74, 222, 128, 0.2);
+  border-radius: 20px;
+  padding: 2px 7px;
+}
+
+.tpl-exo-row__remove {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid #374151;
+  border-radius: 50%;
+  color: #6b7280;
+  font-size: 0.65rem;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.tpl-exo-row__remove:hover {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.4);
+  color: #ef4444;
+}
+
+/* ============================================================
+   BOTTOM SHEET : CONFIGURATION EXERCICE
+   ============================================================ */
+.exo-config-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  pointer-events: none;
+}
+.exo-config-modal--open { pointer-events: auto; }
+
+.exo-config-modal__overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  opacity: 0;
+  transition: opacity 0.25s;
+}
+.exo-config-modal--open .exo-config-modal__overlay { opacity: 1; }
+
+.exo-config-modal__sheet {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #0d1117;
+  border-radius: 20px 20px 0 0;
+  padding: 1rem 1.25rem 2rem;
+  max-height: 92dvh;
+  overflow-y: auto;
+  transform: translateY(100%);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.exo-config-modal--open .exo-config-modal__sheet { transform: translateY(0); }
+
+/* Séries / Reps / Repos sur une ligne */
+.exo-config-modal__row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0.75rem;
+}
+
+@media (min-width: 480px) {
+  .exo-config-modal__sheet {
+    max-width: 480px;
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%) translateY(100%);
+    border-radius: 20px 20px 0 0;
+  }
+  .exo-config-modal--open .exo-config-modal__sheet {
+    transform: translateX(-50%) translateY(0);
+  }
+}

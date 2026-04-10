@@ -266,13 +266,15 @@
         <!-- Exercices -->
         <div class="form-field">
           <span class="form-field__label">Exercices</span>
-          <div class="form-field__row">
-            <select id="template-exo-select" class="form-field__select" style="flex:1">
-              <option value="">Choisir un exercice…</option>
-            </select>
-            <button type="button" id="btn-add-exo-to-template" class="btn-inline">＋</button>
-          </div>
           <div id="template-exo-blocks"></div>
+          <button type="button" id="btn-add-exo-to-template" class="btn-add-exo">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
+                 width="16" height="16" aria-hidden="true">
+              <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            Ajouter un exercice
+          </button>
         </div>
 
         <button type="submit" class="btn-cta" style="width:100%;justify-content:center;margin-top:0.75rem">
@@ -490,6 +492,81 @@
     </a>
 
   </nav>
+
+  <!-- ══════════════════════════════════════════════════════════
+       BOTTOM SHEET : CONFIGURER UN EXERCICE POUR LE MODÈLE
+       Contrôlé par JS (.exo-config-modal--open)
+       ══════════════════════════════════════════════════════════ -->
+  <div class="exo-config-modal" id="modal-exo-config"
+       role="dialog" aria-modal="true" aria-label="Configurer l'exercice">
+
+    <div class="exo-config-modal__overlay" id="exo-config-overlay"></div>
+
+    <div class="exo-config-modal__sheet">
+      <div class="session-modal__handle" aria-hidden="true"></div>
+      <h2 class="session-modal__title" id="exo-config-title">Ajouter un exercice</h2>
+
+      <!-- Sélecteur d'exercice (masqué en mode édition) -->
+      <div id="exo-config-select-wrap" class="form-field">
+        <label class="form-field__label" for="exo-config-select">Exercice</label>
+        <select id="exo-config-select" class="form-field__select">
+          <option value="">Choisir un exercice…</option>
+        </select>
+      </div>
+
+      <!-- Séries / Reps / Repos sur une ligne -->
+      <div class="exo-config-modal__row">
+        <div class="form-field">
+          <label class="form-field__label" for="exo-config-series">Séries</label>
+          <input type="number" id="exo-config-series" class="form-field__input"
+                 value="3" min="1" max="20" inputmode="numeric">
+        </div>
+        <div class="form-field">
+          <label class="form-field__label" for="exo-config-reps">Reps</label>
+          <input type="number" id="exo-config-reps" class="form-field__input"
+                 value="10" min="1" max="100" inputmode="numeric">
+        </div>
+        <div class="form-field">
+          <label class="form-field__label" for="exo-config-repos">Repos</label>
+          <input type="text" id="exo-config-repos" class="form-field__input"
+                 value="90 s" placeholder="90 s">
+        </div>
+      </div>
+
+      <!-- Objectif -->
+      <div class="form-field">
+        <span class="form-field__label">Objectif</span>
+        <div class="exo-type-picker">
+          <label class="exo-type-chip">
+            <input type="radio" name="exo-config-obj" value="hypertrophie" checked>
+            <span>Hypertrophie</span>
+          </label>
+          <label class="exo-type-chip">
+            <input type="radio" name="exo-config-obj" value="force">
+            <span>Force</span>
+          </label>
+          <label class="exo-type-chip">
+            <input type="radio" name="exo-config-obj" value="endurance">
+            <span>Endurance</span>
+          </label>
+          <label class="exo-type-chip">
+            <input type="radio" name="exo-config-obj" value="">
+            <span>Libre</span>
+          </label>
+        </div>
+      </div>
+
+      <button id="exo-config-confirm" class="btn-cta"
+              style="width:100%;justify-content:center;margin-top:0.75rem">
+        <span class="btn-cta__icon" aria-hidden="true">✓</span>
+        <span id="exo-config-confirm-label">Ajouter</span>
+      </button>
+      <button id="exo-config-cancel" class="session-modal__cancel"
+              style="width:100%;text-align:center;display:block;margin-top:0.25rem">
+        Annuler
+      </button>
+    </div>
+  </div>
 
   <script src="js/data.js"></script>
   <script src="js/musculation.js"></script>

@@ -593,21 +593,153 @@ function calculerRMDepuisHistorique(exo) {
   return Math.round(best * 2) / 2;
 }
 
+/* ── État draft du formulaire de modèle ── */
+let templateDraftExercices = []; // [{ exoId, series, reps, repos, objectif }]
+let editingExoIdx = null;        // null = ajout, number = édition
+
+const OBJECTIF_LABELS = { hypertrophie: 'Hypertrophie', force: 'Force', endurance: 'Endurance', '': 'Libre' };
+
+/** Rend la liste read-only des exercices du draft courant */
+function renderTemplateDraftList() {
+  const container = document.getElementById('template-exo-blocks');
+  if (!container) return;
+
+  if (!templateDraftExercices.length) {
+    container.innerHTML = '';
+    return;
+  }
+
+  container.innerHTML = templateDraftExercices.map((block, idx) => {
+    const exo = DB.getExercice(block.exoId);
+    if (!exo) return '';
+    return `
+      <div class="tpl-exo-row" data-idx="${idx}" role="button" tabindex="0"
+           aria-label="Modifier ${exo.nom}">
+        <div class="tpl-exo-row__left">
+          <span class="ws-muscle-tag ws-muscle-tag--${exo.couleur || 'pecto'}">${exo.groupe}</span>
+          <span class="tpl-exo-row__name">${exo.nom}</span>
+        </div>
+        <div class="tpl-exo-row__meta">
+          <span class="tpl-exo-row__param">${block.series}×${block.reps}</span>
+          <span class="tpl-exo-row__param">${block.repos}</span>
+          <span class="tpl-exo-row__obj">${OBJECTIF_LABELS[block.objectif] ?? 'Libre'}</span>
+        </div>
+        <button type="button" class="tpl-exo-row__remove"
+                data-remove-idx="${idx}" aria-label="Retirer">✕</button>
+      </div>`;
+  }).join('');
+
+  // Clic sur la carte → ouvrir en édition
+  container.querySelectorAll('.tpl-exo-row').forEach(row => {
+    row.addEventListener('click', e => {
+      if (e.target.closest('[data-remove-idx]')) return;
+      openExoConfigModal('edit', parseInt(row.dataset.idx));
+    });
+  });
+
+  // Bouton ✕ → retirer sans modal
+  container.querySelectorAll('[data-remove-idx]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      templateDraftExercices.splice(parseInt(btn.dataset.removeIdx), 1);
+      renderTemplateDraftList();
+    });
+  });
+}
+
+/** Ouvre le bottom sheet de configuration exercice */
+function openExoConfigModal(mode, idx) {
+  editingExoIdx = mode === 'edit' ? idx : null;
+
+  const modal       = document.getElementById('modal-exo-config');
+  const selectWrap  = document.getElementById('exo-config-select-wrap');
+  const title       = document.getElementById('exo-config-title');
+  const confirmLbl  = document.getElementById('exo-config-confirm-label');
+
+  if (mode === 'add') {
+    selectWrap.style.display = '';
+    title.textContent        = 'Ajouter un exercice';
+    confirmLbl.textContent   = 'Ajouter';
+    // Valeurs par défaut
+    document.getElementById('exo-config-series').value = '3';
+    document.getElementById('exo-config-reps').value   = '10';
+    document.getElementById('exo-config-repos').value  = '90 s';
+    const radio = document.querySelector('[name="exo-config-obj"][value="hypertrophie"]');
+    if (radio) radio.checked = true;
+  } else {
+    selectWrap.style.display = 'none';
+    const block = templateDraftExercices[idx];
+    const exo   = DB.getExercice(block.exoId);
+    title.textContent      = exo?.nom || 'Modifier';
+    confirmLbl.textContent = 'Enregistrer';
+    document.getElementById('exo-config-series').value = block.series;
+    document.getElementById('exo-config-reps').value   = block.reps;
+    document.getElementById('exo-config-repos').value  = block.repos;
+    const radio = document.querySelector(`[name="exo-config-obj"][value="${block.objectif}"]`);
+    if (radio) radio.checked = true;
+  }
+
+  modal.classList.add('exo-config-modal--open');
+}
+
+/** Ferme le bottom sheet de configuration exercice */
+function closeExoConfigModal() {
+  document.getElementById('modal-exo-config').classList.remove('exo-config-modal--open');
+  editingExoIdx = null;
+}
+
+/** Câble le bottom sheet de configuration exercice */
+function bindExoConfigModal() {
+  // Peupler le select
+  const select = document.getElementById('exo-config-select');
+  if (select) {
+    DB.getAllExercices().forEach(exo => {
+      const opt       = document.createElement('option');
+      opt.value       = exo.id;
+      opt.textContent = `${exo.nom} (${exo.groupe})`;
+      select.appendChild(opt);
+    });
+  }
+
+  document.getElementById('exo-config-overlay')?.addEventListener('click', closeExoConfigModal);
+  document.getElementById('exo-config-cancel')?.addEventListener('click',  closeExoConfigModal);
+
+  document.getElementById('exo-config-confirm')?.addEventListener('click', () => {
+    const series   = parseInt(document.getElementById('exo-config-series').value) || 3;
+    const reps     = parseInt(document.getElementById('exo-config-reps').value)   || 10;
+    const repos    = document.getElementById('exo-config-repos').value.trim()     || '90 s';
+    const objectif = document.querySelector('[name="exo-config-obj"]:checked')?.value ?? 'hypertrophie';
+
+    if (editingExoIdx !== null) {
+      // Mode édition : mettre à jour le bloc existant
+      templateDraftExercices[editingExoIdx] = {
+        ...templateDraftExercices[editingExoIdx],
+        series, reps, repos, objectif,
+      };
+    } else {
+      // Mode ajout : vérifier qu'un exercice est sélectionné
+      const exoId = document.getElementById('exo-config-select').value;
+      if (!exoId) return;
+      templateDraftExercices.push({ exoId, series, reps, repos, objectif });
+    }
+
+    renderTemplateDraftList();
+    closeExoConfigModal();
+  });
+}
+
 /* ── Formulaire : créer un modèle de séance ── */
 function bindAddTemplateForm() {
   const form = document.getElementById('add-template-form');
   if (!form) return;
 
-  // Peupler le select d'exercices
-  const exoSelect = document.getElementById('template-exo-select');
-  if (exoSelect) {
-    DB.getAllExercices().forEach(exo => {
-      const opt       = document.createElement('option');
-      opt.value       = exo.id;
-      opt.textContent = `${exo.nom} (${exo.groupe})`;
-      exoSelect.appendChild(opt);
-    });
-  }
+  // Câbler le bottom sheet de config exercice
+  bindExoConfigModal();
+
+  // Bouton "Ajouter un exercice" → ouvre le bottom sheet en mode ajout
+  document.getElementById('btn-add-exo-to-template')?.addEventListener('click', () => {
+    openExoConfigModal('add');
+  });
 
   form.addEventListener('submit', e => {
     e.preventDefault();
@@ -615,81 +747,16 @@ function bindAddTemplateForm() {
     const nom = document.getElementById('template-nom').value.trim();
     if (!nom) return;
 
-    const exercices = [...form.querySelectorAll('.session-exo-block')].map(block => ({
-      exoId:   block.dataset.exoId,
-      series:  parseInt(block.querySelector('[data-field="series"]').value) || 3,
-      reps:    parseInt(block.querySelector('[data-field="reps"]').value)   || 10,
-      repos:   block.querySelector('[data-field="repos"]').value             || '90 s',
-      objectif: block.querySelector('[data-field="objectif"]:checked')?.value ?? 'hypertrophie',
-    }));
-
-    DB.addTemplate({ nom, exercices });
+    DB.addTemplate({ nom, exercices: [...templateDraftExercices] });
 
     const toggle = document.getElementById('show-add-template');
     if (toggle) toggle.checked = false;
     form.reset();
-    document.getElementById('template-exo-blocks').innerHTML = '';
+    templateDraftExercices = [];
+    renderTemplateDraftList();
 
     renderModelesPanel();
   });
-
-  // Bouton "Ajouter un exercice au modèle"
-  const addExoBtn = document.getElementById('btn-add-exo-to-template');
-  if (addExoBtn && exoSelect) {
-    addExoBtn.addEventListener('click', () => {
-      const exoId = exoSelect.value;
-      if (!exoId) return;
-      const exo = DB.getExercice(exoId);
-      if (!exo) return;
-
-      const container    = document.getElementById('template-exo-blocks');
-      const objectifName = `objectif-${container.children.length}-${exoId}`;
-
-      const block = document.createElement('div');
-      block.className     = 'session-exo-block';
-      block.dataset.exoId = exoId;
-      block.innerHTML = `
-        <div class="session-exo-block__header">
-          <span class="session-exo-block__name">${exo.nom}</span>
-          <button type="button" class="session-exo-block__remove" aria-label="Retirer">✕</button>
-        </div>
-        <div class="session-exo-block__fields">
-          <label>Séries
-            <input type="number" data-field="series" value="3" min="1" max="20">
-          </label>
-          <label>Reps
-            <input type="number" data-field="reps" value="10" min="1" max="100">
-          </label>
-          <label>Repos
-            <input type="text" data-field="repos" value="90 s" placeholder="90 s">
-          </label>
-        </div>
-        <div class="session-exo-block__objectif">
-          <span class="session-exo-block__objectif-label">Objectif</span>
-          <div class="exo-type-picker">
-            <label class="exo-type-chip">
-              <input type="radio" name="${objectifName}" data-field="objectif" value="hypertrophie" checked>
-              <span>Hypertrophie</span>
-            </label>
-            <label class="exo-type-chip">
-              <input type="radio" name="${objectifName}" data-field="objectif" value="force">
-              <span>Force</span>
-            </label>
-            <label class="exo-type-chip">
-              <input type="radio" name="${objectifName}" data-field="objectif" value="endurance">
-              <span>Endurance</span>
-            </label>
-            <label class="exo-type-chip">
-              <input type="radio" name="${objectifName}" data-field="objectif" value="">
-              <span>Libre</span>
-            </label>
-          </div>
-        </div>`;
-
-      block.querySelector('.session-exo-block__remove').addEventListener('click', () => block.remove());
-      container.appendChild(block);
-    });
-  }
 }
 
 /* ── Formulaire : ajouter un exercice ── */
