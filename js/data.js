@@ -342,12 +342,27 @@ const DB = {
   },
 
   /* ─────────────────────────────────────────────────────────────
-     SÉANCE ACTIVE (legacy — conservé pour compatibilité)
+     SÉANCE ACTIVE — snapshot complet pour reprise après quitter
   ───────────────────────────────────────────────────────────── */
 
-  getActiveSessionId()  { return localStorage.getItem(KEYS.ACTIVE_SESSION) || null; },
-  setActiveSession(id)  { localStorage.setItem(KEYS.ACTIVE_SESSION, id); },
-  clearActiveSession()  { localStorage.removeItem(KEYS.ACTIVE_SESSION); },
+  /**
+   * Retourne le snapshot de la séance active, ou null si aucune.
+   * Gère le cas legacy où la valeur stockée était un ID string.
+   */
+  getActiveSession() {
+    const raw = localStorage.getItem(KEYS.ACTIVE_SESSION);
+    if (!raw) return null;
+    try {
+      const parsed = JSON.parse(raw);
+      if (typeof parsed !== 'object' || parsed === null) return null; // ancien format
+      return parsed;
+    } catch { return null; }
+  },
+
+  /** Sauvegarde le snapshot complet de la séance en cours. */
+  setActiveSession(state) { localStorage.setItem(KEYS.ACTIVE_SESSION, JSON.stringify(state)); },
+
+  clearActiveSession()    { localStorage.removeItem(KEYS.ACTIVE_SESSION); },
 };
 
 window.DB = DB;

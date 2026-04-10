@@ -44,9 +44,53 @@ document.addEventListener('DOMContentLoaded', () => {
 ═══════════════════════════════════════════════════════════════ */
 
 function renderTodayPanel() {
-  const emptyEl = document.getElementById('today-empty');
-  const listEl  = document.getElementById('today-sessions-list');
+  const emptyEl    = document.getElementById('today-empty');
+  const listEl     = document.getElementById('today-sessions-list');
+  const bannerEl   = document.getElementById('active-session-banner');
   if (!listEl) return;
+
+  // ── Bannière "Reprendre" si une séance a été interrompue ──
+  const activeSaved = DB.getActiveSession();
+  if (bannerEl) {
+    if (activeSaved) {
+      const elapsedMs  = Date.now() - new Date(activeSaved.savedAt).getTime();
+      const elapsedMin = Math.round(elapsedMs / 60000);
+      const timeStr    = elapsedMin < 60
+        ? `il y a ${elapsedMin} min`
+        : `il y a ${Math.round(elapsedMin / 60)} h`;
+      const exoLabel   = `Exercice ${(activeSaved.currentExoIdx || 0) + 1} · Série ${activeSaved.currentSerie || 1}`;
+
+      bannerEl.innerHTML = `
+        <div class="resume-banner">
+          <div class="resume-banner__body">
+            <span class="resume-banner__pill">Séance en cours</span>
+            <p class="resume-banner__name">${activeSaved.sessionName}</p>
+            <p class="resume-banner__detail">${exoLabel} · ${timeStr}</p>
+          </div>
+          <div class="resume-banner__actions">
+            <a href="seance.html?id=${activeSaved.sessionId}" class="resume-btn resume-btn--resume">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
+                   width="14" height="14" aria-hidden="true">
+                <polygon points="5 3 19 12 5 21 5 3"/>
+              </svg>
+              Reprendre
+            </a>
+            <button class="resume-btn resume-btn--abandon" id="btn-abandon-session" type="button">
+              Abandonner
+            </button>
+          </div>
+        </div>`;
+
+      document.getElementById('btn-abandon-session')?.addEventListener('click', () => {
+        if (confirm(`Abandonner la séance "${activeSaved.sessionName}" ?\nLa progression de cette séance sera perdue.`)) {
+          DB.clearActiveSession();
+          renderTodayPanel();
+        }
+      });
+    } else {
+      bannerEl.innerHTML = '';
+    }
+  }
 
   const today   = localDateStr();
   const planned = DB.getTodayPlanned();

@@ -97,7 +97,7 @@ function init() {
     return;
   }
 
-  // Initialiser la structure de résultats
+  // Initialiser la structure de résultats (vierge)
   results = exercises.map(({ exo }) => ({
     exoId:   exo.id,
     nom:     exo.nom,
@@ -105,6 +105,18 @@ function init() {
     couleur: exo.couleur,
     series:  [],
   }));
+
+  // ── Restauration d'une séance interrompue ──────────────────
+  const saved = DB.getActiveSession();
+  if (saved && saved.sessionId === id && Array.isArray(saved.results)
+      && saved.results.length === results.length) {
+    currentExoIdx = saved.currentExoIdx || 0;
+    currentSerie  = saved.currentSerie  || 1;
+    results       = saved.results;
+    // s'assurer que les indices restent dans les bornes
+    currentExoIdx = Math.min(currentExoIdx, exercises.length - 1);
+    currentSerie  = Math.max(1, currentSerie);
+  }
 
   document.getElementById('ws-session-name').textContent = session.nom;
 
@@ -144,6 +156,12 @@ function init() {
       ressentiVal = chip.dataset.ressenti;
     });
   });
+
+  // ── Sauvegarde automatique à la navigation / fermeture ────
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') saveSessionState();
+  });
+  window.addEventListener('pagehide', saveSessionState);
 
   showReady();
 }
@@ -222,8 +240,15 @@ function showReady() {
     weightSection.style.display = 'none';
   } else {
     weightSection.style.display = '';
+
+    // Titre : préciser "par haltère" pour les Haltères
+    const isHalteres = exo.materiel === 'Haltères';
+    const titleEl = weightSection.querySelector('.ws-ready-weight__title');
+    if (titleEl) titleEl.textContent = isHalteres ? 'Par haltère' : 'Charge prévue';
+
     const lastEl = document.getElementById('ready-last-session');
     const hintEl = document.getElementById('pre-weight-hint');
+    const kgLabel = isHalteres ? 'kg/h.' : 'kg';
 
     if (done.length > 0) {
       // Séries 2+ : utiliser le poids de la série précédente dans cette séance
@@ -231,7 +256,7 @@ function showReady() {
       preWeightVal = lastDone.poids || 0;
       if (lastDone.poids) {
         const icon = RESSENTI_ICON[lastDone.ressenti] || '';
-        lastEl.textContent = `Série ${done.length} · ${lastDone.poids} kg · ${lastDone.actual} reps ${icon}`.trim();
+        lastEl.textContent = `Série ${done.length} · ${lastDone.poids} ${kgLabel} · ${lastDone.actual} reps ${icon}`.trim();
         lastEl.style.display = '';
       } else {
         lastEl.style.display = 'none';
@@ -242,7 +267,7 @@ function showReady() {
       const lastHist = (exo.historique || []).find(e => e.poids > 0);
       if (lastHist) {
         const icon = RESSENTI_ICON[lastHist.ressenti] || '';
-        lastEl.textContent = `Dernière séance · ${lastHist.poids} kg · ${lastHist.reps} reps ${icon}`.trim();
+        lastEl.textContent = `Dernière séance · ${lastHist.poids} ${kgLabel} · ${lastHist.reps} reps ${icon}`.trim();
         lastEl.style.display = '';
       } else {
         lastEl.style.display = 'none';
@@ -334,6 +359,7 @@ function validateReps(actual) {
 
 function showWeightScreen(actualReps, block) {
   const { exo } = exercises[currentExoIdx];
+  const isHalteres = exo.materiel === 'Haltères';
 
   // Réinitialiser le ressenti → OK par défaut
   ressentiVal = 'ok';
@@ -342,6 +368,14 @@ function showWeightScreen(actualReps, block) {
     c.classList.toggle('ws-ressenti__chip--selected', isOk);
     c.setAttribute('aria-pressed', isOk ? 'true' : 'false');
   });
+
+  // Mettre à jour le label de la question
+  const labelEl = document.querySelector('.ws-weight-label');
+  if (labelEl) {
+    labelEl.textContent = isHalteres
+      ? 'Poids utilisé (par haltère) ?'
+      : 'Quel poids as-tu utilisé ?';
+  }
 
   // Utiliser le poids pré-décidé sur l'écran READY (ou fallback suggestion)
   weightVal = preWeightVal > 0
@@ -357,7 +391,8 @@ function showWeightScreen(actualReps, block) {
   // Hint : confirmer le poids prévu
   const hintEl = document.getElementById('weight-hint');
   if (weightVal > 0) {
-    hintEl.textContent = `Prévu : ${weightVal} kg — ajuste si tu as utilisé autre chose`;
+    const kgLabel = isHalteres ? 'kg/haltère' : 'kg';
+    hintEl.textContent = `Prévu : ${weightVal} ${kgLabel} — ajuste si tu as utilisé autre chose`;
     hintEl.style.display = '';
   } else {
     hintEl.style.display = 'none';
@@ -397,6 +432,9 @@ function commitSerie(actualReps, poids) {
 
   const isLastSerie = currentSerie >= totalSeries;
   const isLastExo   = currentExoIdx >= exercises.length - 1;
+
+  // Autosave après chaque série (sauf la toute dernière → gérée par saveAllResults)
+  if (!(isLastSerie && isLastExo)) saveSessionState();
 
   if (isLastSerie && isLastExo) {
     saveAllResults();
@@ -911,7 +949,31 @@ function buildRecapSuggestions() {
 }
 
 /* ═══════════════════════════════════════════════════════════
-   SAUVEGARDE
+   SAUVEGARDE AUTOMATIQUE — REPRISE APRÈS INTERRUPTION
+═══════════════════════════════════════════════════════════ */
+
+/**
+ * Persiste l'état courant de la séance dans localStorage.
+ * Appelée après chaque série validée + lors de la navigation/fermeture.
+ * Ne fait rien si la séance est terminée (état RECAP).
+ */
+function saveSessionState() {
+  if (currentState === 'recap' || !session) return;
+  const id = new URLSearchParams(location.search).get('id');
+  if (!id) return;
+  DB.setActiveSession({
+    sessionId:     id,
+    plannedId:     plannedId,
+    sessionName:   session.nom,
+    currentExoIdx: currentExoIdx,
+    currentSerie:  currentSerie,
+    results:       JSON.parse(JSON.stringify(results)),
+    savedAt:       new Date().toISOString(),
+  });
+}
+
+/* ═══════════════════════════════════════════════════════════
+   SAUVEGARDE FINALE
 ═══════════════════════════════════════════════════════════ */
 function saveAllResults() {
   const now = new Date().toISOString();
