@@ -31,8 +31,8 @@ let currentState     = 'ready';
 let stopwatchSecs    = 0;
 let stopwatchTimer   = null;
 
-let restTotal        = 0;
-let restRemaining    = 0;
+let restTotal        = 0;   // durée totale en secondes (pour l'arc SVG)
+let restEndTime      = 0;   // timestamp ms de fin — temps restant = restEndTime - Date.now()
 let restTimer        = null;
 let pendingLastSerie = false;
 
@@ -157,9 +157,14 @@ function init() {
     });
   });
 
-  // ── Sauvegarde automatique à la navigation / fermeture ────
+  // ── Sauvegarde + resync chrono repos à la navigation ──────
   document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'hidden') saveSessionState();
+    if (document.visibilityState === 'hidden') {
+      saveSessionState();
+    } else if (currentState === 'rest') {
+      // Retour en avant-plan : recalculer le temps restant depuis l'horloge réelle
+      syncRestTimer();
+    }
   });
   window.addEventListener('pagehide', saveSessionState);
 
@@ -622,9 +627,9 @@ function suggererPoidsObjectif(exo, objectif) {
    ÉCRAN 4 : REST
 ═══════════════════════════════════════════════════════════ */
 function startRest(secs, isLastSerie) {
-  currentState  = 'rest';
-  restTotal     = secs || 90;
-  restRemaining = restTotal;
+  currentState = 'rest';
+  restTotal    = secs || 90;
+  restEndTime  = Date.now() + restTotal * 1000;
 
   let nextText;
   if (isLastSerie && currentExoIdx + 1 < exercises.length) {
@@ -636,23 +641,39 @@ function startRest(secs, isLastSerie) {
 
   // Reset arc sans transition parasite
   const arc = document.getElementById('rest-arc');
-  arc.style.transition      = 'none';
+  arc.style.transition       = 'none';
   arc.style.strokeDashoffset = 0;
   void arc.getBoundingClientRect(); // force reflow
-  arc.style.transition      = '';
+  arc.style.transition = '';
 
   updateRestDisplay();
   showScreen('screen-rest');
 
   clearInterval(restTimer);
-  restTimer = setInterval(() => {
-    restRemaining--;
-    updateRestDisplay();
-    if (restRemaining <= 0) {
-      clearInterval(restTimer);
-      advanceAfterRest();
-    }
-  }, 1000);
+  restTimer = setInterval(tickRest, 1000);
+}
+
+/** Tick appelé toutes les secondes — calcule le restant depuis l'horloge réelle */
+function tickRest() {
+  updateRestDisplay();
+  if (Date.now() >= restEndTime) {
+    clearInterval(restTimer);
+    advanceAfterRest();
+  }
+}
+
+/**
+ * Resynchronise le chrono après un retour en avant-plan.
+ * Si le temps est déjà écoulé, avance directement.
+ */
+function syncRestTimer() {
+  clearInterval(restTimer);
+  updateRestDisplay();
+  if (Date.now() >= restEndTime) {
+    advanceAfterRest();
+  } else {
+    restTimer = setInterval(tickRest, 1000);
+  }
 }
 
 function skipRest() {
@@ -1056,11 +1077,12 @@ function updateStopwatch() {
 }
 
 function updateRestDisplay() {
-  const timeEl = document.getElementById('rest-time');
-  const arc    = document.getElementById('rest-arc');
-  if (timeEl) timeEl.textContent = formatTime(restRemaining);
+  const remaining = Math.max(0, Math.ceil((restEndTime - Date.now()) / 1000));
+  const timeEl    = document.getElementById('rest-time');
+  const arc       = document.getElementById('rest-arc');
+  if (timeEl) timeEl.textContent = formatTime(remaining);
   if (arc) {
-    const fraction = restTotal > 0 ? restRemaining / restTotal : 1;
+    const fraction = restTotal > 0 ? remaining / restTotal : 1;
     arc.style.strokeDashoffset = CIRC * (1 - fraction);
   }
 }
