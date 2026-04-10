@@ -500,16 +500,6 @@ function calculerSuggestionPoids(exo, block) {
       const prevABase = sessionsABase[1]; // 2ème session à cette charge (avant aujourd'hui)
       const prevPerf  = analyzeSessionEntries(prevABase, target);
       if (prevPerf?.allHit) {
-        // Vérifier le volume hebdomadaire avant d'autoriser la progression
-        const vol = getVolumeStatus(exo.groupe);
-        if (vol.status !== 'ok') {
-          return {
-            poids: base,
-            raison: vol.status === 'low'
-              ? `= ${base} kg · volume ${exo.groupe} insuffisant (${vol.count} sér./sem.) — ajoute du volume avant de progresser`
-              : `= ${base} kg · volume ${exo.groupe} élevé (${vol.count} sér./sem.) — récupère avant d'augmenter`,
-          };
-        }
         const nouveau = Math.round((base + step) / 2.5) * 2.5;
         const raison  = (perf.anyFacile || prevPerf.anyFacile)
           ? `↑ +${step} kg · tu étais à l'aise (${base} → ${nouveau} kg)`
@@ -771,9 +761,6 @@ function analyzeRepsProgression(exo, block) {
     const allThreeHit = prev.slice(0, 3).every(s => analyzeSessionEntries(s, target)?.allHit);
     if (allThreeHit) {
       if (range && target >= range.max) return null; // déjà au plafond de l'objectif
-      // Vérifier le volume hebdomadaire avant d'autoriser l'augmentation de reps
-      const vol = getVolumeStatus(exo.groupe);
-      if (vol.status !== 'ok') return null; // volume insuffisant ou trop élevé → suspendu
       // +1 rep par défaut (progression conservatrice) ; +2 pour les isolations
       const step      = exo.type === 'isolation' ? 2 : 1;
       const suggested = range ? Math.min(target + step, range.max) : target + step;
