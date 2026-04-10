@@ -22,6 +22,7 @@
 
     <input type="radio" id="tab-stats"   name="exercise-tabs" checked>
     <input type="radio" id="tab-history" name="exercise-tabs">
+    <input type="radio" id="tab-info"    name="exercise-tabs">
 
     <!-- ===== EN-TÊTE ===== -->
     <header class="exercise-header">
@@ -73,6 +74,17 @@
         <span class="tab-btn__label">Historique</span>
       </label>
 
+      <label for="tab-info" class="tab-btn" role="tab" aria-controls="panel-info">
+        <span class="tab-btn__icon" aria-hidden="true">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+          </svg>
+        </span>
+        <span class="tab-btn__label">Info</span>
+      </label>
+
       <span class="tab-indicator" aria-hidden="true"></span>
 
     </nav>
@@ -90,14 +102,6 @@
             <span class="rm-value">—</span><span class="stat-hero__unit">kg</span>
           </div>
           <div class="stat-hero__meta" data-rm-date>Réalise des séances pour estimer ton 1RM</div>
-        </div>
-
-        <!-- BLOC 1b : RECOMMANDATIONS PAR OBJECTIF
-             Injecté par exercice.js selon exo.type -->
-        <div id="reco-block" class="reco-block" style="display:none">
-          <h2 class="section-title">Recommandations Hypertrophie</h2>
-          <p  class="section-sub" id="reco-type-label"></p>
-          <div class="reco-grid" id="reco-grid"></div>
         </div>
 
         <!-- BLOC 2 : SÉLECTEUR DE ZONE D'ENTRAÎNEMENT
@@ -263,6 +267,51 @@
 
         <div class="history-empty-hint">
           Les prochaines séances apparaîtront ici automatiquement.
+        </div>
+
+      </section>
+
+      <!-- ── ONGLET 3 : INFO ── -->
+      <section class="tab-panel info-tab" id="panel-info" role="tabpanel" aria-labelledby="tab-info">
+
+        <!-- Recommandations (déplacées depuis l'onglet Stats) -->
+        <div id="reco-block" class="reco-block" style="display:none">
+          <h2 class="section-title">Recommandations Hypertrophie</h2>
+          <p  class="section-sub" id="reco-type-label"></p>
+          <div class="reco-grid" id="reco-grid"></div>
+        </div>
+
+        <!-- Photos de l'exercice -->
+        <div class="info-section">
+          <div class="info-section__header">
+            <h2 class="section-title">Photos</h2>
+            <button class="info-add-btn" id="btn-add-photo" type="button">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
+                   width="14" height="14" aria-hidden="true">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+              Ajouter
+            </button>
+          </div>
+          <!-- Input fichier caché — déclenché par le bouton -->
+          <input type="file" id="photo-input" accept="image/*" style="display:none">
+          <!-- Grille injectée par exercice.js -->
+          <div class="info-images-grid" id="info-images-grid"></div>
+          <p class="info-images-hint" id="info-images-hint">Max 3 photos · stockées sur cet appareil</p>
+        </div>
+
+        <!-- Notes libres -->
+        <div class="info-section">
+          <h2 class="section-title">Notes</h2>
+          <p class="section-sub">Exécution, conseils, erreurs à éviter…</p>
+          <textarea class="info-notes" id="info-notes" rows="7"
+                    placeholder="Décris comment effectuer cet exercice, les points clés à respecter, les erreurs courantes à éviter…"></textarea>
+          <div class="info-notes-footer">
+            <button class="info-save-btn" id="btn-save-notes" type="button">Enregistrer</button>
+            <span class="info-save-status" id="notes-save-status"></span>
+          </div>
         </div>
 
       </section>

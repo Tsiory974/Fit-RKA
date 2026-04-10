@@ -216,6 +216,17 @@ const DB = {
     this.saveExercice(exo);
   },
 
+  /* Notes et photos d'un exercice — stockées séparément pour ne pas
+     alourdir l'objet exercice (qui est chargé souvent).
+     Structure : { notes: string, images: string[] }            */
+  getExoInfo(id) {
+    const r = localStorage.getItem('ft_exo_info_' + id);
+    return r ? JSON.parse(r) : { notes: '', images: [] };
+  },
+  saveExoInfo(id, info) {
+    localStorage.setItem('ft_exo_info_' + id, JSON.stringify(info));
+  },
+
   /* ─────────────────────────────────────────────────────────────
      MODÈLES DE SÉANCE (SessionTemplate)
      Un modèle = blueprint réutilisable sans date ni jours.

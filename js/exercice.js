@@ -150,6 +150,7 @@ document.addEventListener('DOMContentLoaded', () => {
     renderRecommandations(exo);
     renderChart(exo);
     renderHistorique(exo);
+    renderInfo(exo);
   }
 
   /**
@@ -374,4 +375,133 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  /* ─────────────────────────────────────────────────────────────
+     ONGLET INFO — photos + notes
+  ───────────────────────────────────────────────────────────── */
+
+  /**
+   * Redimensionne une image via canvas et retourne un data URL JPEG.
+   * Limite : max 800 px sur le plus grand côté, qualité 0.72.
+   */
+  function resizeImage(file) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        const MAX = 800;
+        let w = img.width, h = img.height;
+        if (w > MAX || h > MAX) {
+          if (w >= h) { h = Math.round(h * MAX / w); w = MAX; }
+          else        { w = Math.round(w * MAX / h); h = MAX; }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width  = w;
+        canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', 0.72));
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Lecture image échouée')); };
+      img.src = url;
+    });
+  }
+
+  /** Rend la grille de photos dans le panneau Info. */
+  function renderInfoImages(images) {
+    const gridEl   = document.getElementById('info-images-grid');
+    const hintEl   = document.getElementById('info-images-hint');
+    const addBtn   = document.getElementById('btn-add-photo');
+    if (!gridEl) return;
+
+    const MAX_PHOTOS = 3;
+
+    gridEl.innerHTML = images.map((src, idx) => `
+      <div class="info-image-wrap">
+        <img src="${src}" alt="Photo ${idx + 1} de l'exercice" loading="lazy">
+        <button class="info-image-del" data-img-idx="${idx}"
+                aria-label="Supprimer cette photo" title="Supprimer">✕</button>
+      </div>`).join('');
+
+    // Boutons suppression
+    gridEl.querySelectorAll('.info-image-del').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const info = DB.getExoInfo(id);
+        info.images.splice(parseInt(btn.dataset.imgIdx), 1);
+        DB.saveExoInfo(id, info);
+        renderInfoImages(info.images);
+      });
+    });
+
+    // Désactiver "Ajouter" si max atteint
+    if (addBtn) addBtn.disabled = images.length >= MAX_PHOTOS;
+    if (hintEl) hintEl.textContent = images.length >= MAX_PHOTOS
+      ? 'Limite de 3 photos atteinte'
+      : `${images.length}/3 photo${images.length !== 1 ? 's' : ''} · stockées sur cet appareil`;
+  }
+
+  /** Initialise l'onglet Info : images + notes + listeners. */
+  function renderInfo(exo) {
+    const info  = DB.getExoInfo(exo.id);
+    const notes = info.notes  || '';
+    const imgs  = info.images || [];
+
+    renderInfoImages(imgs);
+
+    // Notes
+    const notesEl = document.getElementById('info-notes');
+    if (notesEl) notesEl.value = notes;
+
+    // Bouton enregistrer notes
+    const saveBtn  = document.getElementById('btn-save-notes');
+    const statusEl = document.getElementById('notes-save-status');
+    if (saveBtn) {
+      // Cloner pour réinitialiser les listeners à chaque appel de showPage
+      const fresh = saveBtn.cloneNode(true);
+      saveBtn.replaceWith(fresh);
+      fresh.addEventListener('click', () => {
+        const infoNow = DB.getExoInfo(exo.id);
+        infoNow.notes = (document.getElementById('info-notes') || {}).value || '';
+        try {
+          DB.saveExoInfo(exo.id, infoNow);
+          if (statusEl) {
+            statusEl.textContent = '✓ Enregistré';
+            setTimeout(() => { statusEl.textContent = ''; }, 2000);
+          }
+        } catch (e) {
+          alert('Erreur de sauvegarde : stockage insuffisant.');
+        }
+      });
+    }
+
+    // Bouton ajouter photo
+    const addBtn    = document.getElementById('btn-add-photo');
+    const photoInput = document.getElementById('photo-input');
+    if (addBtn && photoInput) {
+      const freshAdd = addBtn.cloneNode(true);
+      addBtn.replaceWith(freshAdd);
+      freshAdd.addEventListener('click', () => photoInput.click());
+
+      const freshInput = photoInput.cloneNode(false);
+      photoInput.replaceWith(freshInput);
+      freshInput.addEventListener('change', async () => {
+        const files = Array.from(freshInput.files || []);
+        if (!files.length) return;
+        const infoNow = DB.getExoInfo(exo.id);
+        const MAX = 3;
+        const slots = MAX - (infoNow.images || []).length;
+        if (slots <= 0) return;
+        try {
+          const resized = await Promise.all(files.slice(0, slots).map(resizeImage));
+          infoNow.images = [...(infoNow.images || []), ...resized];
+          DB.saveExoInfo(exo.id, infoNow);
+          renderInfoImages(infoNow.images);
+        } catch (e) {
+          alert('Impossible de lire une ou plusieurs images.');
+        }
+        freshInput.value = '';
+      });
+    }
+  }
+
 });
+
