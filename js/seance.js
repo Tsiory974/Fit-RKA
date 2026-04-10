@@ -619,16 +619,33 @@ function showRecap() {
   };
 
   if (suggestions.length > 0) {
+    const isReps = s => s.type === 'reps-up' || s.type === 'reps-down';
     suggestionsEl.innerHTML = `
       <p class="ws-recap-section-title">Bilan &amp; suggestions</p>
-      ${suggestions.map(s => `
+      ${suggestions.map((s, idx) => `
         <div class="ws-recap-suggestion ws-recap-suggestion--${s.type}">
           <span class="ws-recap-suggestion__icon">${SUGGESTION_ICONS[s.type] || '💡'}</span>
           <div class="ws-recap-suggestion__body">
             <div class="ws-recap-suggestion__label">${s.label}</div>
             <div class="ws-recap-suggestion__text">${s.text}</div>
+            ${isReps(s) ? `<button class="ws-apply-btn" data-suggestion-idx="${idx}"
+              data-exo-id="${s.exoId}" data-suggested="${s.suggested}">
+              Appliquer pour la prochaine séance
+            </button>` : ''}
           </div>
         </div>`).join('')}`;
+
+    // Attacher les listeners sur les boutons Appliquer
+    suggestionsEl.querySelectorAll('.ws-apply-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const exoId     = btn.dataset.exoId;
+        const suggested = parseInt(btn.dataset.suggested);
+        applyRepsSuggestion(exoId, suggested);
+        btn.textContent = 'Appliqué ✓';
+        btn.disabled    = true;
+        btn.classList.add('ws-apply-btn--done');
+      });
+    });
   } else {
     suggestionsEl.innerHTML = '';
   }
@@ -704,6 +721,27 @@ function calculateWeeklyVolume() {
 }
 
 /**
+ * Applique une suggestion de reps en mettant à jour le template en base.
+ * Modifie session.exercices[i].reps pour l'exoId donné.
+ */
+function applyRepsSuggestion(exoId, newReps) {
+  if (!session) return;
+  const tpl = DB.getTemplate(session.id);
+  if (!tpl) return;
+  let changed = false;
+  tpl.exercices.forEach(block => {
+    if (block.exoId === exoId) {
+      block.reps = newReps;
+      changed = true;
+    }
+  });
+  if (changed) {
+    DB.updateTemplate(tpl);
+    session = tpl; // mettre à jour la référence locale
+  }
+}
+
+/**
  * Construit les suggestions à afficher dans le récap.
  * Appelé après saveAllResults() — les historiques sont déjà mis à jour.
  *
@@ -721,15 +759,19 @@ function buildRecapSuggestions() {
 
     if (analysis.type === 'increase') {
       suggestions.push({
-        type:  'reps-up',
-        label: exo.nom,
-        text:  `Tu atteins facilement ${analysis.target} reps depuis plusieurs séances. Essaie ${analysis.suggested} la prochaine fois.`,
+        type:     'reps-up',
+        exoId:    exo.id,
+        suggested: analysis.suggested,
+        label:    exo.nom,
+        text:     `Tu atteins facilement ${analysis.target} reps depuis plusieurs séances. Essaie ${analysis.suggested} la prochaine fois.`,
       });
     } else {
       suggestions.push({
-        type:  'reps-down',
-        label: exo.nom,
-        text:  `Tu rates souvent l'objectif de ${analysis.target} reps. Essaie ${analysis.suggested} pour consolider.`,
+        type:     'reps-down',
+        exoId:    exo.id,
+        suggested: analysis.suggested,
+        label:    exo.nom,
+        text:     `Tu rates souvent l'objectif de ${analysis.target} reps. Essaie ${analysis.suggested} pour consolider.`,
       });
     }
   });

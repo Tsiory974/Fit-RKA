@@ -866,6 +866,28 @@ body {
   line-height: 1.4;
 }
 
+.ws-apply-btn {
+  margin-top: 0.5rem;
+  padding: 0.35rem 0.75rem;
+  border: 1px solid #374151;
+  border-radius: 20px;
+  background: transparent;
+  color: #d1d5db;
+  font-size: 0.7rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.ws-apply-btn:hover {
+  background: #1f2428;
+  border-color: #4b5563;
+}
+.ws-apply-btn--done {
+  color: #4b5563;
+  border-color: #1f2428;
+  cursor: default;
+}
+
 /* ============================================================
    BOUTONS GÉNÉRIQUES
    ============================================================ */
