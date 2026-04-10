@@ -412,6 +412,46 @@ function getPasAjustement(materiel) {
 }
 
 /**
+ * Groupe l'historique d'un exercice par session (YYYY-MM-DD).
+ * Retourne les sessions triées du plus récent au plus ancien.
+ * Chaque session est un tableau d'entrées triées par numéro de série (1 → N).
+ */
+function getHistByDate(exo) {
+  const hist = (exo.historique || []).filter(e => typeof e.reps === 'number');
+  const byDate = {};
+  hist.forEach(e => {
+    const d = e.date ? e.date.slice(0, 10) : 'unknown';
+    if (!byDate[d]) byDate[d] = [];
+    byDate[d].push(e);
+  });
+  return Object.keys(byDate)
+    .sort()
+    .reverse()
+    .map(d => byDate[d].sort((a, b) => (a.series || 0) - (b.series || 0)));
+}
+
+/**
+ * Analyse les indicateurs de performance d'une session.
+ * Les entrées doivent être triées par numéro de série (série 1 en premier).
+ *
+ * Règle clé : la première série est l'indicateur de référence.
+ * La fatigue entraîne une baisse naturelle des séries suivantes (ex : 10/9/8 est normal).
+ * "Chute extrême" = dernière série < 60 % de l'objectif (ex : 10 → 5 reps).
+ */
+function analyzeSessionEntries(entries, target) {
+  if (!entries.length) return null;
+  const first = entries[0];
+  const last  = entries[entries.length - 1];
+  return {
+    firstHit:    first.reps >= target,
+    allHit:      entries.every(e => e.reps >= target),
+    extremeDrop: entries.length > 1 && last.reps < target * 0.60,
+    anyDur:      entries.some(e => e.ressenti === 'dur'),
+    anyFacile:   entries.some(e => e.ressenti === 'facile'),
+  };
+}
+
+/**
  * Calcule le poids conseillé pour la série + une raison textuelle affichée à l'utilisateur.
  *
  * Priorité :
@@ -422,33 +462,53 @@ function getPasAjustement(materiel) {
  * @returns {{ poids: number, raison: string|null }}
  */
 function calculerSuggestionPoids(exo, block) {
-  const step          = getPasAjustement(exo.materiel);
-  const lastAvecPoids = (exo.historique || []).find(e => e.poids > 0);
+  const step     = getPasAjustement(exo.materiel);
+  const target   = parseInt(block.reps) || 10;
+  // Garder uniquement les sessions où au moins une série a un poids renseigné
+  const sessions = getHistByDate(exo).filter(s => s.some(e => e.poids > 0));
 
   // ── Cas 1 : historique disponible ──
-  if (lastAvecPoids) {
-    const base         = lastAvecPoids.poids;
-    const repsOk       = !lastAvecPoids.repsObjectif
-                         || lastAvecPoids.reps >= lastAvecPoids.repsObjectif;
+  if (sessions.length) {
+    const lastSess = sessions[0];
+    const base     = lastSess.find(e => e.poids > 0)?.poids || 0;
+    const perf     = analyzeSessionEntries(lastSess, target);
 
-    if (lastAvecPoids.ressenti === 'facile' && repsOk) {
+    // Diminuer : première série rate l'objectif, chute extrême, ou ressenti "trop dur"
+    if (!perf.firstHit || perf.extremeDrop || perf.anyDur) {
+      const nouveau = Math.max(step, Math.round((base - step) / 2.5) * 2.5);
+      const raison  = !perf.firstHit
+        ? `↓ −${step} kg · tu n'as pas atteint l'objectif (${base} → ${nouveau} kg)`
+        : perf.anyDur
+          ? `↓ −${step} kg · c'était trop dur (${base} → ${nouveau} kg)`
+          : `↓ −${step} kg · chute trop importante (${base} → ${nouveau} kg)`;
+      return { poids: nouveau, raison };
+    }
+
+    // Augmenter : toutes les séries réussies + ressenti facile (1 session suffit)
+    if (perf.allHit && perf.anyFacile) {
       const nouveau = Math.round((base + step) / 2.5) * 2.5;
       return {
         poids:  nouveau,
-        raison: `↑ +${step} kg · tu étais à l'aise (${base} → ${nouveau} kg)`,
+        raison: `↑ +${step} kg · tu as tout réussi facilement (${base} → ${nouveau} kg)`,
       };
     }
-    if (lastAvecPoids.ressenti === 'dur' || !repsOk) {
-      const nouveau = Math.max(step, Math.round((base - step) / 2.5) * 2.5);
-      return {
-        poids:  nouveau,
-        raison: `↓ −${step} kg · charge allégée (${base} → ${nouveau} kg)`,
-      };
+
+    // Augmenter : toutes les séries réussies + ressenti ok sur 2 séances consécutives
+    if (perf.allHit && sessions.length >= 2) {
+      const prev = analyzeSessionEntries(sessions[1], target);
+      if (prev.allHit) {
+        const nouveau = Math.round((base + step) / 2.5) * 2.5;
+        return {
+          poids:  nouveau,
+          raison: `↑ +${step} kg · 2 séances consécutives réussies (${base} → ${nouveau} kg)`,
+        };
+      }
     }
-    // 'ok' ou pas de ressenti → garder
+
+    // Garder : baisse progressive normale (fatigue) ou 1 seule séance complète sans facile
     return {
       poids:  base,
-      raison: `= Même charge qu'à la dernière séance (${base} kg)`,
+      raison: `= Même charge · continue à progresser sur les séries (${base} kg)`,
     };
   }
 
@@ -658,44 +718,37 @@ function showRecap() {
 ═══════════════════════════════════════════════════════════ */
 
 /**
- * Analyse la tendance reps pour un exercice sur les 3 dernières sessions.
- * Nécessite au moins 3 entrées avec repsObjectif renseigné.
+ * Analyse la dernière session d'un exercice pour suggérer un ajustement des reps.
+ * Déclenche dès 1 session disponible dans l'historique.
  *
  * @returns {{ type: 'increase'|'decrease', target: number, suggested: number }|null}
  */
 function analyzeRepsProgression(exo, block) {
-  const hist = (exo.historique || []).filter(e =>
-    typeof e.reps === 'number' && e.repsObjectif
-  );
-  if (hist.length < 3) return null;
+  const sessions = getHistByDate(exo);
+  if (!sessions.length) return null;
 
-  // Grouper par date de session (YYYY-MM-DD) pour éviter les biais intra-séance
-  const byDate = {};
-  hist.forEach(e => {
-    const d = e.date ? e.date.slice(0, 10) : 'unknown';
-    if (!byDate[d]) byDate[d] = [];
-    byDate[d].push(e);
-  });
-  const dates = Object.keys(byDate).sort().reverse(); // plus récent en premier
-  if (dates.length < 2) return null;                  // besoin d'au moins 2 sessions
+  const target = parseInt(block.reps) || 10;
+  const perf   = analyzeSessionEntries(sessions[0], target);
 
-  // Entrées des 3 dernières sessions distinctes
-  const recent = dates.slice(0, 3).flatMap(d => byDate[d]);
-  if (recent.length < 3) return null;
-
-  const target       = parseInt(block.reps) || 10;
-  const ratioHitting = recent.filter(e => e.reps >= e.repsObjectif).length / recent.length;
-  const ratioFacile  = recent.filter(e => e.ressenti === 'facile').length   / recent.length;
-  const ratioMissing = recent.filter(e => e.reps < e.repsObjectif).length   / recent.length;
-
-  // 70 %+ touchent l'objectif ET 35 %+ ressentent "facile" → suggérer d'augmenter
-  if (ratioHitting >= 0.70 && ratioFacile >= 0.35) {
-    return { type: 'increase', target, suggested: target + 2 };
-  }
-  // 60 %+ ratent l'objectif → suggérer de diminuer
-  if (ratioMissing >= 0.60) {
+  // Diminuer : première série rate l'objectif, chute extrême, ou ressenti "trop dur"
+  if (!perf.firstHit || perf.extremeDrop || perf.anyDur) {
     return { type: 'decrease', target, suggested: Math.max(1, target - 1) };
   }
+
+  // Augmenter : toutes les séries réussies + ressenti facile (1 session suffit)
+  if (perf.allHit && perf.anyFacile) {
+    return { type: 'increase', target, suggested: target + 2 };
+  }
+
+  // Augmenter : toutes les séries réussies + ressenti ok sur 2 séances consécutives
+  if (perf.allHit && sessions.length >= 2) {
+    const prev = analyzeSessionEntries(sessions[1], target);
+    if (prev.allHit) {
+      return { type: 'increase', target, suggested: target + 2 };
+    }
+  }
+
+  // Pas d'ajustement : baisse progressive normale due à la fatigue
   return null;
 }
 
