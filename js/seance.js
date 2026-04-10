@@ -129,6 +129,8 @@ function init() {
   document.getElementById('btn-rep-minus').addEventListener('click', () => changeStepper(-1));
   document.getElementById('btn-rep-plus').addEventListener('click',  () => changeStepper(+1));
   document.getElementById('btn-skip-rest').addEventListener('click', skipRest);
+  document.getElementById('btn-sound-toggle').addEventListener('click', toggleSound);
+  updateSoundToggle();
   document.getElementById('btn-weight-confirm').addEventListener('click', confirmWeight);
   document.getElementById('btn-weight-skip').addEventListener('click', () => commitSerie(pendingSerieReps, null));
   document.getElementById('btn-weight-minus').addEventListener('click', () => changeWeight(-2.5));
@@ -624,6 +626,71 @@ function suggererPoidsObjectif(exo, objectif) {
 }
 
 /* ═══════════════════════════════════════════════════════════
+   SON DE FIN DE REPOS
+═══════════════════════════════════════════════════════════ */
+
+function isSoundEnabled() {
+  return localStorage.getItem('ft_sound_enabled') !== 'false';
+}
+
+function toggleSound() {
+  localStorage.setItem('ft_sound_enabled', isSoundEnabled() ? 'false' : 'true');
+  updateSoundToggle();
+}
+
+function updateSoundToggle() {
+  const btn = document.getElementById('btn-sound-toggle');
+  if (!btn) return;
+  const on = isSoundEnabled();
+  btn.setAttribute('aria-pressed', String(on));
+  btn.classList.toggle('ws-sound-btn--off', !on);
+  btn.innerHTML = on
+    ? `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+         width="15" height="15" aria-hidden="true">
+         <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+         <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
+         <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+       </svg>Son activé`
+    : `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+         width="15" height="15" aria-hidden="true">
+         <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+         <line x1="23" y1="9" x2="17" y2="15"/>
+         <line x1="17" y1="9" x2="23" y2="15"/>
+       </svg>Son désactivé`;
+}
+
+/**
+ * Joue un double bip (chime) de fin de repos via Web Audio API.
+ * Fonctionne sans fichier externe. Ne joue rien si son désactivé.
+ * Si l'app était en arrière-plan, le son se déclenche au retour
+ * au premier plan (syncRestTimer → playRestEndSound).
+ */
+function playRestEndSound() {
+  if (!isSoundEnabled()) return;
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    if (ctx.state === 'suspended') ctx.resume();
+    const now = ctx.currentTime;
+    [[880, 0], [1047, 0.2]].forEach(([freq, delay]) => {
+      const osc  = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0, now + delay);
+      gain.gain.linearRampToValueAtTime(0.25, now + delay + 0.015);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + delay + 0.36);
+      osc.start(now + delay);
+      osc.stop(now + delay + 0.4);
+    });
+    setTimeout(() => ctx.close(), 1200);
+  } catch (e) {}
+}
+
+/* ═══════════════════════════════════════════════════════════
    ÉCRAN 4 : REST
 ═══════════════════════════════════════════════════════════ */
 function startRest(secs, isLastSerie) {
@@ -658,6 +725,7 @@ function tickRest() {
   updateRestDisplay();
   if (Date.now() >= restEndTime) {
     clearInterval(restTimer);
+    playRestEndSound();
     advanceAfterRest();
   }
 }
@@ -670,6 +738,7 @@ function syncRestTimer() {
   clearInterval(restTimer);
   updateRestDisplay();
   if (Date.now() >= restEndTime) {
+    playRestEndSound();
     advanceAfterRest();
   } else {
     restTimer = setInterval(tickRest, 1000);
