@@ -22,16 +22,20 @@
   --color-triceps:   #fb923c;   /* orange clair */
   --color-jambes:    #ef4444;   /* rouge  */
   --color-abdos:     #eab308;   /* jaune  */
+  --color-cardio:    #38bdf8;   /* bleu sky / cardio */
 }
 
 /* ============================================================
-   ANTI-SWIPE HORIZONTAL + CENTRAGE
-   Empêche le défilement horizontal natif du navigateur sur le
-   track 300% — les onglets ne changent qu'au clic sur les labels.
+   ZÉRO SCROLL HORIZONTAL — nécessaire sur les deux niveaux :
+   - html : évite le scroll container créé par body overflow-x
+   - body : cadre le contenu à 480px et le centre
    ============================================================ */
+html {
+  overflow-x: hidden;
+}
 body {
-  overflow-x: hidden;   /* cache le débordement du track large  */
-  max-width: 480px;     /* centré dans la largeur de l'écran    */
+  overflow-x: hidden;
+  max-width: 480px;
   margin-left: auto;
   margin-right: auto;
 }
@@ -199,49 +203,56 @@ body {
 }
 
 /* ============================================================
-   ZONE DE CONTENU — TRACK HORIZONTAL
+   ZONE DE CONTENU — ONGLETS (display switch)
+   Un seul panneau visible à la fois, zéro scroll horizontal.
    ============================================================ */
 .tabs-track {
-  display: flex;
-  /* 4 panneaux côte à côte */
-  width: 400%;
-  transition: transform 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-  min-height: calc(
-    100vh
-    - var(--header-height)
-    - var(--tabs-height)
-    - var(--nav-height)
-  );
-  touch-action: pan-y;
+  width: 100%;
+  overflow: hidden;
 }
 
-/* Glisser vers le panneau 2 (Planning) */
-#tab-planning:checked ~ .tabs-track {
-  transform: translateX(-25%);
-}
-
-/* Glisser vers le panneau 3 (Séances) */
-#tab-modeles:checked ~ .tabs-track {
-  transform: translateX(-50%);
-}
-
-/* Glisser vers le panneau 4 (Exercices) */
-#tab-exercices:checked ~ .tabs-track {
-  transform: translateX(-75%);
-}
-
-/* --- Chaque panneau occupe 25% du track = 100% de l'écran --- */
+/* Par défaut tous les panneaux sont masqués */
 .tab-panel {
-  width: 25%;
-  min-width: 25%;
-  padding: 1.25rem 1rem 2rem;
-  overflow-y: auto;
+  display: none;
+  width: 100%;
   overflow-x: hidden;
-  touch-action: pan-y;
+  padding: 1.25rem 1rem 2rem;
 }
 
-/* La zone de chips a son propre scroll horizontal —
-   on doit lui redonner les deux axes pour ne pas bloquer pan-x */
+/* Afficher uniquement le panneau actif */
+#tab-seance:checked    ~ .tabs-track #panel-seance    { display: block; }
+#tab-planning:checked  ~ .tabs-track #panel-planning  { display: block; }
+#tab-modeles:checked   ~ .tabs-track #panel-modeles   { display: flex; flex-direction: column; }
+
+/* Panneau Exercices — une seule zone scroll, header sticky
+   Même pattern que #alim-panel-aliments dans alimentation.css      */
+#tab-exercices:checked ~ .tabs-track #panel-exercices {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  overflow: hidden;
+  height: calc(100vh  - var(--header-height) - var(--tabs-height) - var(--nav-height));
+  height: calc(100dvh - var(--header-height) - var(--tabs-height) - var(--nav-height));
+}
+
+/* Zone sticky — search + filtres — ne rétrécit jamais */
+#panel-exercices .search-bar {
+  flex-shrink: 0;
+  margin: 1rem 1rem 0.75rem;
+}
+
+#panel-exercices .filter-chips {
+  flex-shrink: 0;
+  padding: 0 1rem 0.625rem;
+  margin-bottom: 0;
+}
+
+/* Séparateur visuel uniquement sous la dernière rangée de filtres */
+#panel-exercices .filter-chips--meta {
+  border-bottom: 1px solid #1f242a;
+}
+
+/* La zone de chips a son propre scroll horizontal */
 .tab-panel .filter-chips {
   touch-action: pan-x pan-y;
 }
@@ -554,10 +565,11 @@ body {
   display: flex;
   flex-direction: column;
   gap: 0.625rem;
-  /* 6 cartes × ~62px + 5 gaps × 10px = ~422px */
-  max-height: 430px;
+  flex: 1;
+  min-height: 0;               /* requis : overflow sur un flex child */
   overflow-y: auto;
   overflow-x: hidden;
+  padding: 0.875rem 1rem 1rem;
   scrollbar-width: none;        /* Firefox */
   -webkit-overflow-scrolling: touch;
 }
@@ -635,6 +647,11 @@ body {
   color: var(--color-abdos);
   background: rgba(234, 179, 8, 0.1);
   border-color: rgba(234, 179, 8, 0.25);
+}
+.exercise-card__muscle-tag--cardio {
+  color: var(--color-cardio);
+  background: rgba(56, 189, 248, 0.1);
+  border-color: rgba(56, 189, 248, 0.25);
 }
 
 /* Infos de l'exercice */
@@ -1070,15 +1087,9 @@ body {
    ============================================================ */
 @media (min-width: 480px) {
 
-  /* Le track = 4 × 480px */
-  .tabs-track {
-    width: calc(480px * 4);
-  }
-
-  /* Chaque panneau = 480px */
+  /* Panneau actif prend toute la largeur disponible (max 480px via body) */
   .tab-panel {
-    width: 480px;
-    min-width: 480px;
+    width: 100%;
   }
 }
 
@@ -1126,6 +1137,31 @@ body {
 
 .form-field__input::placeholder {
   color: #374151;
+}
+
+.repos-quick-btns {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.repos-quick-btn {
+  flex: 1;
+  padding: 0.45rem 0;
+  background: #1a1e23;
+  border: 1px solid #1f242a;
+  border-radius: 8px;
+  color: #9ca3af;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.repos-quick-btn:active {
+  background: var(--accent-glow);
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 .form-field__select option {
@@ -1233,6 +1269,7 @@ body {
 .today-exercise-row__tag--triceps  { color: var(--color-triceps);  background: rgba(251,146,60,0.1); border-color: rgba(251,146,60,0.2); }
 .today-exercise-row__tag--jambes   { color: var(--color-jambes);  background: rgba(239,68,68,0.1);  border-color: rgba(239,68,68,0.2); }
 .today-exercise-row__tag--abdos    { color: var(--color-abdos);   background: rgba(234,179,8,0.1);  border-color: rgba(234,179,8,0.2); }
+.today-exercise-row__tag--cardio   { color: var(--color-cardio);  background: rgba(56,189,248,0.1); border-color: rgba(56,189,248,0.2); }
 
 .today-exercise-row__name {
   flex: 1;
@@ -1412,6 +1449,7 @@ body {
 .session-card__exo-chip--triceps  { color: var(--color-triceps);  background: rgba(251,146,60,0.1); border-color: rgba(251,146,60,0.2); }
 .session-card__exo-chip--jambes   { color: var(--color-jambes);  background: rgba(239,68,68,0.1);  border-color: rgba(239,68,68,0.2); }
 .session-card__exo-chip--abdos    { color: var(--color-abdos);   background: rgba(234,179,8,0.1);  border-color: rgba(234,179,8,0.2); }
+.session-card__exo-chip--cardio   { color: var(--color-cardio);  background: rgba(56,189,248,0.1); border-color: rgba(56,189,248,0.2); }
 
 .session-card__exo-more {
   font-size: 0.65rem;
@@ -1840,11 +1878,38 @@ body {
   opacity: 0.55;
 }
 
+/* La carte est maintenant entièrement cliquable */
+.planning-session[data-detail-id] {
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.planning-session[data-detail-id]:hover {
+  background: #1a2028;
+  border-color: #2a3540;
+}
+
+.planning-session[data-detail-id]:active {
+  transform: scale(0.985);
+}
+
 .planning-session__top {
   display: flex;
   align-items: center;
   gap: 0.5rem;
   margin-bottom: 0.375rem;
+}
+
+.planning-session__meta {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.planning-session__chevron {
+  color: #4b5563;
+  flex-shrink: 0;
 }
 
 .planning-session__name {
@@ -2065,6 +2130,193 @@ body {
 .template-card__start:hover {
   background: rgba(57, 224, 122, 0.15);
   border-color: rgba(57, 224, 122, 0.45);
+}
+
+/* ── Lien discret "Gérer mes séances" ── */
+.modeles-manage-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 1rem auto 0.5rem;
+  padding: 0.5rem 0.9rem;
+  background: transparent;
+  border: 1px dashed #2a3038;
+  border-radius: 10px;
+  color: var(--text-idle);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s, background 0.2s;
+  -webkit-tap-highlight-color: transparent;
+  font-family: inherit;
+}
+
+.modeles-manage-link:hover {
+  color: #e5e7eb;
+  border-color: #3a4450;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.modeles-manage-link__count {
+  color: #4b5563;
+  font-weight: 500;
+  font-size: 0.72rem;
+}
+
+/* Centrer le lien dans le panneau */
+#panel-modeles .modeles-manage-link {
+  align-self: center;
+}
+
+/* ── Bottom-sheet : Gérer mes séances ── */
+#manage-sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  display: flex;
+  align-items: flex-end;
+}
+
+#manage-sheet[hidden] { display: none; }
+
+.manage-panel {
+  /* Hérite de .sd-panel mais on augmente la hauteur pour un vrai plein écran */
+  max-height: 92vh;
+  max-height: 92dvh;
+}
+
+/* Section collapsible */
+.manage-section {
+  border-bottom: 1px solid #1a1f26;
+}
+
+.manage-section:last-child { border-bottom: none; }
+
+.manage-section__head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.875rem 1rem;
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.manage-section__head::-webkit-details-marker { display: none; }
+
+.manage-section__title {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #e5e7eb;
+  letter-spacing: 0.02em;
+}
+
+.manage-section__count {
+  font-size: 0.68rem;
+  color: var(--text-idle);
+  background: #1f2428;
+  padding: 1px 8px;
+  border-radius: 20px;
+  font-weight: 600;
+}
+
+.manage-section__chevron {
+  margin-left: auto;
+  color: #4b5563;
+  font-size: 0.85rem;
+  transition: transform 0.2s;
+}
+
+.manage-section[open] .manage-section__chevron {
+  transform: rotate(180deg);
+}
+
+.manage-section__body {
+  padding: 0 1rem 0.75rem;
+}
+
+.manage-empty {
+  font-size: 0.78rem;
+  color: var(--text-idle);
+  text-align: center;
+  padding: 0.75rem 0;
+  margin: 0;
+}
+
+/* Ligne modèle dans la feuille */
+.manage-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.625rem 0;
+  border-bottom: 1px solid #1a1f26;
+}
+
+.manage-row:last-child { border-bottom: none; }
+
+.manage-row--archived .manage-row__name { color: #9ca3af; }
+
+.manage-row__info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+.manage-row__name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #e5e7eb;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.manage-row__meta {
+  font-size: 0.68rem;
+  color: var(--text-idle);
+}
+
+.manage-row__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  flex-shrink: 0;
+}
+
+.manage-row__btn {
+  padding: 0.45rem 0.7rem;
+  background: transparent;
+  border: 1px solid #2a3038;
+  border-radius: 8px;
+  color: #9ca3af;
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s, color 0.2s;
+  -webkit-tap-highlight-color: transparent;
+  font-family: inherit;
+}
+
+.manage-row__btn--archive:hover {
+  border-color: rgba(57, 224, 122, 0.4);
+  color: var(--accent);
+  background: rgba(57, 224, 122, 0.06);
+}
+
+.manage-row__btn--delete {
+  width: 32px;
+  padding: 0.45rem 0;
+  text-align: center;
+  color: #4b5563;
+}
+
+.manage-row__btn--delete:hover {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.35);
+  color: #ef4444;
 }
 
 /* ============================================================
@@ -2478,3 +2730,753 @@ body {
   box-shadow: 0 0 0 3px var(--accent-glow);
 }
 .form-exo-info .info-notes::placeholder { color: #374151; }
+
+
+/* ============================================================
+   PANNEAU 2 — PLANNING : navigation semaine + cartes jour
+   ============================================================ */
+
+/* ── Navigation semaine ── */
+.musc-week-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #1f242a;
+  background: #13171b;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.musc-week-nav__btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: #1a1e23;
+  border: 1px solid #2a3038;
+  border-radius: 10px;
+  color: #e5e7eb;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.musc-week-nav__btn:hover,
+.musc-week-nav__btn:active {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.musc-week-nav__label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #e5e7eb;
+  letter-spacing: 0.01em;
+}
+
+/* ── Carte jour ── */
+.musc-day-card {
+  margin: 0.75rem 1rem;
+  background: #13171b;
+  border: 1px solid #1f242a;
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.musc-day-card--today {
+  border-color: rgba(57, 224, 122, 0.35);
+}
+
+.musc-day-card--past {
+  opacity: 0.6;
+}
+
+.musc-day-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.625rem 0.875rem;
+  border-bottom: 1px solid #1f242a;
+  background: #111417;
+}
+
+.musc-day-card--today .musc-day-card__header {
+  background: rgba(57, 224, 122, 0.06);
+}
+
+.musc-day-card__day {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #e5e7eb;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.musc-day-card__today-badge {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--accent);
+  background: rgba(57, 224, 122, 0.15);
+  border-radius: 99px;
+  padding: 1px 7px;
+  letter-spacing: 0.02em;
+}
+
+.musc-day-card__date {
+  font-size: 0.75rem;
+  color: var(--text-idle);
+}
+
+.musc-day-card__body {
+  padding: 0.625rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.musc-day-card__empty {
+  font-size: 0.78rem;
+  color: var(--text-idle);
+  margin: 0;
+  padding: 0.125rem 0;
+}
+
+.musc-day-card__footer {
+  display: flex;
+  padding: 0.5rem 0.75rem;
+  border-top: 1px solid #1a1e23;
+}
+
+.musc-day-card__add-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.65rem;
+  background: transparent;
+  border: 1px solid #2a3038;
+  border-radius: 8px;
+  color: var(--text-idle);
+  font-size: 0.72rem;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.musc-day-card__add-btn:hover,
+.musc-day-card__add-btn:active {
+  color: var(--accent);
+  border-color: rgba(57, 224, 122, 0.4);
+  background: rgba(57, 224, 122, 0.08);
+}
+
+/* ============================================================
+   BOTTOM-SHEET : DÉTAIL SÉANCE PLANIFIÉE
+   Même pattern que pl-menu-detail-sheet (alimentation)
+   ============================================================ */
+
+#musc-session-detail {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  display: flex;
+  align-items: flex-end;
+}
+
+#musc-session-detail[hidden] { display: none; }
+
+.sd-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+}
+
+.sd-panel {
+  position: relative;
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  background: #111417;
+  border-radius: 20px 20px 0 0;
+  border-top: 1px solid #1f242a;
+  max-height: 90vh;
+  max-height: 90dvh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.sd-handle {
+  width: 36px;
+  height: 4px;
+  background: #2a3038;
+  border-radius: 2px;
+  margin: 0.75rem auto 0;
+  flex-shrink: 0;
+}
+
+/* ── En-tête ── */
+.sd-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 1rem 1rem 0.75rem;
+  border-bottom: 1px solid #1f242a;
+  flex-shrink: 0;
+}
+
+.sd-header__left { flex: 1; min-width: 0; }
+
+.sd-title {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #f0f0f0;
+  line-height: 1.2;
+}
+
+.sd-date {
+  font-size: 0.72rem;
+  color: #6b7280;
+  margin-top: 3px;
+  text-transform: capitalize;
+}
+
+.sd-close {
+  flex-shrink: 0;
+  background: #1a1e23;
+  border: 1px solid #2a3038;
+  border-radius: 8px;
+  color: #9ca3af;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 0.875rem;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.sd-close:hover { background: #22272e; }
+
+/* ── Résumé ── */
+.sd-summary {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #1f242a;
+  flex-shrink: 0;
+}
+
+.sd-summary__item {
+  font-size: 0.78rem;
+  color: #9ca3af;
+  font-weight: 500;
+}
+
+.sd-summary__sep {
+  color: #374151;
+  font-size: 0.78rem;
+}
+
+.sd-summary__badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--accent);
+  background: rgba(57, 224, 122, 0.1);
+  border: 1px solid rgba(57, 224, 122, 0.25);
+  padding: 2px 8px;
+  border-radius: 20px;
+  margin-left: auto;
+}
+
+/* ── Label section ── */
+.sd-section-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #4b5563;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 0.75rem 1rem 0.375rem;
+  flex-shrink: 0;
+}
+
+/* ── Liste exercices ── */
+.sd-exercises {
+  padding: 0 1rem;
+}
+/* (le scroll est géré par .sd-scroll-zone) */
+
+.sd-exo-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.625rem 0;
+  border-bottom: 1px solid #1a1f26;
+}
+
+.sd-exo-row:last-child { border-bottom: none; }
+
+.sd-exo-row__left {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.sd-exo-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* Couleurs des groupes musculaires (reprend session-card__exo-chip) */
+.sd-exo-dot--rouge    { background: #ef4444; }
+.sd-exo-dot--orange   { background: #f97316; }
+.sd-exo-dot--jaune    { background: #eab308; }
+.sd-exo-dot--vert     { background: var(--accent); }
+.sd-exo-dot--bleu     { background: #3b82f6; }
+.sd-exo-dot--violet   { background: #8b5cf6; }
+.sd-exo-dot--rose     { background: #ec4899; }
+.sd-exo-dot--gris     { background: #6b7280; }
+.sd-exo-dot--cardio   { background: var(--color-cardio); }
+.sd-exo-dot--pecto    { background: var(--color-pecto); }
+.sd-exo-dot--dos      { background: var(--color-dos); }
+.sd-exo-dot--epaules  { background: var(--color-epaules); }
+.sd-exo-dot--biceps   { background: var(--color-biceps); }
+.sd-exo-dot--triceps  { background: var(--color-triceps); }
+.sd-exo-dot--jambes   { background: var(--color-jambes); }
+.sd-exo-dot--abdos    { background: var(--color-abdos); }
+
+.sd-exo-name {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #e5e7eb;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sd-exo-row__right {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.sd-exo-sets {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #f0f0f0;
+  background: #1a1f26;
+  border: 1px solid #2a3038;
+  padding: 2px 8px;
+  border-radius: 6px;
+}
+
+.sd-exo-weight {
+  font-size: 0.72rem;
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.sd-exo-rest {
+  font-size: 0.7rem;
+  color: #4b5563;
+}
+
+/* ── Actions ── */
+.sd-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.875rem 1rem calc(env(safe-area-inset-bottom, 0px) + 1rem);
+  border-top: 1px solid #1f242a;
+  flex-shrink: 0;
+}
+
+.sd-btn {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  cursor: pointer;
+  border: none;
+  transition: opacity 0.15s, transform 0.1s;
+  -webkit-tap-highlight-color: transparent;
+  font-family: inherit;
+}
+
+.sd-btn:active { transform: scale(0.97); }
+
+.sd-btn--start {
+  background: var(--accent);
+  color: #0e1114;
+}
+
+.sd-btn--start:hover { opacity: 0.88; }
+
+.sd-btn--delete {
+  background: transparent;
+  color: #6b7280;
+  border: 1px solid #2a3038;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.sd-btn--delete:hover {
+  color: #ef4444;
+  border-color: rgba(239, 68, 68, 0.35);
+}
+
+/* ── Bandeau phase du programme ── */
+.sd-phase-banner {
+  padding: 0.45rem 1rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--accent);
+  background: rgba(57, 224, 122, 0.06);
+  border-bottom: 1px solid rgba(57, 224, 122, 0.12);
+  letter-spacing: 0.01em;
+  flex-shrink: 0;
+}
+
+/* ── Scroll zone (exercices + ajouter + picker) ── */
+.sd-scroll-zone {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+.sd-scroll-zone::-webkit-scrollbar { display: none; }
+
+/* Surcharge : .sd-exercises n'a plus son propre scroll */
+.sd-scroll-zone .sd-exercises {
+  flex: none;
+  overflow: visible;
+  padding: 0 1rem;
+}
+
+/* ── Badge "Modifié" ── */
+.sd-modified-badge {
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: #f59e0b;
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: 99px;
+  padding: 2px 8px;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  align-self: flex-start;
+  margin-top: 2px;
+}
+
+/* ── Bouton supprimer un exercice ── */
+.sd-exo-delete {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  border: 1px solid #2a3038;
+  background: transparent;
+  color: #4b5563;
+  font-size: 0.7rem;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  -webkit-tap-highlight-color: transparent;
+  flex-shrink: 0;
+}
+.sd-exo-delete:hover,
+.sd-exo-delete:active {
+  background: rgba(239, 68, 68, 0.12);
+  border-color: rgba(239, 68, 68, 0.35);
+  color: #ef4444;
+}
+
+/* ── Message vide ── */
+.sd-exo-empty {
+  font-size: 0.78rem;
+  color: var(--text-idle);
+  padding: 0.75rem 1rem;
+  margin: 0;
+}
+
+/* ── Zone "Ajouter un exercice" ── */
+.sd-add-zone {
+  padding: 0.5rem 1rem 0.25rem;
+  border-top: 1px solid #1a1f26;
+}
+
+.sd-add-exo-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.75rem;
+  background: transparent;
+  border: 1px solid #2a3038;
+  border-radius: 8px;
+  color: var(--text-idle);
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+  -webkit-tap-highlight-color: transparent;
+  font-family: inherit;
+}
+.sd-add-exo-btn:hover,
+.sd-add-exo-btn:active {
+  color: var(--accent);
+  border-color: rgba(57, 224, 122, 0.4);
+  background: rgba(57, 224, 122, 0.07);
+}
+
+/* ── Picker exercices ── */
+#sd-exo-picker {
+  border-top: 1px solid #1a1f26;
+  padding-bottom: 0.5rem;
+}
+
+.sd-picker-search {
+  padding: 0.625rem 1rem 0.375rem;
+}
+
+.sd-picker-search__input {
+  width: 100%;
+  box-sizing: border-box;
+  background: #1a1e23;
+  border: 1px solid #2a3038;
+  border-radius: 10px;
+  color: #e5e7eb;
+  font-size: 0.82rem;
+  padding: 0.5rem 0.75rem;
+  outline: none;
+  font-family: inherit;
+}
+.sd-picker-search__input:focus {
+  border-color: rgba(57, 224, 122, 0.4);
+}
+.sd-picker-search__input::placeholder { color: #4b5563; }
+
+.sd-picker-list {
+  max-height: 220px;
+  overflow-y: auto;
+  scrollbar-width: none;
+  padding: 0 0.5rem;
+}
+.sd-picker-list::-webkit-scrollbar { display: none; }
+
+.sd-picker-item {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.625rem 0.5rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.sd-picker-item:hover,
+.sd-picker-item:active {
+  background: rgba(57, 224, 122, 0.06);
+}
+
+.sd-picker-item__name {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #e5e7eb;
+  flex: 1;
+}
+
+.sd-picker-item__group {
+  font-size: 0.68rem;
+  color: var(--text-idle);
+}
+
+.sd-picker-empty {
+  font-size: 0.78rem;
+  color: var(--text-idle);
+  padding: 0.75rem 0.5rem;
+  margin: 0;
+}
+
+/* ── Indicateur cardio dans le picker ── */
+.sd-picker-item__cardio-badge {
+  font-size: 0.58rem;
+  font-weight: 700;
+  color: var(--color-cardio);
+  background: rgba(56, 189, 248, 0.1);
+  border: 1px solid rgba(56, 189, 248, 0.2);
+  border-radius: 4px;
+  padding: 1px 5px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* ============================================================
+   CARDIO — BOUTON DÉCLARATION (onglet Aujourd'hui)
+   ============================================================ */
+.cardio-declare-zone {
+  margin-top: 1.25rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid #1a1f26;
+}
+
+.btn-cardio-declare {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: rgba(56, 189, 248, 0.06);
+  border: 1px solid rgba(56, 189, 248, 0.2);
+  border-radius: 12px;
+  color: var(--color-cardio);
+  font-size: 0.82rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.2s, border-color 0.2s;
+}
+.btn-cardio-declare:active {
+  background: rgba(56, 189, 248, 0.12);
+}
+
+/* ============================================================
+   CARDIO — CHIPS INTENSITÉ (partagés séance + déclaration)
+   ============================================================ */
+.cardio-intensite-chips {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.cardio-intensite-chip {
+  padding: 0.4rem 0.875rem;
+  background: #1a1e23;
+  border: 1px solid #2a3038;
+  border-radius: 20px;
+  color: #9ca3af;
+  font-size: 0.78rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+.cardio-intensite-chip--selected {
+  color: var(--color-cardio);
+  background: rgba(56, 189, 248, 0.1);
+  border-color: rgba(56, 189, 248, 0.35);
+}
+
+/* ============================================================
+   CARDIO — CONFIGURATION DANS LE MODÈLE (exo-config-modal)
+   ============================================================ */
+#exo-config-cardio-row {
+  padding: 0;
+}
+
+/* ============================================================
+   CARDIO — AFFICHAGE DANS SD-EXO-ROW
+   ============================================================ */
+.sd-exo-cardio-info {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.sd-exo-cardio-duration {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--color-cardio);
+}
+
+.sd-exo-cardio-detail {
+  font-size: 0.72rem;
+  color: var(--text-idle);
+}
+
+/* ============================================================
+   CARDIO — SHEET DÉCLARATION MANUELLE
+   (réutilise les classes sd-panel / sd-backdrop)
+   ============================================================ */
+
+/* Conteneur fixed — miroir de #musc-session-detail */
+#cardio-declare-sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  display: flex;
+  align-items: flex-end;
+}
+
+#cardio-declare-sheet[hidden] { display: none; }
+
+.cardio-decl-form-field {
+  padding: 0 1rem 1rem;
+}
+
+.cardio-decl-label {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 0.5rem;
+}
+
+.cardio-decl-label span {
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--text-idle);
+}
+
+/* ── Récap cardio dans le panneau Aujourd'hui ── */
+.today-cardio-log {
+  background: rgba(56, 189, 248, 0.05);
+  border: 1px solid rgba(56, 189, 248, 0.15);
+  border-radius: 12px;
+  padding: 0.875rem 1rem;
+  margin-top: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.today-cardio-log__icon {
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+
+.today-cardio-log__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.today-cardio-log__name {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--color-cardio);
+}
+
+.today-cardio-log__meta {
+  font-size: 0.72rem;
+  color: var(--text-idle);
+  margin-top: 2px;
+}

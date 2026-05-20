@@ -1,0 +1,1154 @@
+/* ============================================================
+   FITTRACK — PAGE PROFIL
+   Mobile First | Vanilla CSS
+   ============================================================ */
+
+:root {
+  --header-height: 72px;
+}
+
+body {
+  max-width: 480px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* ============================================================
+   EN-TÊTE
+   ============================================================ */
+.page-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  height: var(--header-height);
+  background: linear-gradient(135deg, #111417 0%, #1a2318 100%);
+  border-bottom: 1px solid #1f2a22;
+  display: flex;
+  align-items: center;
+  padding: 0 1.25rem;
+}
+
+.page-header__inner {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+}
+
+.page-header__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  background: rgba(57, 224, 122, 0.12);
+  border: 1px solid rgba(57, 224, 122, 0.3);
+  border-radius: 12px;
+  color: #39e07a;
+  flex-shrink: 0;
+}
+
+.page-header__icon svg {
+  width: 22px;
+  height: 22px;
+}
+
+.page-header__title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+}
+
+.page-header__subtitle {
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin-top: 2px;
+}
+
+/* ============================================================
+   SYSTÈME D'ONGLETS
+   ============================================================ */
+.profil-tabs {
+  height: calc(100dvh - var(--header-height) - var(--nav-height, 68px));
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Barre d'onglets */
+.profil-tabs__bar {
+  display: flex;
+  background: #13171b;
+  border-bottom: 1px solid #1f242a;
+  flex-shrink: 0;
+}
+
+.profil-tabs__item {
+  flex: 1;
+  text-align: center;
+  padding: 0.7rem 0.25rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #6b7280;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: color 0.15s ease, border-color 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+/* Zone de contenu scrollable */
+.profil-tabs__content {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Panels — masqués par défaut */
+.profil-tab-panel {
+  display: none;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding: 1.25rem 1rem;
+}
+
+/* Onglet actif — label */
+#ptab-objectif:checked  ~ .profil-tabs__bar label[for="ptab-objectif"],
+#ptab-donnees:checked   ~ .profil-tabs__bar label[for="ptab-donnees"],
+#ptab-avance:checked    ~ .profil-tabs__bar label[for="ptab-avance"],
+#ptab-programme:checked ~ .profil-tabs__bar label[for="ptab-programme"] {
+  color: #39e07a;
+  border-bottom-color: #39e07a;
+}
+
+/* Onglet actif — panel */
+#ptab-objectif:checked  ~ .profil-tabs__content #ppanel-objectif,
+#ptab-donnees:checked   ~ .profil-tabs__content #ppanel-donnees,
+#ptab-avance:checked    ~ .profil-tabs__content #ppanel-avance,
+#ptab-programme:checked ~ .profil-tabs__content #ppanel-programme {
+  display: flex;
+}
+
+/* 4 onglets : texte plus compact */
+.profil-tabs__bar--4 .profil-tabs__item {
+  font-size: 0.7rem;
+  padding: 0.7rem 0.125rem;
+}
+
+/* ============================================================
+   SECTION
+   ============================================================ */
+.profil-section {
+  background: #13171b;
+  border: 1px solid #1f2a22;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.profil-section__header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.125rem 0.875rem;
+  border-bottom: 1px solid #1f2a22;
+}
+
+.profil-section__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: rgba(57, 224, 122, 0.1);
+  border-radius: 10px;
+  color: #39e07a;
+  flex-shrink: 0;
+}
+
+.profil-section__icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.profil-section__title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1.2;
+}
+
+.profil-section__desc {
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin-top: 2px;
+}
+
+/* ============================================================
+   BANDEAU EXPLICATIF (DÉVELOPPEMENT)
+   ============================================================ */
+.profil-dev-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin: 0.75rem 1.125rem;
+  padding: 0.625rem 0.875rem;
+  background: rgba(57, 224, 122, 0.06);
+  border: 1px solid rgba(57, 224, 122, 0.15);
+  border-radius: 8px;
+  font-size: 0.72rem;
+  color: #6b7280;
+  line-height: 1.5;
+}
+
+.profil-dev-notice svg {
+  flex-shrink: 0;
+  color: var(--accent);
+  margin-top: 1px;
+}
+
+/* ============================================================
+   CARTE
+   ============================================================ */
+.profil-card {
+  padding: 1rem 1.125rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+}
+
+.profil-card__label {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.625rem;
+}
+
+.profil-card__label-icon {
+  font-size: 1.25rem;
+  line-height: 1;
+  margin-top: 1px;
+  flex-shrink: 0;
+}
+
+.profil-card__title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #e5e7eb;
+  line-height: 1.3;
+}
+
+.profil-card__hint {
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin-top: 3px;
+  line-height: 1.4;
+}
+
+.profil-card__hint code {
+  font-family: "SFMono-Regular", Consolas, monospace;
+  background: #1f2a22;
+  color: #39e07a;
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+}
+
+/* ============================================================
+   SÉPARATEUR
+   ============================================================ */
+.profil-divider {
+  height: 1px;
+  background: #1f2a22;
+  margin: 0 1.125rem;
+}
+
+/* ============================================================
+   BOUTONS
+   ============================================================ */
+.profil-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.8rem 1rem;
+  border: none;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: opacity 0.15s ease, transform 0.1s ease;
+  font-family: inherit;
+}
+
+.profil-btn:active {
+  transform: scale(0.97);
+}
+
+.profil-btn--primary {
+  background: #39e07a;
+  color: #0e1114;
+}
+
+.profil-btn--primary:hover {
+  opacity: 0.88;
+}
+
+.profil-btn--secondary {
+  background: #1f2a22;
+  color: #39e07a;
+  border: 1px solid rgba(57, 224, 122, 0.3);
+}
+
+.profil-btn--secondary:hover {
+  background: rgba(57, 224, 122, 0.1);
+}
+
+.profil-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ============================================================
+   SÉLECTEUR DE FICHIER
+   ============================================================ */
+.profil-file-label {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.75rem 1rem;
+  background: #1a1e23;
+  border: 1px dashed #2d3748;
+  border-radius: 10px;
+  cursor: pointer;
+  color: #9ca3af;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: border-color 0.2s ease, background 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.profil-file-label:hover {
+  border-color: rgba(57, 224, 122, 0.4);
+  background: rgba(57, 224, 122, 0.04);
+}
+
+.profil-file-label.has-file {
+  border-color: rgba(57, 224, 122, 0.5);
+  color: #39e07a;
+}
+
+.profil-file-label svg {
+  flex-shrink: 0;
+  color: inherit;
+}
+
+.profil-file-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ============================================================
+   MESSAGES
+   ============================================================ */
+.profil-msg {
+  font-size: 0.8rem;
+  font-weight: 500;
+  padding: 0.625rem 0.875rem;
+  border-radius: 8px;
+  line-height: 1.4;
+}
+
+.profil-msg--error {
+  background: rgba(248, 113, 113, 0.12);
+  color: #f87171;
+  border: 1px solid rgba(248, 113, 113, 0.25);
+}
+
+/* ============================================================
+   TOAST
+   ============================================================ */
+.profil-toast {
+  position: fixed;
+  bottom: calc(var(--nav-height, 68px) + 1.25rem);
+  left: 50%;
+  transform: translateX(-50%) translateY(12px);
+  background: #39e07a;
+  color: #0e1114;
+  font-size: 0.875rem;
+  font-weight: 700;
+  padding: 0.75rem 1.5rem;
+  border-radius: 99px;
+  white-space: nowrap;
+  z-index: 500;
+  box-shadow: 0 4px 20px rgba(57, 224, 122, 0.35);
+  opacity: 0;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  pointer-events: none;
+}
+
+.profil-toast--show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.profil-toast--error {
+  background: #f87171;
+  box-shadow: 0 4px 20px rgba(248, 113, 113, 0.35);
+  color: #fff;
+}
+
+/* ============================================================
+   SECTION INFO APP
+   ============================================================ */
+.profil-section--info {
+  background: transparent;
+  border-color: transparent;
+  text-align: center;
+  padding: 0.25rem 0 0.5rem;
+}
+
+.profil-app-name {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #374151;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.profil-app-version {
+  font-size: 0.7rem;
+  color: #374151;
+  margin-top: 3px;
+}
+
+/* ============================================================
+   FORMULAIRE OBJECTIF NUTRITIONNEL
+   ============================================================ */
+.profil-objectif-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.125rem;
+  padding: 1.125rem;
+}
+
+/* Ligne à deux colonnes (poids/taille, âge/sexe, période) */
+.profil-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.profil-form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.profil-form-field--full {
+  grid-column: 1 / -1;
+}
+
+.profil-form-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.profil-form-label--opt {
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+  color: #4b5563;
+}
+
+.profil-form-label--hint {
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+  color: #4b5563;
+  font-size: 0.68rem;
+}
+
+/* Input numérique avec unité */
+.profil-input-unit {
+  display: flex;
+  align-items: center;
+  background: #1a1e23;
+  border: 1px solid #2a3038;
+  border-radius: 10px;
+  overflow: hidden;
+  transition: border-color 0.2s ease;
+}
+
+.profil-input-unit:focus-within {
+  border-color: rgba(57, 224, 122, 0.5);
+}
+
+.profil-input {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  outline: none;
+  padding: 0.625rem 0.75rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #f0f0f0;
+  font-family: inherit;
+  -moz-appearance: textfield;
+}
+
+.profil-input::-webkit-outer-spin-button,
+.profil-input::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+.profil-input--date {
+  width: 100%;
+  background: #1a1e23;
+  border: 1px solid #2a3038;
+  border-radius: 10px;
+  padding: 0.625rem 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #e5e7eb;
+  font-family: inherit;
+  outline: none;
+  color-scheme: dark;
+  transition: border-color 0.2s ease;
+}
+
+.profil-input--date:focus {
+  border-color: rgba(57, 224, 122, 0.5);
+}
+
+.profil-input-unit__label {
+  padding: 0 0.625rem 0 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #6b7280;
+  flex-shrink: 0;
+}
+
+/* Select activité */
+.profil-select {
+  width: 100%;
+  background: #1a1e23;
+  border: 1px solid #2a3038;
+  border-radius: 10px;
+  padding: 0.625rem 0.75rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #e5e7eb;
+  font-family: inherit;
+  outline: none;
+  color-scheme: dark;
+  cursor: pointer;
+  transition: border-color 0.2s ease;
+  -webkit-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b7280' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  padding-right: 2.25rem;
+}
+
+.profil-select:focus {
+  border-color: rgba(57, 224, 122, 0.5);
+}
+
+/* Radio chips (objectif, sexe, rythme) */
+.profil-radio-group {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.profil-radio-group--stretch {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+  gap: 0.5rem;
+}
+
+/* Grille 3 colonnes pour le sélecteur d'objectif */
+.profil-radio-group--3col {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+}
+
+/* Chip désactivée (prise de masse — bientôt) */
+.profil-chip-disabled {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  padding: 0.5rem 0.5rem;
+  border-radius: 10px;
+  border: 1px solid #1f2a22;
+  background: #1a1e23;
+  font-size: 0.73rem;
+  font-weight: 600;
+  color: #374151;
+  text-align: center;
+  line-height: 1.2;
+  cursor: not-allowed;
+}
+
+.profil-chip-soon {
+  font-size: 0.58rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #39e07a;
+  opacity: 0.6;
+}
+
+.profil-radio-chip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.profil-radio-chip input[type="radio"] {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.profil-radio-chip span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 0.5rem 0.75rem;
+  border-radius: 10px;
+  border: 1px solid #2a3038;
+  background: #1a1e23;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #6b7280;
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+  width: 100%;
+  line-height: 1.2;
+}
+
+.profil-radio-chip input[type="radio"]:checked + span {
+  background: rgba(57, 224, 122, 0.12);
+  border-color: rgba(57, 224, 122, 0.45);
+  color: #39e07a;
+}
+
+/* Résumé calculé */
+.profil-objectif-summary {
+  background: rgba(57, 224, 122, 0.06);
+  border: 1px solid rgba(57, 224, 122, 0.2);
+  border-radius: 12px;
+  padding: 0.875rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.profil-objectif-summary[hidden] { display: none; }
+
+.profil-objectif-summary__title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #39e07a;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.profil-objectif-summary__grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+}
+
+.profil-objectif-summary__item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+}
+
+.profil-objectif-summary__val {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #f0f0f0;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+
+.profil-objectif-summary__lbl {
+  font-size: 0.62rem;
+  color: #6b7280;
+  text-align: center;
+  line-height: 1.3;
+}
+
+.profil-objectif-summary__projection {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #39e07a;
+  text-align: center;
+  padding: 0.125rem 0;
+  line-height: 1.4;
+}
+
+.profil-objectif-summary__projection[hidden] { display: none; }
+
+.profil-objectif-summary__hint {
+  font-size: 0.68rem;
+  color: #4b5563;
+  text-align: center;
+  line-height: 1.4;
+}
+
+.profil-objectif-submit {
+  margin-top: 0.25rem;
+}
+
+/* Bloc dernière pesée enregistrée */
+.profil-poids-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.625rem 0.875rem;
+  background: #13171b;
+  border: 1px solid #1f2a22;
+  border-radius: 10px;
+  gap: 0.5rem;
+}
+
+.profil-poids-info[hidden] { display: none; }
+
+.profil-poids-info__label {
+  font-size: 0.72rem;
+  color: #6b7280;
+  line-height: 1.3;
+}
+
+.profil-poids-info__val {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #e5e7eb;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ============================================================
+   PANEL AVANCÉ
+   ============================================================ */
+.profil-avance-block {
+  padding: 0.75rem 1.125rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.profil-avance-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid #1f242a;
+  gap: 0.5rem;
+}
+
+.profil-avance-row:last-child {
+  border-bottom: none;
+}
+
+.profil-avance-row__label {
+  font-size: 0.8rem;
+  color: #9ca3af;
+  line-height: 1.3;
+}
+
+.profil-avance-row__val {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #e5e7eb;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.profil-avance-separator {
+  height: 1px;
+  background: rgba(57, 224, 122, 0.15);
+  margin: 0.375rem 0;
+}
+
+.profil-avance-empty {
+  font-size: 0.82rem;
+  color: #6b7280;
+  text-align: center;
+  padding: 1.25rem;
+  line-height: 1.5;
+}
+
+.profil-avance-method {
+  padding: 0.875rem 1.125rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.profil-avance-method p {
+  font-size: 0.8rem;
+  color: #9ca3af;
+  line-height: 1.55;
+}
+
+.profil-avance-method strong {
+  color: #e5e7eb;
+  font-weight: 600;
+}
+
+/* ============================================================
+   SUIVI DU POIDS
+   ============================================================ */
+
+/* Bloc tendance */
+.weight-trend-block {
+  padding: 0.875rem 1.125rem 0;
+}
+
+.weight-trend-empty {
+  font-size: 0.8rem;
+  color: #6b7280;
+  line-height: 1.5;
+}
+
+.weight-trend {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 0.625rem 0.875rem;
+  border-radius: 10px;
+}
+
+.weight-trend__main {
+  display: flex;
+  align-items: baseline;
+  gap: 0.625rem;
+}
+
+.weight-trend__val {
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+
+.weight-trend__lbl {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.weight-trend__period {
+  font-size: 0.7rem;
+  color: #6b7280;
+  line-height: 1.4;
+}
+
+/* Variantes de couleur */
+.weight-trend--down {
+  background: rgba(57, 224, 122, 0.07);
+  border: 1px solid rgba(57, 224, 122, 0.18);
+}
+.weight-trend--down .weight-trend__val,
+.weight-trend--down .weight-trend__lbl { color: #39e07a; }
+
+.weight-trend--up {
+  background: rgba(251, 191, 36, 0.07);
+  border: 1px solid rgba(251, 191, 36, 0.18);
+}
+.weight-trend--up .weight-trend__val,
+.weight-trend--up .weight-trend__lbl { color: #fbbf24; }
+
+.weight-trend--stable {
+  background: rgba(107, 114, 128, 0.07);
+  border: 1px solid rgba(107, 114, 128, 0.18);
+}
+.weight-trend--stable .weight-trend__val,
+.weight-trend--stable .weight-trend__lbl { color: #9ca3af; }
+
+/* Formulaire de saisie */
+.weight-input-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: stretch;
+  padding: 0.875rem 1.125rem 0;
+}
+
+.weight-input-unit {
+  flex: 0 0 auto;
+  width: 100px;
+}
+
+.weight-date-input {
+  flex: 1;
+  min-width: 0;
+}
+
+.weight-add-btn {
+  flex: 0 0 auto;
+  width: auto;
+  padding: 0.625rem 1rem;
+  font-size: 0.82rem;
+  border-radius: 10px;
+}
+
+/* Historique des pesées */
+.weight-history-block {
+  padding: 0.625rem 1.125rem 0.875rem;
+}
+
+.weight-history {
+  display: flex;
+  flex-direction: column;
+}
+
+.weight-history-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #1f242a;
+}
+
+.weight-history-row:last-child { border-bottom: none; }
+
+.weight-history-row__date {
+  font-size: 0.8rem;
+  color: #9ca3af;
+}
+
+.weight-history-row__right {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.weight-history-row__poids {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #e5e7eb;
+}
+
+.weight-history-diff {
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.weight-history-diff--down { color: #39e07a; }
+.weight-history-diff--up   { color: #fbbf24; }
+
+/* ============================================================
+   RESPONSIVE — Desktop
+   ============================================================ */
+@media (min-width: 768px) {
+  .profil-tab-panel {
+    padding: 1.5rem 1.25rem;
+  }
+}
+
+/* ============================================================
+   ONGLET PROGRAMME — styles
+   ============================================================ */
+
+/* Résumé programme actif */
+.prog-summary-icon svg {
+  width: 20px;
+  height: 20px;
+  color: var(--accent);
+}
+
+.prog-summary-bar-wrap {
+  height: 6px;
+  background: rgba(255,255,255,0.07);
+  border-radius: 4px;
+  margin: 0.75rem 1rem 0.25rem;
+  overflow: hidden;
+}
+
+.prog-summary-bar {
+  height: 100%;
+  background: #39e07a;
+  border-radius: 4px;
+  min-width: 4px;
+  transition: width 0.4s ease;
+}
+
+.prog-summary-weeks {
+  font-size: 0.7rem;
+  color: #6b7280;
+  padding: 0 1rem 0.375rem;
+}
+
+.prog-phase-detail-btn {
+  background: none;
+  border: none;
+  padding: 0 1rem 0.875rem;
+  color: var(--accent, #39e07a);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+  display: block;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Formulaire */
+#prog-form {
+  padding: 0 1rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* Liste de phases */
+.prog-phases-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 0.625rem;
+}
+
+.prog-phase-card {
+  background: #1a1e23;
+  border: 1px solid #2a3038;
+  border-radius: 12px;
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.prog-phase-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.prog-phase-card__num {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #39e07a;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Inputs dans les cartes de phase */
+.prog-phase-card .profil-input {
+  width: 100%;
+  box-sizing: border-box;
+  background: rgba(0,0,0,0.2);
+  border: 1px solid #2a3038;
+  border-radius: 8px;
+}
+
+.prog-phase-card .profil-input:focus {
+  border-color: rgba(57, 224, 122, 0.4);
+  outline: none;
+}
+
+.prog-phase-card textarea.profil-input {
+  resize: none;
+  line-height: 1.45;
+  font-size: 0.88rem;
+  font-weight: 400;
+}
+
+.prog-phase-card__remove {
+  background: none;
+  border: none;
+  color: #4b5563;
+  font-size: 0.85rem;
+  cursor: pointer;
+  padding: 2px 6px;
+  line-height: 1;
+  border-radius: 4px;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.prog-phase-card__remove:hover:not(:disabled) {
+  color: #ef4444;
+}
+
+.prog-phase-card__remove:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+/* Bouton ajouter phase */
+.prog-add-phase-btn {
+  width: 100%;
+  background: rgba(57, 224, 122, 0.06);
+  border: 1px dashed rgba(57, 224, 122, 0.3);
+  border-radius: 10px;
+  color: #39e07a;
+  font-size: 0.78rem;
+  font-weight: 600;
+  font-family: inherit;
+  padding: 0.625rem;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s;
+}
+
+.prog-add-phase-btn:hover {
+  background: rgba(57, 224, 122, 0.1);
+}
+
+/* Durée totale */
+.prog-total-weeks {
+  font-size: 0.75rem;
+  color: #6b7280;
+  font-weight: 500;
+  margin-top: -0.375rem;
+}
+
+/* Actions du formulaire */
+.prog-form-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+/* Bouton danger */
+.profil-btn--danger {
+  background: transparent;
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 10px;
+  padding: 0.625rem 1rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.profil-btn--danger:hover {
+  background: rgba(239, 68, 68, 0.06);
+}

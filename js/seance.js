@@ -28,8 +28,13 @@ let currentExoIdx    = 0;
 let currentSerie     = 1;
 let currentState     = 'ready';
 
-let stopwatchSecs    = 0;
+let stopwatchStart   = 0;    // timestamp ms du début de la série (Date.now())
 let stopwatchTimer   = null;
+
+let cardioStopwatchStart = 0;
+let cardioTimer          = null;
+let cardioDistanceVal    = 0;
+let cardioIntensiteVal   = '';
 
 let restTotal        = 0;   // durée totale en secondes (pour l'arc SVG)
 let restEndTime      = 0;   // timestamp ms de fin — temps restant = restEndTime - Date.now()
@@ -159,6 +164,29 @@ function init() {
     });
   });
 
+  // ── Boutons cardio ──────────────────────────────────────────
+  document.getElementById('btn-cardio-stop')?.addEventListener('click', stopCardio);
+  document.getElementById('btn-cardio-confirm')?.addEventListener('click', confirmCardio);
+  document.getElementById('btn-cardio-dur-minus')?.addEventListener('click', () => changeCardioValue('duree', -1));
+  document.getElementById('btn-cardio-dur-plus')?.addEventListener('click',  () => changeCardioValue('duree', +1));
+  document.getElementById('btn-cardio-dist-minus')?.addEventListener('click', () => changeCardioValue('distance', -0.5));
+  document.getElementById('btn-cardio-dist-plus')?.addEventListener('click',  () => changeCardioValue('distance', +0.5));
+  document.querySelectorAll('#cardio-intensite-chips .cardio-intensite-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      const val = chip.dataset.intensite;
+      if (cardioIntensiteVal === val) {
+        cardioIntensiteVal = '';
+        chip.classList.remove('cardio-intensite-chip--selected');
+      } else {
+        document.querySelectorAll('#cardio-intensite-chips .cardio-intensite-chip').forEach(c => {
+          c.classList.remove('cardio-intensite-chip--selected');
+        });
+        cardioIntensiteVal = val;
+        chip.classList.add('cardio-intensite-chip--selected');
+      }
+    });
+  });
+
   // ── Sauvegarde + resync chrono repos à la navigation ──────
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'hidden') {
@@ -166,6 +194,9 @@ function init() {
     } else if (currentState === 'rest') {
       // Retour en avant-plan : recalculer le temps restant depuis l'horloge réelle
       syncRestTimer();
+    } else if (currentState === 'active') {
+      // Retour en avant-plan pendant l'exercice : forcer un refresh du chrono
+      updateStopwatch();
     }
   });
   window.addEventListener('pagehide', saveSessionState);
@@ -203,16 +234,89 @@ function showScreen(id) {
 }
 
 /* ═══════════════════════════════════════════════════════════
+   PROGRAMME — bande de phase + récap
+═══════════════════════════════════════════════════════════ */
+function _updatePhaseStrip() {
+  const strip = document.getElementById('ws-phase-strip');
+  if (!strip || !window.PROGRAMME_DB) return;
+
+  const prog = window.PROGRAMME_DB.get();
+  if (!prog) { strip.hidden = true; return; }
+
+  const info = window.PROGRAMME_DB.getActivePhase(prog);
+  if (!info) { strip.hidden = true; return; }
+
+  const { phase, phaseIndex } = info;
+  const phaseName  = phase.nom || ('Phase ' + (phaseIndex + 1));
+  const mc         = window.PROGRAMME_DB.getMicroCycle(prog);
+  const cycleLabel = mc ? ' · ' + mc.label : '';
+  strip.textContent = phaseName + ' · ' + phase.repsMin + '–' + phase.repsMax + ' reps' + cycleLabel;
+  strip.hidden = false;
+}
+
+function _renderRecapProgramme() {
+  const block = document.getElementById('recap-programme');
+  if (!block || !window.PROGRAMME_DB) return;
+
+  const prog = window.PROGRAMME_DB.get();
+  if (!prog) { block.hidden = true; return; }
+
+  const info       = window.PROGRAMME_DB.getActivePhase(prog);
+  const totalWeeks = window.PROGRAMME_DB.getTotalWeeks(prog);
+
+  if (!info) {
+    block.innerHTML =
+      '<span class="ws-recap-prog__icon">🏁</span>' +
+      '<span class="ws-recap-prog__text">Programme terminé — pense à planifier une semaine de décharge.</span>';
+    block.hidden = false;
+    return;
+  }
+
+  const { phase, phaseIndex, weekOverall } = info;
+  const phaseName = phase.nom || ('Phase ' + (phaseIndex + 1));
+
+  block.innerHTML =
+    '<span class="ws-recap-prog__icon">📋</span>' +
+    '<div class="ws-recap-prog__body">' +
+      '<span class="ws-recap-prog__phase">' + phaseName + '</span>' +
+      '<span class="ws-recap-prog__reps">Objectif reps : ' + phase.repsMin + '–' + phase.repsMax + '</span>' +
+      '<span class="ws-recap-prog__week">Semaine ' + weekOverall + ' / ' + totalWeeks + '</span>' +
+    '</div>';
+  block.hidden = false;
+}
+
+/* ═══════════════════════════════════════════════════════════
    ÉCRAN 1 : READY
 ═══════════════════════════════════════════════════════════ */
 function showReady() {
   currentState = 'ready';
   const { block, exo } = exercises[currentExoIdx];
 
+  // Branche cardio : contourne le flux series/reps/poids
+  if (exo.groupe === 'Cardio') {
+    showCardioScreen();
+    return;
+  }
+
   updateHeader();
 
   setMuscleTag('ready-muscle-tag', exo.groupe, exo.couleur);
   document.getElementById('ready-exo-name').textContent    = exo.nom;
+
+  // ── RIR + Note technique ──────────────────────────────────
+  const hintsEl = document.getElementById('ready-exo-hints');
+  const rirEl   = document.getElementById('ready-rir-chip');
+  const noteEl  = document.getElementById('ready-note-chip');
+  if (hintsEl && rirEl && noteEl) {
+    const hasRir  = block.rir != null && block.rir !== '';
+    const hasNote = !!(block.noteTechnique && block.noteTechnique.trim());
+    rirEl.textContent  = hasRir  ? 'RIR ' + block.rir : '';
+    noteEl.textContent = hasNote ? block.noteTechnique : '';
+    rirEl.hidden  = !hasRir;
+    noteEl.hidden = !hasNote;
+    hintsEl.hidden = !hasRir && !hasNote;
+  }
+
   document.getElementById('ready-serie-num').textContent   = currentSerie;
   document.getElementById('ready-serie-total').textContent = block.series || '?';
   document.getElementById('ready-reps').textContent        = block.reps   || '?';
@@ -270,11 +374,16 @@ function showReady() {
       }
       hintEl.style.display = 'none';
     } else {
-      // Première série : suggestion depuis l'historique + objectif
-      const lastHist = (exo.historique || []).find(e => e.poids > 0);
+      // Première série : dernière perf du MÊME contexte (templateId + plage reps)
+      const ctxSessions = getContextSessions(exo, block, session.id).filter(s => s.some(e => e.poids > 0));
+      const lastHist    = ctxSessions.length ? ctxSessions[0].find(e => e.poids > 0) : null;
       if (lastHist) {
         const icon = RESSENTI_ICON[lastHist.ressenti] || '';
         lastEl.textContent = `Dernière séance · ${lastHist.poids} ${kgLabel} · ${lastHist.reps} reps ${icon}`.trim();
+        lastEl.style.display = '';
+      } else if ((exo.historique || []).some(e => e.poids > 0)) {
+        // Perfs existantes hors contexte → signaler le nouveau cycle, ne rien afficher de trompeur
+        lastEl.textContent = 'Nouveau cycle · première fois dans cette séance';
         lastEl.style.display = '';
       } else {
         lastEl.style.display = 'none';
@@ -292,6 +401,7 @@ function showReady() {
     document.getElementById('pre-weight-input').value = preWeightVal || '';
   }
 
+  _updatePhaseStrip();
   showScreen('screen-ready');
 }
 
@@ -314,13 +424,10 @@ function startSerie() {
   document.getElementById('active-target').textContent   =
     `Série ${currentSerie} / ${block.series}  ·  ${block.reps} reps`;
 
-  stopwatchSecs = 0;
+  stopwatchStart = Date.now();
   clearInterval(stopwatchTimer);
   updateStopwatch();
-  stopwatchTimer = setInterval(() => {
-    stopwatchSecs++;
-    updateStopwatch();
-  }, 1000);
+  stopwatchTimer = setInterval(updateStopwatch, 1000);
 
   showScreen('screen-active');
 }
@@ -349,60 +456,83 @@ function changeStepper(delta) {
 }
 
 function validateReps(actual) {
-  const { block, exo } = exercises[currentExoIdx];
+  const { block } = exercises[currentExoIdx];
   const planned    = parseInt(block.reps) || 10;
   const actualReps = (actual === null) ? planned : actual;
 
   pendingSerieReps = actualReps;
 
-  // Exercice poids du corps → pas de saisie poids
-  if (exo.materiel === 'Poids du corps') {
-    commitSerie(actualReps, null);
-    return;
-  }
-
+  // Poids du corps : on garde l'écran (chips ressenti) mais on masque la saisie poids.
   showWeightScreen(actualReps, block);
 }
 
 function showWeightScreen(actualReps, block) {
-  const { exo } = exercises[currentExoIdx];
-  const isHalteres = exo.materiel === 'Haltères';
+  const { exo }      = exercises[currentExoIdx];
+  const isBodyweight = exo.materiel === 'Poids du corps';
+  const isHalteres   = exo.materiel === 'Haltères';
+  const totalSeries  = parseInt(block.series) || 1;
+  const isLastSerie  = currentSerie >= totalSeries;
 
-  // Réinitialiser le ressenti → OK par défaut
-  ressentiVal = 'ok';
-  document.querySelectorAll('.ws-ressenti__chip').forEach(c => {
-    const isOk = c.dataset.ressenti === 'ok';
-    c.classList.toggle('ws-ressenti__chip--selected', isOk);
-    c.setAttribute('aria-pressed', isOk ? 'true' : 'false');
-  });
-
-  // Mettre à jour le label de la question
-  const labelEl = document.querySelector('.ws-weight-label');
-  if (labelEl) {
-    labelEl.textContent = isHalteres
-      ? 'Poids utilisé (par haltère) ?'
-      : 'Quel poids as-tu utilisé ?';
+  // Ressenti : uniquement sur la dernière série, basé sur le poids réellement utilisé.
+  // Les séries intermédiaires stockent null — elles n'influencent pas l'analyse.
+  const ressentiEl = document.getElementById('weight-ressenti');
+  if (isLastSerie || isBodyweight) {
+    // Réinitialiser à OK avant d'afficher
+    ressentiVal = 'ok';
+    document.querySelectorAll('.ws-ressenti__chip').forEach(c => {
+      const isOk = c.dataset.ressenti === 'ok';
+      c.classList.toggle('ws-ressenti__chip--selected', isOk);
+      c.setAttribute('aria-pressed', isOk ? 'true' : 'false');
+    });
+    const labelEl = document.getElementById('ressenti-label');
+    if (labelEl) {
+      labelEl.textContent = isBodyweight
+        ? 'Comment s\'était cette série ?'
+        : `Ressenti global · ${exo.nom}`;
+    }
+    if (ressentiEl) ressentiEl.style.display = '';
+  } else {
+    // Série intermédiaire : pas de question ressenti
+    ressentiVal = null;
+    if (ressentiEl) ressentiEl.style.display = 'none';
   }
 
-  // Utiliser le poids pré-décidé sur l'écran READY (ou fallback suggestion)
-  weightVal = preWeightVal > 0
-    ? preWeightVal
-    : calculerSuggestionPoids(exo, block).poids;
+  // Label de la question poids
+  const labelEl = document.querySelector('.ws-weight-label');
+  if (labelEl) {
+    labelEl.textContent = isBodyweight
+      ? 'Comment c\'était ?'
+      : isHalteres
+        ? 'Poids utilisé (par haltère) ?'
+        : 'Quel poids as-tu utilisé ?';
+  }
 
   document.getElementById('weight-serie-info').textContent =
     `Série ${currentSerie} · ${actualReps} reps`;
 
-  const input = document.getElementById('weight-input');
-  input.value = weightVal || '';
+  // Bloc saisie poids — masqué pour le poids du corps (seul le ressenti compte).
+  const weightCenter = document.querySelector('.ws-weight-center');
+  if (weightCenter) weightCenter.style.display = isBodyweight ? 'none' : '';
 
-  // Hint : confirmer le poids prévu
-  const hintEl = document.getElementById('weight-hint');
-  if (weightVal > 0) {
-    const kgLabel = isHalteres ? 'kg/haltère' : 'kg';
-    hintEl.textContent = `Prévu : ${weightVal} ${kgLabel} — ajuste si tu as utilisé autre chose`;
-    hintEl.style.display = '';
-  } else {
-    hintEl.style.display = 'none';
+  const skipBtn = document.getElementById('btn-weight-skip');
+  if (skipBtn) skipBtn.style.display = isBodyweight ? 'none' : '';
+
+  if (!isBodyweight) {
+    weightVal = preWeightVal > 0
+      ? preWeightVal
+      : calculerSuggestionPoids(exo, block).poids;
+
+    const input = document.getElementById('weight-input');
+    input.value = weightVal || '';
+
+    const hintEl = document.getElementById('weight-hint');
+    if (weightVal > 0) {
+      const kgLabel = isHalteres ? 'kg/haltère' : 'kg';
+      hintEl.textContent = `Prévu : ${weightVal} ${kgLabel} · ajuste au poids réel utilisé`;
+      hintEl.style.display = '';
+    } else {
+      hintEl.style.display = 'none';
+    }
   }
 
   showScreen('screen-weight');
@@ -419,6 +549,12 @@ function changePreWeight(delta) {
 }
 
 function confirmWeight() {
+  const { exo } = exercises[currentExoIdx];
+  // Poids du corps : on ignore l'input (masqué) et on commit sans poids.
+  if (exo.materiel === 'Poids du corps') {
+    commitSerie(pendingSerieReps, null);
+    return;
+  }
   const inputVal = parseFloat(document.getElementById('weight-input').value);
   weightVal = inputVal > 0 ? inputVal : 0;
   commitSerie(pendingSerieReps, weightVal || null);
@@ -432,9 +568,9 @@ function commitSerie(actualReps, poids) {
   results[currentExoIdx].series.push({
     planned:  planned,
     actual:   actualReps,
-    duration: stopwatchSecs,
+    duration: Math.floor((Date.now() - stopwatchStart) / 1000),
     poids:    poids,
-    ressenti: poids !== null ? ressentiVal : null, // ressenti uniquement si poids renseigné
+    ressenti: ressentiVal, // null pour les séries intermédiaires, valeur réelle sur la dernière
   });
 
   const isLastSerie = currentSerie >= totalSeries;
@@ -450,7 +586,13 @@ function commitSerie(actualReps, poids) {
   }
 
   pendingLastSerie = isLastSerie;
-  startRest(parseRepos(block.repos), isLastSerie);
+  if (isLastSerie && !isLastExo) {
+    // Transition entre exercices — durée neutre définie au niveau de la séance
+    startRest(session.repos_inter || 120, 'transition');
+  } else {
+    // Repos entre séries du même exercice
+    startRest(parseRepos(block.repos), 'serie');
+  }
 }
 
 /**
@@ -467,8 +609,13 @@ function getPasAjustement(materiel) {
  * Retourne les sessions triées du plus récent au plus ancien.
  * Chaque session est un tableau d'entrées triées par numéro de série (1 → N).
  */
-function getHistByDate(exo) {
-  const hist = (exo.historique || []).filter(e => typeof e.reps === 'number');
+function getHistByDate(exo, templateId = null) {
+  const hist = (exo.historique || []).filter(e => {
+    if (typeof e.reps !== 'number') return false;
+    // Filtre par contexte de séance : les entrées sans templateId (legacy) passent toujours
+    if (templateId && e.templateId && e.templateId !== templateId) return false;
+    return true;
+  });
   const byDate = {};
   hist.forEach(e => {
     const d = e.date ? e.date.slice(0, 10) : 'unknown';
@@ -482,12 +629,34 @@ function getHistByDate(exo) {
 }
 
 /**
+ * Retourne les sessions filtrées par contexte de séance :
+ *   1. templateId (entrées taguées) ou legacy sans templateId
+ *   2. repsObjectif compatible avec block.reps (évite que les sessions lourdes
+ *      contaminent un contexte volume et vice-versa pour les données legacy)
+ *
+ * Tolérance : max(3, 40 % de la cible). Ex : cible 20 reps → ±8 → accepte 12–28.
+ * Un objectif 8 reps (lourd) est rejeté depuis un contexte 20 reps (volume) et vice-versa.
+ */
+function getContextSessions(exo, block, templateId) {
+  const repsTarget = parseInt(block.reps) || 10;
+  const tolerance  = Math.max(3, Math.round(repsTarget * 0.4));
+  return getHistByDate(exo, templateId).filter(s => {
+    const ref = s.find(e => e.repsObjectif != null);
+    if (!ref) return true; // legacy sans repsObjectif → inclure (contexte inconnu)
+    return Math.abs(ref.repsObjectif - repsTarget) <= tolerance;
+  });
+}
+
+/**
  * Analyse les indicateurs de performance d'une session.
  * Les entrées doivent être triées par numéro de série (série 1 en premier).
  *
  * Règle clé : la première série est l'indicateur de référence.
  * La fatigue entraîne une baisse naturelle des séries suivantes (ex : 10/9/8 est normal).
  * "Chute extrême" = dernière série < 60 % de l'objectif (ex : 10 → 5 reps).
+ *
+ * Ressenti : stocké uniquement sur la dernière série (global par exercice).
+ * Les séries intermédiaires ont ressenti=null — elles ne contribuent pas à anyDur/anyFacile.
  */
 function analyzeSessionEntries(entries, target) {
   if (!entries.length) return null;
@@ -515,8 +684,8 @@ function analyzeSessionEntries(entries, target) {
 function calculerSuggestionPoids(exo, block) {
   const step     = getPasAjustement(exo.materiel);
   const target   = parseInt(block.reps) || 10;
-  // Garder uniquement les sessions où au moins une série a un poids renseigné
-  const sessions = getHistByDate(exo).filter(s => s.some(e => e.poids > 0));
+  // Contexte strict : templateId + plage de reps compatible (filtre legacy lourd/volume)
+  const sessions = getContextSessions(exo, block, session.id).filter(s => s.some(e => e.poids > 0));
 
   // ── Cas 1 : historique disponible ──
   if (sessions.length) {
@@ -524,15 +693,43 @@ function calculerSuggestionPoids(exo, block) {
     const base     = lastSess.find(e => e.poids > 0)?.poids || 0;
     const perf     = analyzeSessionEntries(lastSess, target);
 
-    // Diminuer : première série rate l'objectif, chute extrême, ou ressenti "trop dur"
-    if (!perf.firstHit || perf.extremeDrop || perf.anyDur) {
-      const nouveau = Math.max(step, Math.round((base - step) / 2.5) * 2.5);
-      const raison  = !perf.firstHit
-        ? `↓ −${step} kg · tu n'as pas atteint l'objectif (${base} → ${nouveau} kg)`
-        : perf.anyDur
-          ? `↓ −${step} kg · c'était trop dur (${base} → ${nouveau} kg)`
-          : `↓ −${step} kg · chute trop importante (${base} → ${nouveau} kg)`;
-      return { poids: nouveau, raison };
+    // Une séance est considérée "ratée" quand la 1ère série manque l'objectif
+    // ou que la dernière série s'effondre (chute extrême). Le ressenti "dur" seul
+    // n'est JAMAIS un motif de baisse — on reste à la même charge pour retenter.
+    const isSessionFailed = p => !!p && (!p.firstHit || p.extremeDrop);
+    const lastFailed      = isSessionFailed(perf);
+
+    if (lastFailed) {
+      // Baisse de charge uniquement après 2 séances ratées consécutives.
+      // Protège la progression d'un mauvais jour isolé (fatigue, sommeil, stress…).
+      const prevSess   = sessions[1];
+      const prevPerf   = prevSess ? analyzeSessionEntries(prevSess, target) : null;
+      const prevFailed = isSessionFailed(prevPerf);
+
+      if (prevFailed) {
+        const nouveau = Math.max(step, Math.round((base - step) / 2.5) * 2.5);
+        return {
+          poids:  nouveau,
+          raison: `↓ −${step} kg · 2 séances consécutives manquées (${base} → ${nouveau} kg)`,
+        };
+      }
+
+      // Séance ratée isolée → on garde la charge, on retente avant d'envisager une baisse
+      return {
+        poids:  base,
+        raison: `= ${base} kg · séance difficile, on retente à la même charge`,
+      };
+    }
+
+    // Garde-fou volume : si le groupe musculaire est hors zone hebdo (trop peu ou trop),
+    // on bloque toute hausse de charge pour éviter la surcharge involontaire.
+    const volStatus = getVolumeStatus(exo.groupe);
+    if (volStatus.status !== 'ok') {
+      const label = volStatus.status === 'low' ? 'insuffisant' : 'élevé';
+      return {
+        poids:  base,
+        raison: `= ${base} kg · volume hebdo ${label} (${volStatus.count} sér./sem.), progression suspendue`,
+      };
     }
 
     // Cooldown : compter le nombre de sessions effectuées à cette charge
@@ -540,15 +737,42 @@ function calculerSuggestionPoids(exo, block) {
     const sessionsABase = sessions.filter(s => (s.find(e => e.poids > 0)?.poids || 0) === base);
     const stableCount   = sessionsABase.length; // inclut la session d'aujourd'hui
 
+    // Isolation : double progression — on privilégie d'abord la hausse de reps.
+    // La charge ne bouge qu'une fois atteint le haut de la fourchette de reps.
+    // (Combiné à stableCount >= 2 ci-dessous, cela garantit "plusieurs fois au sommet".)
+    const range = getRepRange(block, exo);
+    if (exo.type === 'isolation' && range && target < range.max) {
+      return {
+        poids:  base,
+        raison: `= ${base} kg · isolation · vise ${range.max} reps avant d'augmenter (actuel : ${target})`,
+      };
+    }
+
     if (perf.allHit && stableCount >= 2) {
       // Vérifier que la session précédente à cette même charge était aussi complète
       const prevABase = sessionsABase[1]; // 2ème session à cette charge (avant aujourd'hui)
       const prevPerf  = analyzeSessionEntries(prevABase, target);
       if (prevPerf?.allHit) {
+        // Signal doux "dur" : une séance validée mais ressentie dure ajoute
+        // une stabilisation (3 séances réussies au lieu de 2). Jamais de
+        // deload — juste un délai pour laisser la récupération rattraper.
+        const hasDurSignal = perf.anyDur || prevPerf.anyDur;
+        if (hasDurSignal) {
+          const prev2ABase = sessionsABase[2];
+          const prev2Perf  = prev2ABase ? analyzeSessionEntries(prev2ABase, target) : null;
+          if (!prev2Perf?.allHit) {
+            return {
+              poids:  base,
+              raison: `= ${base} kg · séance dure malgré la réussite, on stabilise encore`,
+            };
+          }
+        }
+
         const nouveau = Math.round((base + step) / 2.5) * 2.5;
+        const nbOk    = hasDurSignal ? 3 : 2;
         const raison  = (perf.anyFacile || prevPerf.anyFacile)
           ? `↑ +${step} kg · tu étais à l'aise (${base} → ${nouveau} kg)`
-          : `↑ +${step} kg · 2 séances réussies à ${base} kg (→ ${nouveau} kg)`;
+          : `↑ +${step} kg · ${nbOk} séances réussies à ${base} kg (→ ${nouveau} kg)`;
         return { poids: nouveau, raison };
       }
     }
@@ -693,18 +917,34 @@ function playRestEndSound() {
 /* ═══════════════════════════════════════════════════════════
    ÉCRAN 4 : REST
 ═══════════════════════════════════════════════════════════ */
-function startRest(secs, isLastSerie) {
+function startRest(secs, mode) {  // mode: 'serie' | 'transition'
   currentState = 'rest';
   restTotal    = secs || 90;
   restEndTime  = Date.now() + restTotal * 1000;
 
-  let nextText;
-  if (isLastSerie && currentExoIdx + 1 < exercises.length) {
-    nextText = `Prochain : ${exercises[currentExoIdx + 1].exo.nom}`;
-  } else {
-    nextText = `Prochain : Série ${currentSerie + 1}`;
+  const isTransition = mode === 'transition';
+
+  // Label et note contextuelle
+  const labelEl = document.getElementById('rest-label');
+  if (labelEl) labelEl.textContent = isTransition ? 'Exercice terminé' : 'Récupération';
+
+  const noteEl = document.getElementById('rest-transition-note');
+  if (noteEl) noteEl.hidden = !isTransition;
+
+  // Texte "prochain"
+  const nextTextEl = document.getElementById('rest-next-text');
+  if (nextTextEl) {
+    if (isTransition) {
+      const nextExo = exercises[currentExoIdx + 1];
+      nextTextEl.textContent = nextExo ? `Prochain · ${nextExo.exo.nom}` : '';
+    } else {
+      nextTextEl.textContent = `Prochain · Série ${currentSerie + 1}`;
+    }
   }
-  document.getElementById('rest-next-text').textContent = nextText;
+
+  // Classe CSS pour distinguer visuellement la transition
+  const screenEl = document.getElementById('screen-rest');
+  if (screenEl) screenEl.classList.toggle('screen-rest--transition', isTransition);
 
   // Reset arc sans transition parasite
   const arc = document.getElementById('rest-arc');
@@ -771,7 +1011,26 @@ function showRecap() {
 
   const listEl = document.getElementById('recap-list');
   listEl.innerHTML = results.map((r, i) => {
-    const block = session.exercices[i] || {};
+    const block    = session.exercices[i] || {};
+    const isCardio = r.groupe === 'Cardio';
+    const couleur  = r.couleur || 'pecto';
+
+    if (isCardio) {
+      const c = r.cardio || {};
+      const INTENSITE_LABELS = { faible: 'Faible', moderee: 'Modérée', elevee: 'Élevée' };
+      return `
+        <div class="ws-recap-exo">
+          <div class="ws-recap-exo__header">
+            <span class="ws-muscle-tag ws-muscle-tag--cardio">Cardio</span>
+            <span class="ws-recap-exo__name">${r.nom}</span>
+          </div>
+          <div class="ws-recap-cardio">
+            ${c.duree ? `<span class="ws-recap-cardio__val">${c.duree}</span><span class="ws-recap-cardio__label">min</span>` : ''}
+            ${c.distance ? `<span class="ws-recap-cardio__val">${c.distance}</span><span class="ws-recap-cardio__label">km</span>` : ''}
+            ${c.intensite ? `<span class="ws-recap-cardio__badge">${INTENSITE_LABELS[c.intensite] || c.intensite}</span>` : ''}
+          </div>
+        </div>`;
+    }
 
     const RESSENTI_ICON = { facile: '💪', ok: '👍', dur: '😰' };
     const seriesHtml = r.series.map((s, idx) => {
@@ -789,13 +1048,20 @@ function showRecap() {
         </div>`;
     }).join('');
 
+    const globalRessenti = r.series.length ? r.series[r.series.length - 1].ressenti : null;
+    const RESSENTI_LABEL = { facile: 'Séance facile', ok: 'Séance OK', dur: 'Séance difficile' };
+    const ressentiLine   = globalRessenti
+      ? `<div class="ws-recap-exo__ressenti">${RESSENTI_ICON[globalRessenti]} ${RESSENTI_LABEL[globalRessenti] || ''}</div>`
+      : '';
+
     return `
       <div class="ws-recap-exo">
         <div class="ws-recap-exo__header">
-          <span class="ws-muscle-tag ws-muscle-tag--${r.couleur || 'pecto'}">${r.groupe}</span>
+          <span class="ws-muscle-tag ws-muscle-tag--${couleur}">${r.groupe}</span>
           <span class="ws-recap-exo__name">${r.nom}</span>
         </div>
         ${seriesHtml || '<div style="padding:.75rem 1rem;font-size:.8rem;color:#4b5563">Aucune série</div>'}
+        ${ressentiLine}
       </div>`;
   }).join('');
 
@@ -843,6 +1109,7 @@ function showRecap() {
     suggestionsEl.innerHTML = '';
   }
 
+  _renderRecapProgramme();
   showScreen('screen-recap');
 }
 
@@ -875,8 +1142,8 @@ function getRepRange(block, exo) {
  *
  * @returns {{ type: 'increase'|'decrease', target: number, suggested: number }|null}
  */
-function analyzeRepsProgression(exo, block) {
-  const sessions = getHistByDate(exo);
+function analyzeRepsProgression(exo, block, templateId = null) {
+  const sessions = getContextSessions(exo, block, templateId);
   // On analyse les sessions PRÉCÉDENTES uniquement (sessions[0] = aujourd'hui)
   const prev = sessions.slice(1);
   if (!prev.length) return null;
@@ -885,9 +1152,20 @@ function analyzeRepsProgression(exo, block) {
   const range  = getRepRange(block, exo);
 
   // ── Augmenter : 3 sessions précédentes toutes complètes ──
-  if (prev.length >= 3) {
-    const allThreeHit = prev.slice(0, 3).every(s => analyzeSessionEntries(s, target)?.allHit);
+  // Bloqué si le volume hebdo du groupe est hors zone (garde-fou cohérent avec le poids).
+  const volStatus = getVolumeStatus(exo.groupe);
+  if (volStatus.status === 'ok' && prev.length >= 3) {
+    const perfs       = prev.slice(0, 3).map(s => analyzeSessionEntries(s, target));
+    const allThreeHit = perfs.every(p => p?.allHit);
     if (allThreeHit) {
+      // Signal doux "dur" symétrique au poids : si l'une des 3 séances réussies
+      // a été ressentie dure, on exige une 4ᵉ séance allHit avant d'augmenter.
+      // Pas de deload — juste un délai pour laisser la fatigue retomber.
+      const hasDurSignal = perfs.some(p => p?.anyDur);
+      if (hasDurSignal) {
+        const fourth = prev[3] ? analyzeSessionEntries(prev[3], target) : null;
+        if (!fourth?.allHit) return null; // on stabilise, pas d'augmentation cette fois
+      }
       if (range && target >= range.max) return null; // déjà au plafond de l'objectif
       // +1 rep par défaut (progression conservatrice) ; +2 pour les isolations
       const step      = exo.type === 'isolation' ? 2 : 1;
@@ -973,20 +1251,25 @@ function buildRecapSuggestions() {
 
   // ── 1. Reps : analyse par exercice ──────────────────────
   exercises.forEach(({ block, exo }) => {
-    if (exo.materiel === 'Poids du corps') return;
-    const freshExo = DB.getExercice(exo.id) || exo;
-    const analysis = analyzeRepsProgression(freshExo, block);
+    if (exo.groupe === 'Cardio') return; // pas de progression stricte pour le cardio
+    const freshExo    = DB.getExercice(exo.id) || exo;
+    const isBodyweight = exo.materiel === 'Poids du corps';
+    const analysis    = analyzeRepsProgression(freshExo, block, session.id);
     if (!analysis) return;
 
-    // Règle : ne jamais ajuster poids ET reps dans le même sens.
+    // Règle (charges seulement) : ne jamais ajuster poids ET reps dans le même sens.
     // Le poids a la priorité — si le poids est déjà ajusté dans la même direction,
     // on supprime la suggestion reps pour éviter une double réduction (ou double hausse).
-    const sessionsAvecPoids = getHistByDate(freshExo).filter(s => s.some(e => e.poids > 0));
-    if (sessionsAvecPoids.length) {
-      const lastPoids           = sessionsAvecPoids[0].find(e => e.poids > 0)?.poids || 0;
-      const { poids: newPoids } = calculerSuggestionPoids(freshExo, block);
-      if (analysis.type === 'decrease' && newPoids < lastPoids) return; // poids baisse déjà → priorité poids
-      if (analysis.type === 'increase' && newPoids > lastPoids) return; // poids monte déjà → priorité poids
+    // En poids du corps, il n'y a pas de progression de charge → la suggestion reps
+    // est l'unique levier mécanique, on ne la déduplique pas.
+    if (!isBodyweight) {
+      const sessionsAvecPoids = getContextSessions(freshExo, block, session.id).filter(s => s.some(e => e.poids > 0));
+      if (sessionsAvecPoids.length) {
+        const lastPoids           = sessionsAvecPoids[0].find(e => e.poids > 0)?.poids || 0;
+        const { poids: newPoids } = calculerSuggestionPoids(freshExo, block);
+        if (analysis.type === 'decrease' && newPoids < lastPoids) return; // poids baisse déjà → priorité poids
+        if (analysis.type === 'increase' && newPoids > lastPoids) return; // poids monte déjà → priorité poids
+      }
     }
 
     if (analysis.type === 'increase') {
@@ -1013,6 +1296,7 @@ function buildRecapSuggestions() {
   const groupesTrained = [...new Set(exercises.map(({ exo }) => exo.groupe))];
 
   groupesTrained.forEach(groupe => {
+    if (groupe === 'Cardio') return; // volume cardio non mesuré en séries
     const count = weeklyVol[groupe] || 0;
     if (count < VOL_OPTIMAL_MIN) {
       suggestions.push({
@@ -1036,6 +1320,98 @@ function buildRecapSuggestions() {
   });
 
   return suggestions;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   CARDIO — MACHINE À ÉTATS
+═══════════════════════════════════════════════════════════ */
+
+function showCardioScreen() {
+  const { block, exo } = exercises[currentExoIdx];
+  currentState = 'cardio-run';
+  updateHeader();
+
+  setMuscleTag('cardio-muscle-tag', exo.groupe, exo.couleur);
+  document.getElementById('cardio-exo-name').textContent = exo.nom;
+  const plannedMin = block.duree || 30;
+  document.getElementById('cardio-planned-val').textContent = `${plannedMin} min`;
+
+  // Lancer le chrono
+  clearInterval(cardioTimer);
+  cardioStopwatchStart = Date.now();
+  updateCardioStopwatch();
+  cardioTimer = setInterval(updateCardioStopwatch, 1000);
+
+  // Phase run visible, confirm caché
+  document.getElementById('cardio-phase-run').hidden    = false;
+  document.getElementById('cardio-phase-confirm').hidden = true;
+
+  showScreen('screen-cardio');
+}
+
+function stopCardio() {
+  clearInterval(cardioTimer);
+  currentState = 'cardio-confirm';
+
+  // Pré-remplir avec le temps réel arrondi à la minute (min 1 min)
+  const elapsedSecs = Math.floor((Date.now() - cardioStopwatchStart) / 1000);
+  const elapsedMins = Math.max(1, Math.round(elapsedSecs / 60));
+  const dureeInput  = document.getElementById('cardio-duree-input');
+  if (dureeInput) dureeInput.value = elapsedMins;
+
+  cardioDistanceVal  = 0;
+  cardioIntensiteVal = '';
+  const distInput = document.getElementById('cardio-distance-input');
+  if (distInput) distInput.value = '';
+  document.querySelectorAll('#cardio-intensite-chips .cardio-intensite-chip').forEach(c => {
+    c.classList.remove('cardio-intensite-chip--selected');
+  });
+
+  document.getElementById('cardio-phase-run').hidden    = true;
+  document.getElementById('cardio-phase-confirm').hidden = false;
+
+  // Sync état de l'input distance
+  document.getElementById('cardio-distance-input')?.addEventListener('input', e => {
+    cardioDistanceVal = parseFloat(e.target.value) || 0;
+  }, { once: true });
+}
+
+function changeCardioValue(field, delta) {
+  if (field === 'duree') {
+    const input = document.getElementById('cardio-duree-input');
+    const val   = Math.max(1, (parseInt(input?.value) || 1) + delta);
+    if (input) input.value = val;
+  } else if (field === 'distance') {
+    cardioDistanceVal = Math.max(0, Math.round((cardioDistanceVal + delta) * 2) / 2);
+    const input = document.getElementById('cardio-distance-input');
+    if (input) input.value = cardioDistanceVal || '';
+  }
+}
+
+function confirmCardio() {
+  const dureeInput = document.getElementById('cardio-duree-input');
+  const duree      = parseInt(dureeInput?.value) || 1;
+  const distRaw    = parseFloat(document.getElementById('cardio-distance-input')?.value) || 0;
+  const distance   = distRaw > 0 ? distRaw : null;
+  const intensite  = cardioIntensiteVal || null;
+
+  results[currentExoIdx].cardio = { duree, distance, intensite };
+
+  const isLastExo = currentExoIdx >= exercises.length - 1;
+  if (isLastExo) {
+    saveAllResults();
+    showRecap();
+  } else {
+    saveSessionState();
+    currentExoIdx++;
+    currentSerie = 1;
+    showReady();
+  }
+}
+
+function updateCardioStopwatch() {
+  const el = document.getElementById('cardio-stopwatch');
+  if (el) el.textContent = formatTime(Math.floor((Date.now() - cardioStopwatchStart) / 1000));
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -1066,22 +1442,38 @@ function saveSessionState() {
    SAUVEGARDE FINALE
 ═══════════════════════════════════════════════════════════ */
 function saveAllResults() {
-  const now = new Date().toISOString();
   results.forEach((r, i) => {
+    const block    = (session.exercices || [])[i] || {};
+    const exo      = exercises[i]?.exo;
+    const isCardio = exo?.groupe === 'Cardio';
+
+    if (isCardio) {
+      const c = r.cardio;
+      if (c && c.duree) {
+        DB.addHistoriqueEntry(r.exoId, {
+          titre:      session.nom,
+          templateId: session.id,
+          duree:      c.duree,
+          distance:   c.distance ?? null,
+          intensite:  c.intensite ?? null,
+        });
+      }
+      return;
+    }
+
     if (!r.series.length) return;
-    const block = (session.exercices || [])[i] || {};
-    const exo   = exercises[i]?.exo;
 
     // Sauvegarder chaque série individuellement pour un 1RM précis
     r.series.forEach((s, idx) => {
       DB.addHistoriqueEntry(r.exoId, {
-        titre:       session.nom,
-        series:      idx + 1,
-        reps:        s.actual,           // number (pas string)
-        repos:       block.repos || '',
-        poids:       s.poids ?? null,
-        ressenti:    s.ressenti || null, // 'facile' | 'ok' | 'dur' | null
-        repsObjectif: parseInt(block.reps) || null, // pour détecter si objectif atteint
+        titre:        session.nom,
+        templateId:   session.id,
+        series:       idx + 1,
+        reps:         s.actual,
+        repos:        block.repos || '',
+        poids:        s.poids ?? null,
+        ressenti:     s.ressenti || null,
+        repsObjectif: parseInt(block.reps) || null,
       });
     });
   });
@@ -1103,6 +1495,7 @@ function confirmQuit() {
   if (confirm('Quitter la séance en cours ?\nTa progression ne sera pas sauvegardée.')) {
     clearInterval(stopwatchTimer);
     clearInterval(restTimer);
+    clearInterval(cardioTimer);
     DB.clearActiveSession();
     location.href = 'musculation.html';
   }
@@ -1124,7 +1517,13 @@ function updateHeader() {
 
   counterEl.textContent = `${currentExoIdx + 1}/${exercises.length}`;
 
-  const { block } = exercises[currentExoIdx];
+  const { block, exo } = exercises[currentExoIdx];
+
+  if (exo.groupe === 'Cardio') {
+    dotsEl.innerHTML = '<span class="ws-dot ws-dot--current"></span>';
+    return;
+  }
+
   const n = parseInt(block.series) || 1;
   dotsEl.innerHTML = Array.from({ length: n }, (_, i) => {
     if (i + 1 < currentSerie)   return '<span class="ws-dot ws-dot--done"></span>';
@@ -1142,7 +1541,7 @@ function setMuscleTag(elementId, groupe, couleur) {
 
 function updateStopwatch() {
   const el = document.getElementById('ws-stopwatch');
-  if (el) el.textContent = formatTime(stopwatchSecs);
+  if (el) el.textContent = formatTime(Math.floor((Date.now() - stopwatchStart) / 1000));
 }
 
 function updateRestDisplay() {

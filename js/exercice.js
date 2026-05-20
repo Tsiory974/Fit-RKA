@@ -118,6 +118,28 @@ document.addEventListener('DOMContentLoaded', () => {
   /* ── 4. Fonctions d'affichage ────────────────────────────── */
 
   function showPage(exo) {
+    const isCardio = exo.groupe === 'Cardio';
+
+    if (isCardio) {
+      document.querySelectorAll('[data-exo-rm]').forEach(el => el.style.display = 'none');
+      const heroBlock = document.querySelector('.stat-hero');
+      if (heroBlock) heroBlock.style.display = 'none';
+      const zoneBlock = document.querySelector('.zone-selector-wrapper');
+      if (zoneBlock) zoneBlock.style.display = 'none';
+      const rmChartBlock = document.querySelector('.rm-chart-block');
+      if (rmChartBlock) rmChartBlock.style.display = 'none';
+      const recoBlock = document.getElementById('reco-block');
+      if (recoBlock) recoBlock.style.display = 'none';
+      const cardioStatsBlock = document.getElementById('cardio-stats-block');
+      if (cardioStatsBlock) cardioStatsBlock.style.display = '';
+
+      renderCardioStats(exo);
+      renderChartCardio(exo);
+      renderHistorique(exo);
+      renderInfo(exo);
+      return;
+    }
+
     const rm = calculateRM(exo);
     const isPoidsDuCorps = exo.materiel === 'Poids du corps';
 
@@ -137,8 +159,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const rmDateEl = document.querySelector('[data-rm-date]');
     if (rmDateEl) {
+      const sessionCount = countSessions(exo);
       rmDateEl.textContent = rm
-        ? `Estimé sur ${(exo.historique || []).filter(e => e.poids > 0).length} séance(s)`
+        ? `Estimé sur ${sessionCount} séance${sessionCount !== 1 ? 's' : ''}`
         : 'Aucune donnée — réalise des séances pour estimer ton 1RM';
     }
 
@@ -292,21 +315,66 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  /* ── Helpers session ── */
+
+  function countSessions(exo) {
+    const keys = new Set((exo.historique || []).map(e => {
+      const date = (e.date || '').slice(0, 10);
+      if (!date) return null;
+      return e.templateId ? `${e.templateId}__${date}` : date;
+    }).filter(Boolean));
+    return keys.size;
+  }
+
+  function groupBySession(exo) {
+    const byKey = {};
+    (exo.historique || []).forEach(e => {
+      const date = (e.date || '').slice(0, 10);
+      if (!date) return;
+      // Clé composite (templateId + date) pour séparer les contextes de séance
+      const key = e.templateId ? `${e.templateId}__${date}` : date;
+      if (!byKey[key]) byKey[key] = { dateKey: date, templateId: e.templateId || null, entries: [] };
+      byKey[key].entries.push(e);
+    });
+    return Object.values(byKey)
+      .sort((a, b) => b.dateKey.localeCompare(a.dateKey))
+      .map(g => ({ ...g, entries: g.entries.sort((a, b) => (a.series || 0) - (b.series || 0)) }));
+  }
+
+  function _evalSession(series) {
+    if (!series.length) return null;
+    const target = series[0].repsObjectif;
+    if (!target) return null;
+    const last = series[series.length - 1];
+    if (series.length > 1 && last.reps < target * 0.60) return 'hard';
+    const hits = series.filter(s => s.reps >= target).length;
+    return hits > series.length / 2 ? 'success' : 'partial';
+  }
+
+  function _statusBadge(status) {
+    if (status === 'success') return '<span class="session-status session-status--ok">✓ Réussie</span>';
+    if (status === 'hard')    return '<span class="session-status session-status--hard">⚠ Difficile</span>';
+    if (status === 'partial') return '<span class="session-status session-status--partial">◑ Partielle</span>';
+    return '';
+  }
+
   /**
-   * Rend la liste des entrées d'historique.
+   * Rend la liste de l'historique — une carte par SÉANCE (groupées par date),
+   * pas par série. Chaque carte détaille les séries en chips internes.
    */
   function renderHistorique(exo) {
     const listEl  = document.querySelector('.history-list');
     const countEl = document.querySelector('.history-header__count');
     if (!listEl) return;
 
-    const rm      = calculateRM(exo);  // source unique — jamais exo.rm (deprecated)
-    const entries = exo.historique;
+    const rm       = calculateRM(exo);
+    const sessions = groupBySession(exo);
+
     if (countEl) {
-      countEl.textContent = entries.length + ' séance' + (entries.length !== 1 ? 's' : '');
+      countEl.textContent = sessions.length + ' séance' + (sessions.length !== 1 ? 's' : '');
     }
 
-    if (entries.length === 0) {
+    if (sessions.length === 0) {
       listEl.innerHTML = `
         <li class="history-empty">
           Aucune séance enregistrée pour cet exercice.
@@ -314,18 +382,55 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    listEl.innerHTML = entries.map((entry, idx) => {
-      const d      = new Date(entry.date);
-      const day    = d.toLocaleDateString('fr-FR', { day: '2-digit' });
-      const month  = d.toLocaleDateString('fr-FR', { month: 'short' });
-      const year   = d.getFullYear();
+    listEl.innerHTML = sessions.map(({ dateKey, templateId, entries }) => {
+      const first = entries[0];
+      const d     = new Date(first.date);
+      const day   = d.toLocaleDateString('fr-FR', { day: '2-digit' });
+      const month = d.toLocaleDateString('fr-FR', { month: 'short' });
+      const year  = d.getFullYear();
 
-      // Couleur du badge poids — basée sur le 1RM calculé (pas exo.rm)
-      let badgeClass = '';
-      if (rm) {
-        if (entry.poids >= rm * 0.9) badgeClass = 'history-entry__weight-badge--max';
-        else if (entry.poids >= rm * 0.8) badgeClass = 'history-entry__weight-badge--heavy';
+      // Séance cardio (une entrée unique avec duree)
+      if (first.duree !== undefined && first.duree !== null) {
+        return `
+          <li>
+            <article class="history-entry">
+              <div class="history-entry__date-col">
+                <span class="history-entry__day">${day}</span>
+                <span class="history-entry__month">${month}</span>
+                <span class="history-entry__year">${year}</span>
+              </div>
+              <div class="history-entry__body">
+                <div class="history-entry__title">${first.titre || 'Activité cardio'}</div>
+                <div class="history-entry__stats">
+                  <span class="history-entry__stat"><span class="history-entry__stat-icon">⏱</span>${first.duree} min</span>
+                  ${first.distance ? `<span class="history-entry__stat"><span class="history-entry__stat-icon">📍</span>${first.distance} km</span>` : ''}
+                  ${first.intensite ? `<span class="history-entry__stat"><span class="history-entry__stat-icon">🔥</span>${first.intensite}</span>` : ''}
+                </div>
+                <div class="history-entry__cardio-badge">${first.duree} min</div>
+              </div>
+              <button class="history-entry__delete" data-date="${dateKey}"
+                      ${templateId ? `data-template-id="${templateId}"` : ''}
+                      aria-label="Supprimer cette séance" title="Supprimer">✕</button>
+            </article>
+          </li>`;
       }
+
+      // Séance musculation
+      const muscSeries  = entries.filter(e => typeof e.reps === 'number');
+      const bestPoids   = muscSeries.reduce((m, e) => Math.max(m, e.poids || 0), 0);
+      const totalReps   = muscSeries.reduce((s, e) => s + (e.reps || 0), 0);
+
+      let badgeClass = '';
+      if (rm && bestPoids) {
+        if (bestPoids >= rm * 0.9)      badgeClass = 'history-entry__weight-badge--max';
+        else if (bestPoids >= rm * 0.8) badgeClass = 'history-entry__weight-badge--heavy';
+      }
+
+      const status    = _evalSession(muscSeries);
+      const serieHtml = muscSeries.map(s => {
+        const miss = s.repsObjectif && s.reps < s.repsObjectif;
+        return `<span class="history-entry__serie-chip${miss ? ' history-entry__serie-chip--miss' : ''}">S${s.series}&nbsp;·&nbsp;${s.reps}${s.repsObjectif ? '/' + s.repsObjectif : ''} reps${s.poids ? '&nbsp;·&nbsp;' + s.poids + 'kg' : ''}</span>`;
+      }).join('');
 
       return `
         <li>
@@ -336,43 +441,136 @@ document.addEventListener('DOMContentLoaded', () => {
               <span class="history-entry__year">${year}</span>
             </div>
             <div class="history-entry__body">
-              <div class="history-entry__title">${entry.titre || 'Séance'}</div>
+              <div class="history-entry__title">${first.titre || 'Séance'}</div>
               <div class="history-entry__stats">
-                <span class="history-entry__stat">
-                  <span class="history-entry__stat-icon">📋</span>Série ${entry.series}
-                </span>
-                <span class="history-entry__stat">
-                  <span class="history-entry__stat-icon">↩</span>${entry.reps} reps
-                </span>
-                ${entry.poids ? `
-                <span class="history-entry__stat history-entry__stat--poids">
-                  <span class="history-entry__stat-icon">🏋️</span>${entry.poids} kg
-                </span>` : ''}
-                ${entry.repos ? `
-                <span class="history-entry__stat">
-                  <span class="history-entry__stat-icon">⏱</span>${entry.repos}
-                </span>` : ''}
+                <span class="history-entry__stat"><span class="history-entry__stat-icon">📦</span>${muscSeries.length} série${muscSeries.length !== 1 ? 's' : ''}</span>
+                <span class="history-entry__stat"><span class="history-entry__stat-icon">↩</span>${totalReps} reps</span>
+                ${bestPoids ? `<span class="history-entry__stat history-entry__stat--poids"><span class="history-entry__stat-icon">🏋️</span>${bestPoids} kg max</span>` : ''}
               </div>
-              ${entry.poids
-                ? `<div class="history-entry__weight-badge ${badgeClass}">${entry.poids} kg</div>`
-                : ''}
+              <div class="history-entry__series-row">${serieHtml}</div>
+              <div class="history-entry__footer">
+                ${bestPoids ? `<span class="history-entry__weight-badge ${badgeClass}">${bestPoids} kg</span>` : ''}
+                ${_statusBadge(status)}
+              </div>
             </div>
-            <button class="history-entry__delete" data-index="${idx}"
-                    aria-label="Supprimer cette entrée" title="Supprimer">✕</button>
+            <button class="history-entry__delete" data-date="${dateKey}"
+                    ${templateId ? `data-template-id="${templateId}"` : ''}
+                    aria-label="Supprimer cette séance" title="Supprimer">✕</button>
           </article>
         </li>`;
     }).join('');
 
-    // Boutons de suppression individuels
     listEl.querySelectorAll('.history-entry__delete').forEach(btn => {
       btn.addEventListener('click', e => {
         e.stopPropagation();
-        if (confirm('Supprimer cette entrée ?')) {
-          DB.deleteHistoriqueEntry(id, parseInt(btn.dataset.index));
+        if (confirm('Supprimer cette séance ?')) {
+          DB.deleteHistoriqueSession(id, btn.dataset.date, btn.dataset.templateId || null);
           showPage(DB.getExercice(id));
         }
       });
     });
+  }
+
+  /* ─────────────────────────────────────────────────────────────
+     CARDIO — stats résumées + graphique durée
+  ───────────────────────────────────────────────────────────── */
+
+  function renderCardioStats(exo) {
+    const gridEl  = document.getElementById('cardio-stats-grid');
+    if (!gridEl) return;
+
+    const entries = (exo.historique || []).filter(e => e.duree);
+    const total   = entries.reduce((acc, e) => acc + (e.duree || 0), 0);
+    const best    = entries.length ? Math.max(...entries.map(e => e.duree)) : 0;
+    const last    = entries[0];
+
+    const lastStr  = last ? `${last.duree} min` : '—';
+    const bestStr  = best ? `${best} min` : '—';
+    const totalH   = Math.floor(total / 60);
+    const totalM   = total % 60;
+    const totalStr = totalH > 0
+      ? `${totalH}h${totalM > 0 ? totalM + 'm' : ''}`
+      : (total ? `${total} min` : '—');
+
+    gridEl.innerHTML = [
+      { val: lastStr,                     lbl: 'Dernière' },
+      { val: entries.length || '—',       lbl: 'Sessions' },
+      { val: totalStr,                    lbl: 'Temps total' },
+      { val: bestStr,                     lbl: 'Meilleure' },
+    ].map(c => `
+      <div class="cardio-stat-card">
+        <span class="cardio-stat-card__val">${c.val}</span>
+        <span class="cardio-stat-card__lbl">${c.lbl}</span>
+      </div>`).join('');
+  }
+
+  function renderChartCardio(exo) {
+    const barsEl   = document.getElementById('cardio-bars');
+    const labelsEl = document.getElementById('cardio-labels');
+    const gridEl   = document.getElementById('cardio-grid');
+    const trendEl  = document.getElementById('cardio-chart-trend');
+    if (!barsEl || !labelsEl) return;
+
+    const byDate = {};
+    (exo.historique || []).forEach(e => {
+      if (!e.duree) return;
+      const dateKey = (e.date || '').slice(0, 10);
+      if (!dateKey) return;
+      if (!byDate[dateKey] || e.duree > byDate[dateKey]) byDate[dateKey] = e.duree;
+    });
+
+    const points = Object.entries(byDate)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([dateKey, duree]) => ({ date: new Date(dateKey), duree }));
+
+    if (points.length > 0) {
+      const maxDuree = Math.max(...points.map(p => p.duree));
+      for (let i = points.length - 1; i >= 0; i--) {
+        if (points[i].duree === maxDuree) { points[i].isPeak = true; break; }
+      }
+    }
+
+    if (points.length === 0) {
+      barsEl.innerHTML   = '<p class="chart-empty">Aucune activité pour l\'instant.</p>';
+      labelsEl.innerHTML = '';
+      if (gridEl) gridEl.innerHTML = '';
+      if (trendEl) trendEl.textContent = '';
+      return;
+    }
+
+    const maxDuree = Math.max(...points.map(p => p.duree));
+
+    if (gridEl) {
+      const step = Math.ceil(maxDuree / 4 / 5) * 5 || 10;
+      gridEl.innerHTML = [4, 3, 2, 1].map(i => {
+        const val = i * step;
+        const pos = Math.round(val / maxDuree * 100);
+        return `<span class="chart-grid__line" style="--pos:${pos}%"><em>${val} min</em></span>`;
+      }).join('');
+    }
+
+    barsEl.innerHTML   = '';
+    labelsEl.innerHTML = '';
+
+    points.forEach(p => {
+      const h   = Math.round(p.duree / maxDuree * 100);
+      const bar = document.createElement('div');
+      bar.className = 'chart-bar' + (p.isPeak ? ' chart-bar--peak' : '');
+      bar.style.setProperty('--h', h + '%');
+      bar.innerHTML = `<span class="chart-bar__tip">${p.duree} min</span>`;
+      barsEl.appendChild(bar);
+
+      const lbl = document.createElement('span');
+      lbl.textContent = p.date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+      labelsEl.appendChild(lbl);
+    });
+
+    if (points.length >= 2 && trendEl) {
+      const diff = points[points.length - 1].duree - points[0].duree;
+      const up   = diff >= 0;
+      trendEl.className   = 'rm-chart-block__trend rm-chart-block__trend--' + (up ? 'up' : 'down');
+      trendEl.textContent = (up ? '↑ +' : '↓ ') + Math.abs(diff) + ' min';
+    }
   }
 
   /* ─────────────────────────────────────────────────────────────

@@ -3,13 +3,14 @@
  * ============================
  * Gère 4 onglets :
  *   1. Aujourd'hui  — séances planifiées du jour
- *   2. Planning     — vue 14 jours (passé proche + futur)
+ *   2. Planning     — vue semaine (navigation semaine précédente / suivante)
  *   3. Séances      — gestion des modèles de séance
  *   4. Exercices    — bibliothèque d'exercices
  */
 
-const JOURS_FR   = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
-const MOIS_SHORT = ['jan', 'fév', 'mar', 'avr', 'mai', 'jun', 'jul', 'août', 'sep', 'oct', 'nov', 'déc'];
+const JOURS_FR      = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
+const MOIS_SHORT    = ['jan', 'fév', 'mar', 'avr', 'mai', 'jun', 'jul', 'août', 'sep', 'oct', 'nov', 'déc'];
+const JOURS_COMPLETS = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
 
 // ── Filtres exercices ──
 let currentSearch     = '';
@@ -28,6 +29,15 @@ const SOUS_GROUPES = {
 let planModalTemplateId = null;
 let planModalDate       = null;
 
+// ── État planning semaine ──
+let _muscWeekOffset = 0;   // 0 = semaine courante, -1 = précédente, +1 = suivante
+
+// ── État bottom-sheet détail séance ──
+let _sdPlannedId   = null;
+let _sdExercices   = null;   // copie de travail des exercices de la séance planifiée
+let _sdPickSearch  = '';     // filtre texte du picker
+let _sdPickerOpen  = false;  // picker visible
+
 document.addEventListener('DOMContentLoaded', () => {
   DB.init();
 
@@ -37,7 +47,30 @@ document.addEventListener('DOMContentLoaded', () => {
   renderExerciseList();
   bindForms();
   updateHeaderDate();
+  _bindSessionDetailEvents();
+  _bindPlanningWeekNav();
+  _bindManageSheetEvents();
+  _bindCardioDeclarationEvents();
 });
+
+/* ── Helpers semaine planning ── */
+function _muscWeekStart(offset) {
+  const now = new Date();
+  const dow = now.getDay();                     // 0=dim … 6=sam
+  const diffToMonday = (dow === 0) ? -6 : 1 - dow;
+  const monday = new Date(now);
+  monday.setDate(now.getDate() + diffToMonday + offset * 7);
+  monday.setHours(12, 0, 0, 0);
+  return monday;
+}
+
+function _muscWeekDays(weekStart) {
+  return Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(weekStart);
+    d.setDate(weekStart.getDate() + i);
+    return d;
+  });
+}
 
 /* ═══════════════════════════════════════════════════════════════
    ONGLET 1 — AUJOURD'HUI
@@ -114,11 +147,15 @@ function renderTodayPanel() {
     const exercisesHtml = tpl.exercices.slice(0, 5).map(block => {
       const exo = DB.getExercice(block.exoId);
       if (!exo) return '';
+      const isCardio = exo.groupe === 'Cardio';
+      const infoText = isCardio
+        ? (block.duree ? `${block.duree} min` : '30 min')
+        : `${block.series}×${block.reps} · ${block.repos}`;
       return `
         <div class="today-exercise-row">
           <span class="today-exercise-row__tag today-exercise-row__tag--${exo.couleur}">${exo.groupe}</span>
           <span class="today-exercise-row__name">${exo.nom}</span>
-          <span class="today-exercise-row__info">${block.series}×${block.reps} · ${block.repos}</span>
+          <span class="today-exercise-row__info">${infoText}</span>
         </div>`;
     }).join('');
 
@@ -173,33 +210,29 @@ function renderPlanningPanel() {
   const container = document.getElementById('planning-list');
   if (!container) return;
 
-  // Aujourd'hui à midi (heure locale) — midi évite les ambiguïtés DST à minuit
-  const todayMs  = new Date();
-  todayMs.setHours(12, 0, 0, 0);
-  const todayStr = localDateStr();
+  const weekStart  = _muscWeekStart(_muscWeekOffset);
+  const days       = _muscWeekDays(weekStart);
+  const weekEnd    = days[6];
+  const todayStr   = localDateStr();
 
-  // 3 jours passés + aujourd'hui + 10 jours futurs = 14 jours
-  const days = [];
-  for (let i = -3; i <= 10; i++) {
-    const d = new Date(todayMs);
-    d.setDate(todayMs.getDate() + i);
-    days.push(d);
+  // Mettre à jour le label de navigation semaine
+  const labelEl = document.getElementById('musc-week-label');
+  if (labelEl) {
+    const s = `${weekStart.getDate()} ${MOIS_SHORT[weekStart.getMonth()]}`;
+    const e = `${weekEnd.getDate()} ${MOIS_SHORT[weekEnd.getMonth()]}`;
+    labelEl.textContent = `${s} → ${e}`;
   }
 
-  const startStr = localDateStr(days[0]);
-  const endStr   = localDateStr(days[days.length - 1]);
+  const startStr   = localDateStr(days[0]);
+  const endStr     = localDateStr(days[6]);
   const allPlanned = DB.getPlannedForRange(startStr, endStr);
 
-  container.innerHTML = days.map(d => {
-    const dateStr  = localDateStr(d);
-    const isToday  = dateStr === todayStr;
-    const isPast   = dateStr < todayStr;
-    const jsDay    = d.getDay();            // 0=Dim, 1=Lun…
-    const frDay    = jsDay === 0 ? 6 : jsDay - 1;
-    const dayLabel = isToday ? "Aujourd'hui" : JOURS_FR[frDay];
-    const dayNum   = d.getDate();
-    const monthLbl = MOIS_SHORT[d.getMonth()];
+  container.innerHTML = '';
 
+  days.forEach((d, i) => {
+    const dateStr    = localDateStr(d);
+    const isToday    = dateStr === todayStr;
+    const isPast     = dateStr < todayStr;
     const dayPlanned = allPlanned.filter(p => p.date === dateStr);
 
     const sessionsHtml = dayPlanned.map(p => {
@@ -216,58 +249,365 @@ function renderPlanningPanel() {
         : '');
 
       return `
-        <div class="planning-session${p.completed ? ' planning-session--done' : ''}">
+        <div class="planning-session${p.completed ? ' planning-session--done' : ''}"
+             data-detail-id="${p.id}" role="button" tabindex="0"
+             aria-label="Voir le détail de ${tpl.nom}">
           <div class="planning-session__top">
             <span class="planning-session__name">${tpl.nom}</span>
-            <span class="planning-session__count">${exoCount} exo${exoCount > 1 ? 's' : ''}</span>
-            ${p.completed ? '<span class="planning-session__badge">✓ Fait</span>' : ''}
+            <div class="planning-session__meta">
+              <span class="planning-session__count">${exoCount} exo${exoCount > 1 ? 's' : ''}</span>
+              ${p.completed ? '<span class="planning-session__badge">✓ Fait</span>' : ''}
+            </div>
+            <svg class="planning-session__chevron" xmlns="http://www.w3.org/2000/svg"
+                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
+                 width="14" height="14" aria-hidden="true">
+              <polyline points="9 18 15 12 9 6"/>
+            </svg>
           </div>
           ${chipsHtml ? `<div class="planning-session__chips">${chipsHtml}</div>` : ''}
-          <div class="planning-session__actions">
-            ${!p.completed && exoCount > 0 ? `
-            <button class="planning-session__start" data-planned-id="${p.id}" type="button">▶ Démarrer</button>` : ''}
-            ${!p.completed ? `
-            <button class="planning-session__delete" data-delete-planned="${p.id}" type="button" aria-label="Supprimer">✕</button>` : ''}
-          </div>
         </div>`;
     }).join('');
 
-    return `
-      <div class="planning-day${isToday ? ' planning-day--today' : ''}${isPast ? ' planning-day--past' : ''}">
-        <div class="planning-day__header">
-          <div class="planning-day__label">
-            <span class="planning-day__weekday">${dayLabel}</span>
-            <span class="planning-day__num">${dayNum} ${monthLbl}</span>
-          </div>
-          ${!isPast ? `
-          <button class="planning-day__add" data-date="${dateStr}" aria-label="Planifier une séance">＋</button>` : ''}
-        </div>
-        ${sessionsHtml ? `<div class="planning-day__sessions">${sessionsHtml}</div>` : ''}
+    const card = document.createElement('div');
+    card.className = 'musc-day-card'
+      + (isToday ? ' musc-day-card--today' : '')
+      + (isPast  ? ' musc-day-card--past'  : '');
+    card.dataset.date = dateStr;
+    card.innerHTML = `
+      <div class="musc-day-card__header">
+        <div class="musc-day-card__day">${JOURS_COMPLETS[i]}${isToday
+          ? '<span class="musc-day-card__today-badge">Aujourd\'hui</span>'
+          : ''}</div>
+        <div class="musc-day-card__date">${d.getDate()} ${MOIS_SHORT[d.getMonth()]}</div>
+      </div>
+      <div class="musc-day-card__body">
+        ${dayPlanned.length > 0
+          ? sessionsHtml
+          : '<p class="musc-day-card__empty">Aucune séance planifiée</p>'}
+      </div>
+      <div class="musc-day-card__footer">
+        <button class="musc-day-card__add-btn" data-plan-date="${dateStr}" aria-label="Planifier une séance">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none"
+               stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+               width="13" height="13" aria-hidden="true">
+            <line x1="8" y1="2" x2="8" y2="14"/><line x1="2" y1="8" x2="14" y2="8"/>
+          </svg>
+          Planifier une séance
+        </button>
       </div>`;
-  }).join('');
 
-  // Boutons "Démarrer"
-  container.querySelectorAll('.planning-session__start').forEach(btn => {
-    btn.addEventListener('click', () => {
-      window.location.href = `seance.html?id=${btn.dataset.plannedId}`;
-    });
+    container.appendChild(card);
   });
 
-  // Boutons "Supprimer instance"
-  container.querySelectorAll('[data-delete-planned]').forEach(btn => {
-    btn.addEventListener('click', e => {
-      e.stopPropagation();
-      if (confirm('Supprimer cette séance du planning ?')) {
-        DB.deletePlanned(btn.dataset.deletePlanned);
-        renderPlanningPanel();
-        renderTodayPanel();
+  // Clic sur une carte séance → ouvrir le détail
+  container.querySelectorAll('[data-detail-id]').forEach(card => {
+    card.addEventListener('click', () => _openSessionDetail(card.dataset.detailId));
+    card.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        _openSessionDetail(card.dataset.detailId);
       }
     });
   });
 
-  // Boutons "+" par jour
-  container.querySelectorAll('.planning-day__add').forEach(btn => {
-    btn.addEventListener('click', () => openPlanModal(btn.dataset.date));
+  // Boutons "Planifier une séance" par jour
+  container.querySelectorAll('[data-plan-date]').forEach(btn => {
+    btn.addEventListener('click', () => openPlanModal(btn.dataset.planDate));
+  });
+}
+
+function _bindPlanningWeekNav() {
+  document.getElementById('musc-prev-week')?.addEventListener('click', () => {
+    _muscWeekOffset--;
+    renderPlanningPanel();
+  });
+  document.getElementById('musc-next-week')?.addEventListener('click', () => {
+    _muscWeekOffset++;
+    renderPlanningPanel();
+  });
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   BOTTOM-SHEET : DÉTAIL D'UNE SÉANCE PLANIFIÉE
+═══════════════════════════════════════════════════════════════ */
+
+const MOIS_LONG = ['janvier','février','mars','avril','mai','juin',
+                   'juillet','août','septembre','octobre','novembre','décembre'];
+const JOURS_LONG = ['dimanche','lundi','mardi','mercredi','jeudi','vendredi','samedi'];
+
+function _openSessionDetail(plannedId) {
+  const p = DB.getPlanned(plannedId);
+  if (!p) return;
+  const tpl = DB.getTemplate(p.templateId);
+  if (!tpl) return;
+
+  _sdPlannedId  = plannedId;
+  _sdPickSearch = '';
+  _sdPickerOpen = false;
+
+  // Copie de travail des exercices (migration : anciens planned sans .exercices)
+  _sdExercices = p.exercices
+    ? p.exercices.map(b => ({ ...b }))
+    : tpl.exercices.map(b => ({ ...b }));
+
+  // Fermer le picker
+  const pickerEl = document.getElementById('sd-exo-picker');
+  if (pickerEl) pickerEl.hidden = true;
+
+  // Titre
+  document.getElementById('sd-title').textContent = tpl.nom;
+
+  // Date
+  const d = new Date(p.date + 'T12:00:00');
+  const isToday = p.date === localDateStr();
+  const dayStr  = isToday
+    ? "Aujourd'hui"
+    : JOURS_LONG[d.getDay()] + ' ' + d.getDate() + ' ' + MOIS_LONG[d.getMonth()];
+  document.getElementById('sd-date').textContent = dayStr;
+
+  _renderSdSummary(p);
+  _renderSdExoList(p.completed);
+  _renderSdModifiedBadge(tpl);
+  _renderSdPhaseBanner();
+
+  // Bouton démarrer / supprimer
+  const startBtn  = document.getElementById('sd-start');
+  const deleteBtn = document.getElementById('sd-delete');
+  if (startBtn)  startBtn.hidden  = p.completed || _sdExercices.length === 0;
+  if (deleteBtn) deleteBtn.hidden = p.completed;
+
+  // Cacher le bouton "Ajouter" si séance terminée
+  const addZone = document.getElementById('sd-add-zone');
+  if (addZone) addZone.hidden = p.completed;
+
+  const sheet = document.getElementById('musc-session-detail');
+  if (sheet) sheet.hidden = false;
+}
+
+function _renderSdPhaseBanner() {
+  const banner = document.getElementById('sd-phase-banner');
+  if (!banner || !window.PROGRAMME_DB) return;
+
+  const prog = window.PROGRAMME_DB.get();
+  if (!prog) { banner.hidden = true; return; }
+
+  const info = window.PROGRAMME_DB.getActivePhase(prog);
+  if (!info) { banner.hidden = true; return; }
+
+  const { phase, phaseIndex, weekInPhase } = info;
+  const phaseName = phase.nom || ('Phase ' + (phaseIndex + 1));
+  const mc        = window.PROGRAMME_DB.getMicroCycle(prog);
+  const cycleLabel = mc ? ' · ' + mc.label : '';
+  banner.textContent = phaseName + ' · ' + phase.repsMin + '–' + phase.repsMax + ' reps · Sem. ' + weekInPhase + cycleLabel;
+  banner.hidden = false;
+}
+
+function _renderSdSummary(p) {
+  const exoCount = _sdExercices.length;
+  const muscBlocks   = _sdExercices.filter(b => DB.getExercice(b.exoId)?.groupe !== 'Cardio');
+  const cardioBlocks = _sdExercices.filter(b => DB.getExercice(b.exoId)?.groupe === 'Cardio');
+  const totalSets = muscBlocks.reduce((s, b) => s + (parseInt(b.series) || 3), 0);
+  const cardioMin = cardioBlocks.reduce((s, b) => s + (parseInt(b.duree) || 30), 0);
+
+  let html = `<span class="sd-summary__item">${exoCount} exercice${exoCount !== 1 ? 's' : ''}</span>`;
+  if (totalSets > 0) {
+    html += `<span class="sd-summary__sep">·</span><span class="sd-summary__item">${totalSets} série${totalSets !== 1 ? 's' : ''}</span>`;
+  }
+  if (cardioMin > 0) {
+    html += `<span class="sd-summary__sep">·</span><span class="sd-summary__item">${cardioMin} min cardio</span>`;
+  }
+  if (p && p.completed) html += '<span class="sd-summary__badge">✓ Terminé</span>';
+  document.getElementById('sd-summary').innerHTML = html;
+}
+
+function _renderSdExoList(isCompleted) {
+  const listEl = document.getElementById('sd-exercises');
+  if (!listEl) return;
+
+  if (_sdExercices.length === 0) {
+    listEl.innerHTML = '<p class="sd-exo-empty">Aucun exercice. Ajoutes-en un ci-dessous.</p>';
+    return;
+  }
+
+  listEl.innerHTML = _sdExercices.map((b, idx) => {
+    const exo = DB.getExercice(b.exoId);
+    if (!exo) return '';
+    const isCardio = exo.groupe === 'Cardio';
+    const deleteBtn = !isCompleted
+      ? `<button class="sd-exo-delete" data-sd-del="${idx}" aria-label="Supprimer ${exo.nom}">✕</button>`
+      : '';
+
+    if (isCardio) {
+      const dureeLabel = b.duree ? `${b.duree} min` : '30 min';
+      const distLabel  = b.distance ? ` · ${b.distance} km` : '';
+      const intLabel   = b.intensite ? ` · ${b.intensite}` : '';
+      return `
+        <div class="sd-exo-row">
+          <div class="sd-exo-row__left">
+            <span class="sd-exo-dot sd-exo-dot--cardio"></span>
+            <span class="sd-exo-name">${exo.nom}</span>
+          </div>
+          <div class="sd-exo-row__right">
+            <span class="sd-exo-cardio-duration">${dureeLabel}</span>
+            ${(distLabel || intLabel) ? `<span class="sd-exo-cardio-detail">${distLabel}${intLabel}</span>` : ''}
+            ${deleteBtn}
+          </div>
+        </div>`;
+    }
+
+    const repsLabel  = b.reps  ? `${b.series} × ${b.reps}` : `${b.series} série${b.series !== 1 ? 's' : ''}`;
+    const poidsLabel = b.poids ? `${b.poids} kg` : '';
+    const reposLabel = b.repos ? `${parseInt(b.repos) || b.repos} s` : '';
+    return `
+      <div class="sd-exo-row">
+        <div class="sd-exo-row__left">
+          <span class="sd-exo-dot sd-exo-dot--${exo.couleur}"></span>
+          <span class="sd-exo-name">${exo.nom}</span>
+        </div>
+        <div class="sd-exo-row__right">
+          <span class="sd-exo-sets">${repsLabel}</span>
+          ${poidsLabel ? `<span class="sd-exo-weight">${poidsLabel}</span>` : ''}
+          ${reposLabel ? `<span class="sd-exo-rest">${reposLabel} repos</span>` : ''}
+          ${deleteBtn}
+        </div>
+      </div>`;
+  }).join('');
+
+  // Boutons supprimer
+  listEl.querySelectorAll('[data-sd-del]').forEach(btn => {
+    btn.addEventListener('click', () => _sdDeleteExo(parseInt(btn.dataset.sdDel, 10)));
+  });
+}
+
+function _renderSdModifiedBadge(tpl) {
+  const badgeEl = document.getElementById('sd-modified-badge');
+  if (!badgeEl) return;
+  const tplIds  = (tpl.exercices || []).map(b => b.exoId).join(',');
+  const planIds = (_sdExercices || []).map(b => b.exoId).join(',');
+  badgeEl.hidden = (tplIds === planIds);
+}
+
+function _sdDeleteExo(idx) {
+  if (!_sdExercices || idx < 0 || idx >= _sdExercices.length) return;
+  _sdExercices.splice(idx, 1);
+  DB.updatePlannedExercices(_sdPlannedId, _sdExercices);
+
+  const p   = DB.getPlanned(_sdPlannedId);
+  const tpl = DB.getTemplate(p?.templateId);
+  _renderSdSummary(p);
+  _renderSdExoList(p?.completed);
+  _renderSdModifiedBadge(tpl);
+
+  const startBtn = document.getElementById('sd-start');
+  if (startBtn) startBtn.hidden = p?.completed || _sdExercices.length === 0;
+
+  // Rafraîchir le planning
+  renderPlanningPanel();
+  renderTodayPanel();
+}
+
+function _openSdPicker() {
+  _sdPickSearch  = '';
+  _sdPickerOpen  = true;
+  const pickerEl = document.getElementById('sd-exo-picker');
+  const inputEl  = document.getElementById('sd-picker-input');
+  if (pickerEl) pickerEl.hidden = false;
+  if (inputEl)  { inputEl.value = ''; setTimeout(() => inputEl.focus(), 50); }
+  _renderSdPickerList();
+}
+
+function _closeSdPicker() {
+  _sdPickerOpen = false;
+  const pickerEl = document.getElementById('sd-exo-picker');
+  if (pickerEl) pickerEl.hidden = true;
+}
+
+function _renderSdPickerList() {
+  const listEl = document.getElementById('sd-picker-list');
+  if (!listEl) return;
+  const q    = _sdPickSearch.toLowerCase().trim();
+  const exos = DB.getAllExercices().filter(e =>
+    !q || e.nom.toLowerCase().includes(q) || e.groupe.toLowerCase().includes(q)
+  );
+  if (exos.length === 0) {
+    listEl.innerHTML = '<p class="sd-picker-empty">Aucun exercice trouvé.</p>';
+    return;
+  }
+  listEl.innerHTML = exos.map(e => {
+    const isCardio = e.groupe === 'Cardio';
+    return `
+    <div class="sd-picker-item" data-sd-pick="${e.id}">
+      <span class="sd-exo-dot sd-exo-dot--${e.couleur}"></span>
+      <span class="sd-picker-item__name">${e.nom}</span>
+      ${isCardio
+        ? '<span class="sd-picker-item__cardio-badge">Cardio</span>'
+        : `<span class="sd-picker-item__group">${e.groupe}</span>`}
+    </div>`;
+  }).join('');
+  listEl.querySelectorAll('[data-sd-pick]').forEach(row => {
+    row.addEventListener('click', () => _sdSelectExo(row.dataset.sdPick));
+  });
+}
+
+function _sdSelectExo(exoId) {
+  const pickedExo = DB.getExercice(exoId);
+  const isCardio  = pickedExo?.groupe === 'Cardio';
+  _sdExercices.push(isCardio
+    ? { exoId, duree: 30, distance: '', intensite: '' }
+    : { exoId, series: 3, reps: 10, repos: 90, poids: '' });
+  DB.updatePlannedExercices(_sdPlannedId, _sdExercices);
+  _closeSdPicker();
+
+  const p   = DB.getPlanned(_sdPlannedId);
+  const tpl = DB.getTemplate(p?.templateId);
+  _renderSdSummary(p);
+  _renderSdExoList(p?.completed);
+  _renderSdModifiedBadge(tpl);
+
+  const startBtn = document.getElementById('sd-start');
+  if (startBtn) startBtn.hidden = p?.completed || _sdExercices.length === 0;
+
+  renderPlanningPanel();
+  renderTodayPanel();
+}
+
+function _closeSessionDetail() {
+  const sheet = document.getElementById('musc-session-detail');
+  if (sheet) sheet.hidden = true;
+  _sdPlannedId  = null;
+  _sdExercices  = null;
+  _sdPickerOpen = false;
+}
+
+function _bindSessionDetailEvents() {
+  document.getElementById('sd-backdrop')?.addEventListener('click', _closeSessionDetail);
+  document.getElementById('sd-close')?.addEventListener('click', _closeSessionDetail);
+
+  document.getElementById('sd-start')?.addEventListener('click', () => {
+    if (_sdPlannedId) window.location.href = `seance.html?id=${_sdPlannedId}`;
+  });
+
+  document.getElementById('sd-delete')?.addEventListener('click', () => {
+    if (!_sdPlannedId) return;
+    if (confirm('Supprimer cette séance du planning ?')) {
+      DB.deletePlanned(_sdPlannedId);
+      _closeSessionDetail();
+      renderPlanningPanel();
+      renderTodayPanel();
+    }
+  });
+
+  // Bouton "Ajouter un exercice" → ouvre/ferme le picker
+  document.getElementById('sd-add-exo-btn')?.addEventListener('click', () => {
+    if (_sdPickerOpen) _closeSdPicker();
+    else               _openSdPicker();
+  });
+
+  // Recherche dans le picker
+  document.getElementById('sd-picker-input')?.addEventListener('input', e => {
+    _sdPickSearch = e.target.value;
+    _renderSdPickerList();
   });
 }
 
@@ -278,12 +618,19 @@ function renderPlanningPanel() {
 function renderModelesPanel() {
   const listEl   = document.getElementById('modeles-list');
   const recentEl = document.getElementById('modeles-recent');
+  const linkEl   = document.getElementById('btn-open-manage');
+  const linkCt   = document.getElementById('manage-link-count');
   if (!listEl) return;
 
-  const templates = DB.getAllTemplates();
-  const recent    = DB.getRecentTemplates(3);
+  const allTemplates    = DB.getAllTemplates();
+  const activeTemplates = DB.getActiveTemplates();
+  const recent          = DB.getRecentTemplates(5);
 
-  // Section "Récemment utilisées"
+  // Masquer dans "Mes modèles actifs" les modèles déjà présents dans "Récemment utilisées"
+  const recentIds       = new Set(recent.map(r => r.template.id));
+  const otherActives    = activeTemplates.filter(t => !recentIds.has(t.id));
+
+  // Section "Récemment utilisées" — point d'entrée principal
   if (recentEl) {
     if (recent.length > 0) {
       recentEl.style.display = 'block';
@@ -297,22 +644,146 @@ function renderModelesPanel() {
       bindTemplateCardActions(recentEl);
     } else {
       recentEl.style.display = 'none';
+      recentEl.innerHTML    = '';
     }
   }
 
-  // Section "Mes modèles"
-  if (templates.length === 0) {
+  // Section "Mes modèles actifs" (hors récents)
+  if (activeTemplates.length === 0) {
     listEl.innerHTML = `
       <div class="sessions-empty">
         <p>Aucun modèle de séance.</p>
         <p>Crée ton premier modèle pour commencer.</p>
       </div>`;
+  } else if (otherActives.length === 0) {
+    // Tous les actifs sont déjà dans "Récemment utilisées"
+    listEl.innerHTML = '';
   } else {
     listEl.innerHTML = `
-      <p class="modeles-section-title">Mes modèles</p>
-      ${templates.map(tpl => renderTemplateCard(tpl)).join('')}`;
+      <p class="modeles-section-title">${recent.length > 0 ? 'Autres modèles' : 'Mes modèles'}</p>
+      ${otherActives.map(tpl => renderTemplateCard(tpl)).join('')}`;
     bindTemplateCardActions(listEl);
   }
+
+  // Lien "Gérer mes séances" — affiché seulement s'il existe des modèles
+  if (linkEl) {
+    if (allTemplates.length === 0) {
+      linkEl.style.display = 'none';
+    } else {
+      linkEl.style.display = 'inline-flex';
+      if (linkCt) linkCt.textContent = `(${allTemplates.length})`;
+    }
+  }
+}
+
+/* ─── Bottom-sheet "Gérer mes séances" ─── */
+
+function openManageSheet() {
+  const sheet = document.getElementById('manage-sheet');
+  if (!sheet) return;
+  renderManageSheet();
+  sheet.hidden = false;
+  document.body.style.overflow = 'hidden';
+}
+
+function closeManageSheet() {
+  const sheet = document.getElementById('manage-sheet');
+  if (!sheet) return;
+  sheet.hidden = true;
+  document.body.style.overflow = '';
+}
+
+function renderManageSheet() {
+  const actives   = DB.getActiveTemplates();
+  const archived  = DB.getArchivedTemplates();
+
+  const activeListEl   = document.getElementById('manage-list-active');
+  const archivedListEl = document.getElementById('manage-list-archived');
+  const activeCtEl     = document.getElementById('manage-count-active');
+  const archivedCtEl   = document.getElementById('manage-count-archived');
+  const subtitleEl     = document.getElementById('manage-subtitle');
+
+  if (activeCtEl)   activeCtEl.textContent   = String(actives.length);
+  if (archivedCtEl) archivedCtEl.textContent = String(archived.length);
+  if (subtitleEl)   subtitleEl.textContent   = `${actives.length} actif${actives.length !== 1 ? 's' : ''} · ${archived.length} archivé${archived.length !== 1 ? 's' : ''}`;
+
+  if (activeListEl) {
+    activeListEl.innerHTML = actives.length === 0
+      ? `<p class="manage-empty">Aucun modèle actif.</p>`
+      : actives.map(tpl => renderManageRow(tpl, false)).join('');
+    bindManageRowActions(activeListEl);
+  }
+
+  if (archivedListEl) {
+    archivedListEl.innerHTML = archived.length === 0
+      ? `<p class="manage-empty">Aucun modèle archivé.</p>`
+      : archived.map(tpl => renderManageRow(tpl, true)).join('');
+    bindManageRowActions(archivedListEl);
+  }
+}
+
+function renderManageRow(tpl, isArchived) {
+  const exoCount = tpl.exercices.length;
+  const actionLabel = isArchived ? 'Désarchiver' : 'Archiver';
+  const actionAttr  = isArchived ? 'data-unarchive-template' : 'data-archive-template';
+  return `
+    <div class="manage-row ${isArchived ? 'manage-row--archived' : ''}" data-template-id="${tpl.id}">
+      <div class="manage-row__info">
+        <span class="manage-row__name">${tpl.nom}</span>
+        <span class="manage-row__meta">${exoCount} exercice${exoCount !== 1 ? 's' : ''}</span>
+      </div>
+      <div class="manage-row__actions">
+        <button class="manage-row__btn manage-row__btn--archive"
+                ${actionAttr}="${tpl.id}" type="button">${actionLabel}</button>
+        <button class="manage-row__btn manage-row__btn--delete"
+                data-delete-template-manage="${tpl.id}" type="button" aria-label="Supprimer ${tpl.nom}">✕</button>
+      </div>
+    </div>`;
+}
+
+function bindManageRowActions(container) {
+  if (!container) return;
+
+  container.querySelectorAll('[data-archive-template]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      DB.archiveTemplate(btn.dataset.archiveTemplate);
+      renderManageSheet();
+      renderModelesPanel();
+      renderTodayPanel();
+    });
+  });
+
+  container.querySelectorAll('[data-unarchive-template]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      DB.unarchiveTemplate(btn.dataset.unarchiveTemplate);
+      renderManageSheet();
+      renderModelesPanel();
+      renderTodayPanel();
+    });
+  });
+
+  container.querySelectorAll('[data-delete-template-manage]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id  = btn.dataset.deleteTemplateManage;
+      const tpl = DB.getTemplate(id);
+      if (tpl && confirm(`Supprimer le modèle "${tpl.nom}" ?\nLes séances futures planifiées avec ce modèle seront également supprimées.`)) {
+        DB.deleteTemplate(id);
+        renderManageSheet();
+        renderModelesPanel();
+        renderTodayPanel();
+        renderPlanningPanel();
+      }
+    });
+  });
+}
+
+function _bindManageSheetEvents() {
+  const openBtn   = document.getElementById('btn-open-manage');
+  const closeBtn  = document.getElementById('manage-close');
+  const backdrop  = document.getElementById('manage-backdrop');
+  if (openBtn)  openBtn.addEventListener('click', openManageSheet);
+  if (closeBtn) closeBtn.addEventListener('click', closeManageSheet);
+  if (backdrop) backdrop.addEventListener('click', closeManageSheet);
 }
 
 function renderTemplateCard(tpl, recentLabel = null) {
@@ -402,7 +873,15 @@ function renderExerciseList() {
   });
 
   exercises.forEach(exo => {
-    const rm   = calculerRMDepuisHistorique(exo);
+    const isCardio = exo.groupe === 'Cardio';
+    const rm   = isCardio ? null : calculerRMDepuisHistorique(exo);
+    let infoText;
+    if (isCardio) {
+      const lastEntry = (exo.historique || []).find(e => e.duree);
+      infoText = lastEntry ? `Dernière : ${lastEntry.duree} min` : 'Aucune activité enregistrée';
+    } else {
+      infoText = rm ? `${rm} kg max` : 'Pas encore de 1RM';
+    }
     const card = document.createElement('a');
     card.href      = `exercice.html?id=${exo.id}`;
     card.className = 'exercise-card';
@@ -413,7 +892,7 @@ function renderExerciseList() {
       <div class="exercise-card__body">
         <h3 class="exercise-card__name">${exo.nom}</h3>
         <p  class="exercise-card__info">
-          ${rm ? rm + ' kg max' : 'Pas encore de 1RM'}
+          ${infoText}
         </p>
       </div>
       <button class="exercise-card__delete" data-delete-exo="${exo.id}"
@@ -470,9 +949,9 @@ function openPlanModal(dateStr, preselectedTemplateId = null) {
     });
   }
 
-  // Liste des modèles
+  // Liste des modèles (actifs uniquement)
   const tplList   = document.getElementById('plan-template-list');
-  const templates = DB.getAllTemplates();
+  const templates = DB.getActiveTemplates();
 
   if (tplList) {
     if (templates.length === 0) {
@@ -656,6 +1135,12 @@ function renderTemplateDraftList() {
   container.innerHTML = templateDraftExercices.map((block, idx) => {
     const exo = DB.getExercice(block.exoId);
     if (!exo) return '';
+    const isCardio = exo.groupe === 'Cardio';
+    const metaHtml = isCardio
+      ? `<span class="tpl-exo-row__param">${block.duree || 30} min</span>`
+      : `<span class="tpl-exo-row__param">${block.series}×${block.reps}</span>
+         <span class="tpl-exo-row__param">${parseInt(block.repos) || block.repos} s</span>
+         <span class="tpl-exo-row__obj">${OBJECTIF_LABELS[block.objectif] ?? 'Libre'}</span>`;
     return `
       <div class="tpl-exo-row" data-idx="${idx}" role="button" tabindex="0"
            aria-label="Modifier ${exo.nom}">
@@ -664,9 +1149,7 @@ function renderTemplateDraftList() {
           <span class="tpl-exo-row__name">${exo.nom}</span>
         </div>
         <div class="tpl-exo-row__meta">
-          <span class="tpl-exo-row__param">${block.series}×${block.reps}</span>
-          <span class="tpl-exo-row__param">${block.repos}</span>
-          <span class="tpl-exo-row__obj">${OBJECTIF_LABELS[block.objectif] ?? 'Libre'}</span>
+          ${metaHtml}
         </div>
         <button type="button" class="tpl-exo-row__remove"
                 data-remove-idx="${idx}" aria-label="Retirer">✕</button>
@@ -704,23 +1187,36 @@ function openExoConfigModal(mode, idx) {
     selectWrap.style.display = '';
     title.textContent        = 'Ajouter un exercice';
     confirmLbl.textContent   = 'Ajouter';
-    // Valeurs par défaut
+    // Valeurs par défaut musculation
     document.getElementById('exo-config-series').value = '3';
     document.getElementById('exo-config-reps').value   = '10';
-    document.getElementById('exo-config-repos').value  = '90 s';
+    document.getElementById('exo-config-repos').value  = '90';
+    document.getElementById('exo-config-duree').value  = '30';
     const radio = document.querySelector('[name="exo-config-obj"][value="hypertrophie"]');
     if (radio) radio.checked = true;
+    // Afficher les champs musculation par défaut (le select déclenchera le toggle)
+    _exoConfigToggleCardio(false);
   } else {
     selectWrap.style.display = 'none';
-    const block = templateDraftExercices[idx];
-    const exo   = DB.getExercice(block.exoId);
+    const block    = templateDraftExercices[idx];
+    const exo      = DB.getExercice(block.exoId);
+    const isCardio = exo?.groupe === 'Cardio';
     title.textContent      = exo?.nom || 'Modifier';
     confirmLbl.textContent = 'Enregistrer';
-    document.getElementById('exo-config-series').value = block.series;
-    document.getElementById('exo-config-reps').value   = block.reps;
-    document.getElementById('exo-config-repos').value  = block.repos;
-    const radio = document.querySelector(`[name="exo-config-obj"][value="${block.objectif}"]`);
-    if (radio) radio.checked = true;
+    _exoConfigToggleCardio(isCardio);
+    if (isCardio) {
+      document.getElementById('exo-config-duree').value = block.duree || 30;
+    } else {
+      document.getElementById('exo-config-series').value = block.series;
+      document.getElementById('exo-config-reps').value   = block.reps;
+      document.getElementById('exo-config-repos').value  = parseInt(block.repos) || 90;
+      const radio = document.querySelector(`[name="exo-config-obj"][value="${block.objectif}"]`);
+      if (radio) radio.checked = true;
+      const rirEl  = document.getElementById('exo-config-rir');
+      const noteEl = document.getElementById('exo-config-note');
+      if (rirEl)  rirEl.value  = block.rir != null ? block.rir : '';
+      if (noteEl) noteEl.value = block.noteTechnique || '';
+    }
   }
 
   modal.classList.add('exo-config-modal--open');
@@ -730,6 +1226,26 @@ function openExoConfigModal(mode, idx) {
 function closeExoConfigModal() {
   document.getElementById('modal-exo-config').classList.remove('exo-config-modal--open');
   editingExoIdx = null;
+}
+
+function _exoConfigIsCardio() {
+  if (editingExoIdx !== null) {
+    const block = templateDraftExercices[editingExoIdx];
+    return DB.getExercice(block?.exoId)?.groupe === 'Cardio';
+  }
+  const exoId = document.getElementById('exo-config-select')?.value;
+  return exoId ? DB.getExercice(exoId)?.groupe === 'Cardio' : false;
+}
+
+function _exoConfigToggleCardio(isCardio) {
+  const standardRows = document.getElementById('exo-config-standard-rows');
+  const cardioRow    = document.getElementById('exo-config-cardio-row');
+  const objRow       = document.getElementById('exo-config-obj-row');
+  const extraRow     = document.getElementById('exo-config-muscu-extra');
+  if (standardRows) standardRows.style.display = isCardio ? 'none' : '';
+  if (cardioRow)    cardioRow.style.display    = isCardio ? '' : 'none';
+  if (objRow)       objRow.style.display       = isCardio ? 'none' : '';
+  if (extraRow)     extraRow.style.display     = isCardio ? 'none' : '';
 }
 
 /** Câble le bottom sheet de configuration exercice */
@@ -743,28 +1259,59 @@ function bindExoConfigModal() {
       opt.textContent = `${exo.nom} (${exo.groupe})`;
       select.appendChild(opt);
     });
+    select.addEventListener('change', () => {
+      _exoConfigToggleCardio(_exoConfigIsCardio());
+    });
   }
 
   document.getElementById('exo-config-overlay')?.addEventListener('click', closeExoConfigModal);
   document.getElementById('exo-config-cancel')?.addEventListener('click',  closeExoConfigModal);
 
+  document.querySelectorAll('.repos-quick-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.getElementById('exo-config-repos').value = btn.dataset.val;
+    });
+  });
+
   document.getElementById('exo-config-confirm')?.addEventListener('click', () => {
-    const series   = parseInt(document.getElementById('exo-config-series').value) || 3;
-    const reps     = parseInt(document.getElementById('exo-config-reps').value)   || 10;
-    const repos    = document.getElementById('exo-config-repos').value.trim()     || '90 s';
-    const objectif = document.querySelector('[name="exo-config-obj"]:checked')?.value ?? 'hypertrophie';
+    const isCardio = _exoConfigIsCardio();
 
     if (editingExoIdx !== null) {
-      // Mode édition : mettre à jour le bloc existant
-      templateDraftExercices[editingExoIdx] = {
-        ...templateDraftExercices[editingExoIdx],
-        series, reps, repos, objectif,
-      };
+      if (isCardio) {
+        const duree = parseInt(document.getElementById('exo-config-duree').value) || 30;
+        templateDraftExercices[editingExoIdx] = {
+          ...templateDraftExercices[editingExoIdx],
+          duree,
+        };
+      } else {
+        const series        = parseInt(document.getElementById('exo-config-series').value) || 3;
+        const reps          = parseInt(document.getElementById('exo-config-reps').value)   || 10;
+        const repos         = parseInt(document.getElementById('exo-config-repos').value)   || 90;
+        const objectif      = document.querySelector('[name="exo-config-obj"]:checked')?.value ?? 'hypertrophie';
+        const rirRaw        = document.getElementById('exo-config-rir')?.value;
+        const rir           = rirRaw !== '' && rirRaw != null ? parseInt(rirRaw) : null;
+        const noteTechnique = (document.getElementById('exo-config-note')?.value || '').trim();
+        templateDraftExercices[editingExoIdx] = {
+          ...templateDraftExercices[editingExoIdx],
+          series, reps, repos, objectif, rir, noteTechnique,
+        };
+      }
     } else {
-      // Mode ajout : vérifier qu'un exercice est sélectionné
       const exoId = document.getElementById('exo-config-select').value;
       if (!exoId) return;
-      templateDraftExercices.push({ exoId, series, reps, repos, objectif });
+      if (isCardio) {
+        const duree = parseInt(document.getElementById('exo-config-duree').value) || 30;
+        templateDraftExercices.push({ exoId, duree, distance: '', intensite: '' });
+      } else {
+        const series        = parseInt(document.getElementById('exo-config-series').value) || 3;
+        const reps          = parseInt(document.getElementById('exo-config-reps').value)   || 10;
+        const repos         = parseInt(document.getElementById('exo-config-repos').value)   || 90;
+        const objectif      = document.querySelector('[name="exo-config-obj"]:checked')?.value ?? 'hypertrophie';
+        const rirRaw        = document.getElementById('exo-config-rir')?.value;
+        const rir           = rirRaw !== '' && rirRaw != null ? parseInt(rirRaw) : null;
+        const noteTechnique = (document.getElementById('exo-config-note')?.value || '').trim();
+        templateDraftExercices.push({ exoId, series, reps, repos, objectif, rir, noteTechnique });
+      }
     }
 
     renderTemplateDraftList();
@@ -891,11 +1438,15 @@ function bindAddExerciseForm() {
   }
 
   groupeSelect.addEventListener('change', () => {
-    const fieldSG     = document.getElementById('field-sous-groupe');
-    const selectSG    = document.getElementById('new-exo-sous-groupe');
-    const sousGroupes = SOUS_GROUPES[groupeSelect.value] || [];
+    const fieldSG      = document.getElementById('field-sous-groupe');
+    const selectSG     = document.getElementById('new-exo-sous-groupe');
+    const fieldType    = document.getElementById('field-exo-type');
+    const fieldMat     = document.getElementById('field-exo-materiel');
+    const isCardio     = groupeSelect.value === 'Cardio';
+    const sousGroupes  = SOUS_GROUPES[groupeSelect.value] || [];
 
-    if (sousGroupes.length > 0) {
+    // Sous-groupe : uniquement pour les groupes musculaires avec zones
+    if (!isCardio && sousGroupes.length > 0) {
       selectSG.innerHTML = '<option value="">Indifférent</option>' +
         sousGroupes.map(sg =>
           `<option value="${sg}">${sg.charAt(0).toUpperCase() + sg.slice(1)}</option>`
@@ -905,6 +1456,10 @@ function bindAddExerciseForm() {
       fieldSG.style.display = 'none';
       selectSG.innerHTML    = '';
     }
+
+    // Type et matériel : non pertinents pour Cardio
+    if (fieldType)  fieldType.style.display  = isCardio ? 'none' : '';
+    if (fieldMat)   fieldMat.style.display   = isCardio ? 'none' : '';
   });
 
   form.addEventListener('submit', e => {
@@ -915,8 +1470,9 @@ function bindAddExerciseForm() {
     const groupe     = groupeSelect.value;
     const couleur    = groupeSelect.selectedOptions[0]?.dataset.couleur || 'autre';
     const sousGroupe = document.getElementById('new-exo-sous-groupe')?.value || '';
-    const type       = form.querySelector('[name="new-exo-type"]:checked')?.value     || '';
-    const materiel   = form.querySelector('[name="new-exo-materiel"]:checked')?.value || '';
+    const isCardio   = groupe === 'Cardio';
+    const type       = isCardio ? 'cardio' : (form.querySelector('[name="new-exo-type"]:checked')?.value     || '');
+    const materiel   = isCardio ? ''       : (form.querySelector('[name="new-exo-materiel"]:checked')?.value || '');
 
     if (!nom || !groupe) return;
 
@@ -938,6 +1494,10 @@ function bindAddExerciseForm() {
     if (toggle) toggle.checked = false;
     form.reset();
     document.getElementById('field-sous-groupe').style.display = 'none';
+    const ft = document.getElementById('field-exo-type');
+    const fm = document.getElementById('field-exo-materiel');
+    if (ft) ft.style.display = '';
+    if (fm) fm.style.display = '';
     // Réinitialiser la section infos
     newExoImages = [];
     renderNewExoImages();
@@ -981,5 +1541,102 @@ function updateHeaderDate() {
   if (!el) return;
   el.textContent = new Date().toLocaleDateString('fr-FR', {
     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
+  });
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   CARDIO — DÉCLARATION MANUELLE
+═══════════════════════════════════════════════════════════════ */
+
+let _cardioDeclIntensiteVal = '';
+
+function openCardioDeclarationSheet() {
+  const sheet  = document.getElementById('cardio-declare-sheet');
+  const select = document.getElementById('cardio-decl-exo');
+  if (!sheet || !select) return;
+
+  // Peupler la liste des activités cardio
+  const cardioExos = DB.getAllExercices().filter(e => e.groupe === 'Cardio');
+  select.innerHTML = cardioExos.length
+    ? cardioExos.map(e => `<option value="${e.id}">${e.nom}</option>`).join('')
+    : '<option value="">Aucune activité cardio disponible</option>';
+
+  // Date par défaut : aujourd'hui
+  const dateInput = document.getElementById('cardio-decl-date');
+  if (dateInput) {
+    dateInput.value = localDateStr();
+    dateInput.max   = localDateStr();
+  }
+
+  // Reset formulaire
+  const dureeInput    = document.getElementById('cardio-decl-duree');
+  const distanceInput = document.getElementById('cardio-decl-distance');
+  if (dureeInput)    dureeInput.value    = '';
+  if (distanceInput) distanceInput.value = '';
+  _cardioDeclIntensiteVal = '';
+  document.querySelectorAll('#cardio-decl-intensite-chips .cardio-intensite-chip').forEach(c => {
+    c.classList.remove('cardio-intensite-chip--selected');
+  });
+
+  sheet.hidden = false;
+  document.body.style.overflow = 'hidden';
+}
+
+function closeCardioDeclarationSheet() {
+  const sheet = document.getElementById('cardio-declare-sheet');
+  if (sheet) sheet.hidden = true;
+  document.body.style.overflow = '';
+}
+
+function saveCardioDeclaration() {
+  const exoId    = document.getElementById('cardio-decl-exo')?.value;
+  const dateVal  = document.getElementById('cardio-decl-date')?.value;
+  const dureeVal = parseInt(document.getElementById('cardio-decl-duree')?.value);
+  const distRaw  = parseFloat(document.getElementById('cardio-decl-distance')?.value);
+  const distance = distRaw > 0 ? distRaw : null;
+
+  if (!exoId) { alert('Sélectionne une activité.'); return; }
+  if (!dureeVal || dureeVal < 1) { alert('Saisis une durée valide.'); return; }
+
+  const exo = DB.getExercice(exoId);
+  if (!exo) return;
+
+  const isoDate = dateVal
+    ? new Date(dateVal + 'T12:00:00').toISOString()
+    : new Date().toISOString();
+
+  exo.historique.unshift({
+    titre:     'Déclaration manuelle',
+    duree:     dureeVal,
+    distance:  distance,
+    intensite: _cardioDeclIntensiteVal || null,
+    date:      isoDate,
+  });
+  DB.saveExercice(exo);
+
+  closeCardioDeclarationSheet();
+}
+
+function _bindCardioDeclarationEvents() {
+  document.getElementById('btn-cardio-declare')?.addEventListener('click', openCardioDeclarationSheet);
+  document.getElementById('cardio-declare-close')?.addEventListener('click', closeCardioDeclarationSheet);
+  document.getElementById('cardio-declare-backdrop')?.addEventListener('click', closeCardioDeclarationSheet);
+  document.getElementById('cardio-decl-save')?.addEventListener('click', saveCardioDeclaration);
+
+  // Chips intensité
+  document.querySelectorAll('#cardio-decl-intensite-chips .cardio-intensite-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      const val = chip.dataset.intensite;
+      if (_cardioDeclIntensiteVal === val) {
+        _cardioDeclIntensiteVal = '';
+        chip.classList.remove('cardio-intensite-chip--selected');
+      } else {
+        document.querySelectorAll('#cardio-decl-intensite-chips .cardio-intensite-chip').forEach(c => {
+          c.classList.remove('cardio-intensite-chip--selected');
+        });
+        _cardioDeclIntensiteVal = val;
+        chip.classList.add('cardio-intensite-chip--selected');
+      }
+    });
   });
 }

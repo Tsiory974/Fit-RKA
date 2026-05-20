@@ -1,0 +1,4743 @@
+/* ============================================================
+   FITTRACK — PAGE ALIMENTATION
+   Mobile First | HTML5 + CSS3 uniquement
+   ============================================================ */
+
+:root {
+  --header-height: 72px;
+  --tabs-height:   48px;
+}
+
+html {
+  overflow-x: hidden;
+}
+body {
+  overflow-x: hidden;
+  max-width: 480px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* ============================================================
+   EN-TÊTE DE PAGE
+   Identique au header de Musculation
+   ============================================================ */
+.page-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  height: var(--header-height);
+  background: linear-gradient(135deg, #111417 0%, #1a2318 100%);
+  border-bottom: 1px solid #1f2a22;
+  display: flex;
+  align-items: center;
+  padding: 0 1.25rem;
+}
+
+.page-header__inner {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+}
+
+.page-header__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  background: var(--accent-glow);
+  border: 1px solid rgba(57, 224, 122, 0.3);
+  border-radius: 12px;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.page-header__icon svg {
+  width: 22px;
+  height: 22px;
+}
+
+.page-header__title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+}
+
+.page-header__subtitle {
+  font-size: 0.75rem;
+  color: var(--text-idle);
+  margin-top: 2px;
+}
+
+/* ============================================================
+   MASQUER LES RADIO INPUTS
+   ============================================================ */
+input[name="alim-tabs"] {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ============================================================
+   BARRE D'ONGLETS
+   ============================================================ */
+.tabs-header {
+  position: sticky;
+  top: var(--header-height);
+  z-index: 99;
+  height: var(--tabs-height);
+  background: #111417;
+  border-bottom: 1px solid #1f242a;
+  display: flex;
+  align-items: stretch;
+  overflow: hidden;
+}
+
+.tab-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: var(--text-idle);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: color 0.25s ease;
+  padding: 0 0.5rem;
+  white-space: nowrap;
+}
+
+.tab-btn__icon {
+  display: flex;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.tab-btn__icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* Indicateur glissant vert sous l'onglet actif */
+.tab-indicator {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 25%;
+  height: 3px;
+  background: var(--accent);
+  border-radius: 3px 3px 0 0;
+  transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* ============================================================
+   ÉTAT DES ONGLETS — piloté par les radio inputs
+   ============================================================ */
+#alim-aujourdhui:checked ~ .tabs-header label[for="alim-aujourdhui"] { color: var(--accent); }
+
+#alim-planning:checked ~ .tabs-header label[for="alim-planning"] { color: var(--accent); }
+#alim-planning:checked ~ .tabs-header .tab-indicator { transform: translateX(100%); }
+
+#alim-recettes:checked ~ .tabs-header label[for="alim-recettes"] { color: var(--accent); }
+#alim-recettes:checked ~ .tabs-header .tab-indicator { transform: translateX(200%); }
+
+#alim-aliments:checked ~ .tabs-header label[for="alim-aliments"] { color: var(--accent); }
+#alim-aliments:checked ~ .tabs-header .tab-indicator { transform: translateX(300%); }
+
+/* ============================================================
+   ZONE DE CONTENU — ONGLETS (display switch)
+   Un seul panneau visible à la fois, zéro scroll horizontal.
+   ============================================================ */
+.tabs-track {
+  width: 100%;
+  overflow: hidden;
+}
+
+/* Par défaut tous les panneaux sont masqués */
+.tab-panel {
+  display: none;
+  width: 100%;
+  overflow-x: hidden;
+  padding: 1.25rem 1rem 2rem;
+}
+
+/* Afficher uniquement le panneau actif */
+#alim-aujourdhui:checked ~ .tabs-track #alim-panel-aujourdhui { display: block; }
+#alim-planning:checked   ~ .tabs-track #alim-panel-planning   { display: block; }
+#alim-recettes:checked   ~ .tabs-track #alim-panel-recettes   { display: block; }
+#alim-aliments:checked   ~ .tabs-track #alim-panel-aliments   { display: block; }
+
+/* ============================================================
+   PLACEHOLDER PANNEAU
+   ============================================================ */
+.panel-placeholder {
+  color: var(--text-idle);
+  font-size: 0.9rem;
+  text-align: center;
+  padding-top: 2rem;
+}
+
+/* ============================================================
+   BARRE DE RECHERCHE
+   ============================================================ */
+.search-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  background: #141820;
+  border: 1px solid #1f2428;
+  border-radius: 12px;
+  padding: 0 0.875rem;
+  height: 44px;
+  margin-bottom: 1rem;
+}
+
+.search-bar__icon {
+  display: flex;
+  width: 18px;
+  height: 18px;
+  color: var(--text-idle);
+  flex-shrink: 0;
+}
+
+.search-bar__icon svg { width: 100%; height: 100%; }
+
+.search-bar__input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #f0f0f0;
+  font-size: 0.875rem;
+  font-family: inherit;
+}
+
+.search-bar__input::placeholder { color: var(--text-idle); }
+
+/* ============================================================
+   CHIPS DE FILTRES
+   ============================================================ */
+.filter-chips {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 0.5rem;
+  margin-bottom: 1rem;
+  scrollbar-width: none;
+  touch-action: pan-x;
+  -webkit-overflow-scrolling: touch;
+}
+
+.filter-chips::-webkit-scrollbar { display: none; }
+
+.chip {
+  flex-shrink: 0;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  padding: 5px 12px;
+  border-radius: 20px;
+  background: #1a1e23;
+  color: var(--text-idle);
+  border: 1px solid #2a3038;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+  user-select: none;
+}
+
+.chip--active,
+.chip:hover {
+  background: var(--accent-glow);
+  color: var(--accent);
+  border-color: rgba(57, 224, 122, 0.4);
+}
+
+/* ============================================================
+   ONGLET ALIMENTS — EN-TÊTE
+   ============================================================ */
+.al-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0 0 0.75rem;
+}
+
+.al-header__left { min-width: 0; }
+
+.al-header__title {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #f0f0f0;
+  margin: 0 0 2px;
+  line-height: 1.2;
+}
+
+.al-header__count {
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--text-idle);
+  margin-left: 0.35em;
+}
+
+.al-header__subtitle {
+  font-size: 0.72rem;
+  color: var(--text-idle);
+  margin: 0;
+  line-height: 1.4;
+}
+
+.al-header__create {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--accent);
+  color: #000;
+  font-size: 0.8rem;
+  font-weight: 700;
+  border: none;
+  border-radius: 20px;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.15s;
+  -webkit-tap-highlight-color: transparent;
+  white-space: nowrap;
+}
+
+.al-header__create:hover,
+.al-header__create:active {
+  opacity: 0.88;
+  transform: scale(0.97);
+}
+
+/* ── État vide aliments ── */
+.al-empty {
+  text-align: center;
+  padding: 2rem 0.5rem;
+}
+
+.al-empty__icon {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1rem;
+  opacity: 0.22;
+  color: var(--text-idle);
+}
+
+.al-empty__title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #e5e7eb;
+  margin-bottom: 0.5rem;
+}
+
+.al-empty__hint {
+  font-size: 0.8rem;
+  color: var(--text-idle);
+  line-height: 1.55;
+  max-width: 280px;
+  margin: 0 auto 1.5rem;
+}
+
+.al-empty__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: var(--accent);
+  color: #000;
+  font-size: 0.85rem;
+  font-weight: 700;
+  border: none;
+  border-radius: 24px;
+  padding: 0.65rem 1.25rem;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.al-empty__cta:hover,
+.al-empty__cta:active {
+  opacity: 0.88;
+  transform: scale(0.97);
+}
+
+/* ============================================================
+   LISTE D'ALIMENTS
+   ============================================================ */
+/* ── ONGLET ALIMENTS : sticky header + liste scrollable ─────────
+   La hauteur est déclarée sur tabs-track (enfant direct du body)
+   plutôt que sur le panneau, pour que height:100% sur le panneau
+   soit résolu sans ambiguïté, y compris sur iOS Safari / Chrome
+   Android où les unités dvh seules sur un petit-fils peuvent
+   échouer si le parent n'a pas de hauteur explicite.
+   ──────────────────────────────────────────────────────────────── */
+#alim-aliments:checked ~ .tabs-track {
+  height: calc(100vh  - var(--header-height) - var(--tabs-height) - var(--nav-height));
+  height: calc(100dvh - var(--header-height) - var(--tabs-height) - var(--nav-height));
+  overflow: hidden;
+}
+
+#alim-aliments:checked ~ .tabs-track #alim-panel-aliments {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 0;
+  overflow: hidden;
+}
+
+/* Zone sticky — s'adapte au contenu, ne rétrécit jamais */
+#alim-panel-aliments .al-header {
+  flex-shrink: 0;
+  padding: 1.25rem 1rem 0.75rem;
+}
+
+#alim-panel-aliments .search-bar {
+  flex-shrink: 0;
+  margin: 0 1rem 0.75rem;
+}
+
+#alim-panel-aliments .filter-chips {
+  flex-shrink: 0;
+  padding: 0 1rem 0.625rem;
+  margin-bottom: 0;
+  border-bottom: 1px solid #1f242a;
+}
+
+/* Zone scroll — remplit tout l'espace restant */
+.aliments-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  flex: 1;
+  min-height: 0;        /* requis pour que overflow fonctionne dans un flex child */
+  overflow-y: auto;
+  padding: 0.875rem 1rem 1rem;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.aliments-list::-webkit-scrollbar { display: none; }
+
+.aliment-card {
+  display: flex;
+  align-items: stretch;
+  background: #141820;
+  border: 1px solid #1f2428;
+  border-radius: 14px;
+  overflow: hidden;
+  min-height: 64px;
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
+}
+
+.aliment-card:active {
+  transform: translateX(2px);
+}
+
+.aliment-card:hover,
+.aliment-card:active {
+  background: #1a2028;
+  border-color: #2a3540;
+}
+
+/* Lien principal (toute la zone cliquable sauf le bouton ⋮) */
+.aliment-card__link {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  flex: 1;
+  min-width: 0;
+  padding: 1rem 0 1rem 1rem;
+  text-decoration: none;
+  color: inherit;
+}
+
+/* Bouton ⋮ options */
+.aliment-card__action {
+  flex-shrink: 0;
+  padding: 0 0.875rem;
+  background: none;
+  border: none;
+  border-left: 1px solid #1f2428;
+  color: var(--text-idle);
+  font-size: 1.25rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  transition: background 0.15s, color 0.15s;
+}
+
+.aliment-card__action:hover {
+  background: rgba(255,255,255,0.05);
+  color: #e5e7eb;
+}
+
+/* Badge catégorie */
+.aliment-card__cat-tag {
+  flex-shrink: 0;
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 4px 7px;
+  border-radius: 6px;
+  width: 72px;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.aliment-card__cat-tag--viandes {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+}
+.aliment-card__cat-tag--poissons {
+  color: #3b9eff;
+  background: rgba(59, 158, 255, 0.1);
+  border: 1px solid rgba(59, 158, 255, 0.25);
+}
+.aliment-card__cat-tag--fruits {
+  color: #39e07a;
+  background: rgba(57, 224, 122, 0.1);
+  border: 1px solid rgba(57, 224, 122, 0.25);
+}
+.aliment-card__cat-tag--legumes {
+  color: #10b981;
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+}
+.aliment-card__cat-tag--feculents {
+  color: #f97316;
+  background: rgba(249, 115, 22, 0.1);
+  border: 1px solid rgba(249, 115, 22, 0.25);
+}
+.aliment-card__cat-tag--laitiers {
+  color: #a78bfa;
+  background: rgba(167, 139, 250, 0.1);
+  border: 1px solid rgba(167, 139, 250, 0.25);
+}
+.aliment-card__cat-tag--boissons {
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.1);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+}
+.aliment-card__cat-tag--autres {
+  color: #9ca3af;
+  background: rgba(156, 163, 175, 0.1);
+  border: 1px solid rgba(156, 163, 175, 0.25);
+}
+
+.aliment-card__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.aliment-card__name {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #e5e7eb;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.aliment-card__info {
+  font-size: 0.72rem;
+  color: var(--text-idle);
+  margin-top: 2px;
+}
+
+.aliment-card__arrow {
+  font-size: 1.4rem;
+  color: #374151;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+/* ============================================================
+   ALIMENTS MASQUÉS / ARCHIVÉS — section collapsible en bas
+   ============================================================ */
+.al-archived-section {
+  margin-top: 0.5rem;
+}
+
+.al-archived-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  color: var(--text-idle);
+  cursor: pointer;
+  padding: 0.625rem 0.5rem;
+  list-style: none;
+  user-select: none;
+}
+.al-archived-toggle::-webkit-details-marker { display: none; }
+
+.al-archived-toggle__chevron {
+  transition: transform 0.2s;
+}
+.al-archived-section[open] .al-archived-toggle__chevron {
+  transform: rotate(180deg);
+}
+
+.al-archived-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.25rem 0 0.75rem;
+}
+
+.al-archived-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: #1a1e23;
+  border: 1px solid #2a2e35;
+  border-radius: 10px;
+  padding: 0.625rem 0.875rem;
+}
+
+.al-archived-row__info {
+  flex: 1;
+  min-width: 0;
+}
+
+.al-archived-row__name {
+  display: block;
+  font-size: 0.85rem;
+  color: #9ca3af;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.al-archived-row__cat {
+  font-size: 0.7rem;
+  color: #4b5563;
+}
+
+.al-archived-row__restore {
+  flex-shrink: 0;
+  background: none;
+  border: 1px solid rgba(57,224,122,0.3);
+  border-radius: 8px;
+  color: var(--accent);
+  font-size: 0.75rem;
+  padding: 4px 10px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.al-archived-row__restore:hover {
+  background: rgba(57,224,122,0.1);
+}
+
+/* ============================================================
+   BOTTOM-SHEET — GESTION ALIMENT (archive / suppression)
+   ============================================================ */
+#alim-manage-sheet[hidden] { display: none; }
+#alim-manage-sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: flex;
+  align-items: flex-end;
+}
+
+.alim-manage__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+}
+
+.alim-manage__panel {
+  position: relative;
+  width: 100%;
+  background: #1a1e23;
+  border-radius: 20px 20px 0 0;
+  padding: 0.75rem 1.25rem 2rem;
+  z-index: 1;
+}
+
+.alim-manage__handle {
+  width: 36px;
+  height: 4px;
+  background: #374151;
+  border-radius: 2px;
+  margin: 0 auto 1.25rem;
+}
+
+.alim-manage__name {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #e5e7eb;
+  text-align: center;
+  margin-bottom: 1.5rem;
+  padding: 0 1rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.alim-manage__btn {
+  display: block;
+  width: 100%;
+  padding: 0.875rem;
+  border-radius: 12px;
+  border: none;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.alim-manage__btn--archive {
+  background: rgba(57,224,122,0.12);
+  color: var(--accent);
+}
+
+.alim-manage__btn--delete {
+  background: rgba(248,113,113,0.12);
+  color: #f87171;
+}
+
+.alim-manage__btn:hover { opacity: 0.8; }
+
+.alim-manage__hint {
+  font-size: 0.75rem;
+  color: var(--text-idle);
+  text-align: center;
+  margin-top: 0.5rem;
+  line-height: 1.4;
+}
+
+.alim-manage__cancel {
+  display: block;
+  width: 100%;
+  padding: 0.875rem;
+  border-radius: 12px;
+  border: 1px solid #2a3540;
+  background: transparent;
+  color: #9ca3af;
+  font-size: 0.95rem;
+  cursor: pointer;
+  margin-top: 0.75rem;
+  transition: background 0.15s;
+}
+.alim-manage__cancel:hover { background: rgba(255,255,255,0.04); }
+
+/* ============================================================
+   FAB — AJOUTER UN ALIMENT
+   ============================================================ */
+
+/* ============================================================
+   ONGLET AUJOURD'HUI
+   ============================================================ */
+
+/* ── Résumé calories ── */
+.aj-summary {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: #141820;
+  border: 1px solid #1f2428;
+  border-radius: 16px;
+  padding: 1.125rem 1rem;
+  margin-bottom: 0.875rem;
+}
+
+/* Anneau SVG */
+.aj-ring-wrap {
+  position: relative;
+  flex-shrink: 0;
+  width: 96px;
+  height: 96px;
+}
+
+.aj-ring {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.aj-ring__bg {
+  fill: none;
+  stroke: #1f2428;
+  stroke-width: 8;
+}
+
+.aj-ring__fill {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 8;
+  stroke-linecap: round;
+  stroke-dasharray: 326.73; /* 2π×52 */
+  stroke-dashoffset: 326.73;
+  transition: stroke-dashoffset 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.aj-ring__center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  line-height: 1.15;
+}
+
+.aj-ring__kcal {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -0.02em;
+}
+
+.aj-ring__unit {
+  font-size: 0.6rem;
+  color: var(--text-idle);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.aj-ring__rest {
+  font-size: 0.55rem;
+  color: var(--accent);
+  font-weight: 600;
+  margin-top: 2px;
+  white-space: nowrap;
+}
+
+/* Barres macros */
+.aj-macros {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.aj-macro__head {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 3px;
+}
+
+.aj-macro__name {
+  font-size: 0.7rem;
+  color: var(--text-idle);
+  font-weight: 600;
+}
+
+.aj-macro__val {
+  font-size: 0.7rem;
+  color: #e5e7eb;
+  font-weight: 600;
+}
+
+.aj-macro__bar {
+  height: 5px;
+  background: #1f2428;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.aj-macro__fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.4s ease;
+  width: 0%;
+}
+
+.aj-macro__fill--p { background: #39e07a; }
+.aj-macro__fill--g { background: #f97316; }
+.aj-macro__fill--l { background: #a78bfa; }
+
+/* ── Eau ── */
+.aj-water {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: #141820;
+  border: 1px solid #1f2428;
+  border-radius: 14px;
+  padding: 0.875rem 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.aj-water__icon {
+  width: 20px;
+  height: 20px;
+  color: #38bdf8;
+  flex-shrink: 0;
+}
+
+.aj-water__icon svg { width: 100%; height: 100%; }
+
+.aj-water__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.aj-water__label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #38bdf8;
+  margin-bottom: 4px;
+}
+
+.aj-water__bar-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.aj-water__bar {
+  flex: 1;
+  height: 6px;
+  background: #1f2428;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.aj-water__fill {
+  height: 100%;
+  background: #38bdf8;
+  border-radius: 3px;
+  transition: width 0.4s ease;
+  width: 0%;
+}
+
+.aj-water__val {
+  font-size: 0.68rem;
+  color: var(--text-idle);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.aj-water__btn {
+  flex-shrink: 0;
+  background: rgba(56, 189, 248, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  border-radius: 8px;
+  color: #38bdf8;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 6px 10px;
+  cursor: pointer;
+  transition: background 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.aj-water__btn:hover { background: rgba(56, 189, 248, 0.22); }
+
+/* ── Sections repas ── */
+.aj-meal {
+  background: #141820;
+  border: 1px solid #1f2428;
+  border-radius: 14px;
+  margin-bottom: 0.75rem;
+  overflow: hidden;
+}
+
+.aj-meal--validated {
+  border-color: rgba(57, 224, 122, 0.35);
+}
+
+.aj-meal__header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.875rem 1rem;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.aj-meal__icon {
+  font-size: 1.25rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.aj-meal__info {
+  flex: 1;
+  min-width: 0;
+}
+
+.aj-meal__name {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #e5e7eb;
+}
+
+.aj-meal__kcal {
+  font-size: 0.7rem;
+  color: var(--text-idle);
+  margin-top: 1px;
+}
+
+/* Pills macros dans l'en-tête de repas */
+.aj-meal__macros {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+.aj-meal__macro {
+  font-size: 0.65rem;
+  color: var(--text-idle);
+  background: #1a1e23;
+  border: 1px solid #23282f;
+  border-radius: 5px;
+  padding: 1px 5px;
+  white-space: nowrap;
+}
+
+.aj-meal__macro strong { font-weight: 700; }
+.aj-meal__macro--p strong { color: #60a5fa; }
+.aj-meal__macro--g strong { color: #fbbf24; }
+.aj-meal__macro--l strong { color: #f87171; }
+
+.aj-meal__check {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 2px solid #2a3038;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.aj-meal__check svg {
+  width: 14px;
+  height: 14px;
+  stroke: transparent;
+  transition: stroke 0.2s;
+}
+
+.aj-meal--validated .aj-meal__check {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.aj-meal--validated .aj-meal__check svg {
+  stroke: #0a0e12;
+}
+
+/* Corps du repas (masqué/visible selon état collapse) */
+.aj-meal__body {
+  padding: 0 1rem 0.875rem;
+  display: none;
+}
+
+.aj-meal--open .aj-meal__body {
+  display: block;
+}
+
+/* Liste des aliments dans un repas */
+.aj-meal__items {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  margin-bottom: 0.75rem;
+}
+
+.aj-meal__item {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.5rem 0.625rem;
+  background: #0e1114;
+  border-radius: 8px;
+}
+
+.aj-meal__item-name {
+  flex: 1;
+  font-size: 0.8rem;
+  color: #e5e7eb;
+  font-weight: 600;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.aj-meal__item-qty {
+  font-size: 0.7rem;
+  color: var(--text-idle);
+  flex-shrink: 0;
+}
+
+.aj-meal__item-kcal {
+  font-size: 0.72rem;
+  color: var(--accent);
+  font-weight: 700;
+  flex-shrink: 0;
+  min-width: 40px;
+  text-align: right;
+}
+
+.aj-meal__item-del {
+  background: none;
+  border: none;
+  color: #374151;
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 0 0 4px;
+  flex-shrink: 0;
+  transition: color 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.aj-meal__item-del:hover { color: #ef4444; }
+
+.aj-meal__empty {
+  font-size: 0.78rem;
+  color: var(--text-idle);
+  text-align: center;
+  padding: 0.5rem 0 0.375rem;
+}
+
+/* Boutons d'action du repas */
+.aj-meal__actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.aj-meal__btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  background: #1a1e23;
+  border: 1px solid #2a3038;
+  border-radius: 8px;
+  color: var(--text-idle);
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 7px 0;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.aj-meal__btn:hover {
+  color: var(--accent);
+  border-color: rgba(57, 224, 122, 0.35);
+  background: rgba(57, 224, 122, 0.06);
+}
+
+/* ── Bouton "Ajouter un repas" ── */
+.aj-add-meal-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.875rem;
+  background: transparent;
+  border: 1.5px dashed #2a3038;
+  border-radius: 12px;
+  color: var(--text-idle);
+  font-size: 0.875rem;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  margin-top: 0.375rem;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.aj-add-meal-btn:hover,
+.aj-add-meal-btn:active {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: rgba(57, 224, 122, 0.05);
+}
+
+/* ── État vide repas ── */
+.aj-meals-empty {
+  text-align: center;
+  padding: 2rem 1rem 1.5rem;
+}
+
+.aj-meals-empty__icon {
+  font-size: 2.25rem;
+  margin-bottom: 0.625rem;
+  opacity: 0.35;
+  display: block;
+}
+
+.aj-meals-empty__title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #e5e7eb;
+  margin-bottom: 0.375rem;
+}
+
+.aj-meals-empty__hint {
+  font-size: 0.78rem;
+  color: var(--text-idle);
+  line-height: 1.5;
+  max-width: 260px;
+  margin: 0 auto 1.25rem;
+}
+
+.aj-meals-empty__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--accent);
+  color: #000;
+  font-size: 0.82rem;
+  font-weight: 700;
+  border: none;
+  border-radius: 20px;
+  padding: 0.55rem 1.1rem;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.aj-meals-empty__cta:hover,
+.aj-meals-empty__cta:active {
+  opacity: 0.88;
+  transform: scale(0.97);
+}
+
+/* Bloc pédagogique Planning vs Aujourd'hui */
+.aj-meals-empty__explainer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  background: #13171b;
+  border: 1px solid #1f242a;
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  margin: 0 auto 1.25rem;
+  max-width: 270px;
+  text-align: left;
+}
+
+.aj-meals-empty__explainer-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.2rem;
+  display: block;
+}
+
+.aj-meals-empty__explainer-row {
+  font-size: 0.75rem;
+  color: var(--text-idle);
+  line-height: 1.45;
+  display: block;
+}
+
+.aj-meals-empty__explainer-row strong {
+  color: #e5e7eb;
+  font-weight: 600;
+}
+
+/* Lien secondaire */
+.aj-meals-empty__secondary {
+  display: block;
+  margin: 0.75rem auto 0;
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 0.75rem;
+  color: var(--text-idle);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.aj-meals-empty__secondary:hover,
+.aj-meals-empty__secondary:active {
+  color: #e5e7eb;
+}
+
+/* ============================================================
+   BOTTOM-SHEET "AJOUTER UN REPAS"
+   ============================================================ */
+.aj-add-sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;   /* au-dessus de la navbar (z-index: 1000) */
+  display: flex;
+  align-items: flex-end;
+}
+
+.aj-add-sheet[hidden] { display: none; }
+
+.aj-add-sheet__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+}
+
+.aj-add-sheet__panel {
+  position: relative;
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  background: #111417;
+  border-radius: 20px 20px 0 0;
+  border-top: 1px solid #1f242a;
+  padding: 1rem 1rem calc(1.5rem + var(--nav-height, 68px));
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.aj-add-sheet__panel::-webkit-scrollbar { display: none; }
+
+/* Bouton retour dans le header de la sheet */
+.aj-add-sheet__back {
+  background: #1a1e23;
+  border: 1px solid #2a3038;
+  border-radius: 8px;
+  color: #9ca3af;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.aj-add-sheet__back[hidden] { display: none; }
+
+/* Grille 2 colonnes pour les types de repas */
+.aj-meal-type-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.625rem;
+  margin-top: 0.5rem;
+}
+
+.aj-meal-type-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  background: #141820;
+  border: 1px solid #1f2428;
+  border-radius: 12px;
+  padding: 0.9rem 0.875rem;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s, border-color 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.aj-meal-type-btn:hover,
+.aj-meal-type-btn:active {
+  background: rgba(57, 224, 122, 0.08);
+  border-color: rgba(57, 224, 122, 0.35);
+}
+
+.aj-meal-type-btn__icon {
+  font-size: 1.4rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.aj-meal-type-btn__label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #e5e7eb;
+  line-height: 1.25;
+}
+
+/* Sous-titre étape contenu */
+.aj-add-sheet__subtitle {
+  font-size: 0.78rem;
+  color: var(--text-idle);
+  font-weight: 600;
+  margin: 0.25rem 0 0.75rem;
+}
+
+/* Boutons de choix de contenu (Recette / Aliment) */
+.aj-content-opt {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  background: #141820;
+  border: 1px solid #1f2428;
+  border-radius: 12px;
+  padding: 1rem;
+  margin-bottom: 0.625rem;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s, border-color 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.aj-content-opt:hover,
+.aj-content-opt:active {
+  background: rgba(57, 224, 122, 0.06);
+  border-color: rgba(57, 224, 122, 0.3);
+}
+
+.aj-content-opt__icon {
+  font-size: 1.5rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.aj-content-opt__body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.aj-content-opt__title {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #e5e7eb;
+}
+
+.aj-content-opt__hint {
+  font-size: 0.7rem;
+  color: var(--text-idle);
+  line-height: 1.3;
+}
+
+.aj-content-opt__arrow {
+  font-size: 1.5rem;
+  color: var(--text-idle);
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+/* Liste des recettes dans la sheet */
+.aj-add-sheet__rc-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  overflow-y: auto;
+  scrollbar-width: none;
+  padding-top: 0.25rem;
+}
+
+.aj-add-sheet__rc-list::-webkit-scrollbar { display: none; }
+
+/* ============================================================
+   MODALE AJOUT ALIMENT
+   ============================================================ */
+.aj-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;   /* au-dessus de la navbar (z-index: 1000) */
+  display: flex;
+  align-items: flex-end;
+}
+
+.aj-modal[hidden] { display: none; }
+
+.aj-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+}
+
+.aj-modal__sheet {
+  position: relative;
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  background: #111417;
+  border-radius: 20px 20px 0 0;
+  border-top: 1px solid #1f242a;
+  padding: 1rem 1rem 0;
+  box-sizing: border-box;
+  /* height définie (pas seulement max-height) : requis pour que flex: 1
+     des enfants ait une hauteur résolue sur iOS Safari */
+  height: 90vh;
+  height: 90dvh;
+  height: var(--modal-avail-h, 90dvh);
+  max-height: 90vh;       /* fallback navigateurs anciens */
+  max-height: 90dvh;      /* dvh = viewport dynamique : se réduit quand le clavier s'ouvre */
+  max-height: var(--modal-avail-h, 90dvh); /* surcharge JS pour iOS < 15.4 */
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.aj-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.875rem;
+  flex-shrink: 0;
+}
+
+.aj-modal__title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.aj-modal__close {
+  background: #1a1e23;
+  border: 1px solid #2a3038;
+  border-radius: 8px;
+  color: #9ca3af;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+#aj-modal-step-search {
+  display: flex;
+  flex-direction: column;
+  flex: 1;          /* remplit la hauteur disponible dans le sheet */
+  min-height: 0;    /* permet le rétrécissement flex (requis pour iOS) */
+  overflow: hidden;
+  padding-bottom: 1rem;
+}
+
+/* [hidden] a une spécificité inférieure à display:flex ci-dessus → override explicite */
+#aj-modal-step-search[hidden] {
+  display: none;
+}
+
+#aj-modal-step-qty {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding-bottom: 1.5rem;
+  scrollbar-width: none;
+}
+
+.aj-modal__count {
+  font-size: 0.7rem;
+  color: var(--text-idle);
+  margin-bottom: 0.375rem;
+  min-height: 1em;
+}
+
+.aj-modal__list {
+  overflow-y: auto;
+  flex: 1;          /* remplit l'espace restant dans #aj-modal-step-search */
+  min-height: 0;    /* indispensable pour que flex fonctionne avec overflow */
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+.aj-modal__list::-webkit-scrollbar { display: none; }
+
+.aj-modal__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 1.5rem 0;
+  font-size: 0.82rem;
+  color: var(--text-idle);
+  text-align: center;
+}
+
+.aj-modal__empty-icon { font-size: 1.5rem; line-height: 1; }
+
+.aj-modal__alim-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: #141820;
+  border: 1px solid #1f2428;
+  border-radius: 10px;
+  padding: 0.625rem 0.875rem;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.aj-modal__alim-row:hover { background: #1a2028; border-color: #2a3540; }
+
+.aj-modal__alim-name {
+  flex: 1;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #e5e7eb;
+}
+
+.aj-modal__alim-info {
+  font-size: 0.7rem;
+  color: var(--text-idle);
+}
+
+/* Étape 2 : quantité */
+.aj-modal__alim-preview {
+  background: #141820;
+  border: 1px solid #1f2428;
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #e5e7eb;
+}
+
+/* ── Compteur pièce / portion ── */
+.aj-modal__qty-counter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #141820;
+  border: 1px solid #1f2428;
+  border-radius: 14px;
+  padding: 0.5rem;
+  margin-bottom: 0.75rem;
+  gap: 0.5rem;
+}
+
+/* display:flex ci-dessus bat [hidden]{display:none} du navigateur → override */
+.aj-modal__qty-counter[hidden] { display: none; }
+
+.aj-qty__btn {
+  width: 54px;
+  height: 54px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #1a1e23;
+  border: 1.5px solid #2a3038;
+  border-radius: 12px;
+  color: #e5e7eb;
+  font-size: 1.6rem;
+  font-weight: 300;
+  line-height: 1;
+  cursor: pointer;
+  flex-shrink: 0;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.1s, border-color 0.1s;
+  font-family: inherit;
+}
+
+.aj-qty__btn:active { background: #222830; border-color: var(--accent); }
+
+.aj-qty__center {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.1rem;
+}
+
+.aj-qty__count {
+  font-size: 2.2rem;
+  font-weight: 800;
+  color: #f0f0f0;
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+
+.aj-qty__unit {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-idle);
+  text-transform: lowercase;
+  letter-spacing: 0.02em;
+}
+
+.aj-modal__qty-hint {
+  font-size: 0.75rem;
+  color: var(--text-idle);
+  text-align: center;
+  margin: 0 0 0.75rem;
+  min-height: 1.1em;
+}
+
+.aj-modal__qty-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+/* display:flex ci-dessus bat [hidden]{display:none} du navigateur → override */
+.aj-modal__qty-row[hidden] { display: none; }
+
+.aj-modal__qty-label {
+  font-size: 0.82rem;
+  color: var(--text-idle);
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.aj-modal__qty-input {
+  flex: 1;
+  background: #141820;
+  border: 1px solid #1f2428;
+  border-radius: 10px;
+  color: #f0f0f0;
+  font-size: 1rem;
+  font-weight: 700;
+  font-family: inherit;
+  padding: 0.5rem 0.875rem;
+  outline: none;
+  text-align: right;
+  transition: border-color 0.2s;
+}
+
+.aj-modal__qty-input:focus { border-color: rgba(57, 224, 122, 0.4); }
+
+.aj-modal__qty-macros {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.aj-modal__qty-ctx {
+  width: 100%;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--text-idle);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0 0 0.25rem;
+}
+
+.aj-modal__macro-chip {
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 6px;
+  background: #1a1e23;
+  border: 1px solid #2a3038;
+  color: var(--text-idle);
+}
+
+.aj-modal__actions {
+  display: flex;
+  gap: 0.625rem;
+}
+
+.aj-modal__btn-back {
+  flex: 1;
+  background: #1a1e23;
+  border: 1px solid #2a3038;
+  border-radius: 10px;
+  color: var(--text-idle);
+  font-size: 0.82rem;
+  font-weight: 700;
+  padding: 10px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.aj-modal__btn-confirm {
+  flex: 2;
+  background: var(--accent);
+  border: none;
+  border-radius: 10px;
+  color: #0a0e12;
+  font-size: 0.85rem;
+  font-weight: 800;
+  padding: 10px;
+  cursor: pointer;
+  transition: opacity 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.aj-modal__btn-confirm:hover { opacity: 0.88; }
+
+/* ============================================================
+   ONGLET RECETTES
+   ============================================================ */
+
+/* ── En-tête + bouton créer ── */
+.rc-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0 0 0.75rem;
+}
+
+.rc-header__left {
+  min-width: 0;
+}
+
+.rc-header__title {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #f0f0f0;
+  margin: 0 0 2px;
+  line-height: 1.2;
+}
+
+.rc-header__subtitle {
+  font-size: 0.72rem;
+  color: var(--text-idle);
+  margin: 0;
+  line-height: 1.4;
+}
+
+.rc-header__count {
+  font-size: 0.72rem;
+  color: var(--text-idle);
+  margin-left: 0.4em;
+  font-weight: 500;
+}
+
+.rc-header__create {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--accent);
+  color: #000;
+  font-size: 0.8rem;
+  font-weight: 700;
+  border: none;
+  border-radius: 20px;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.15s;
+  -webkit-tap-highlight-color: transparent;
+  white-space: nowrap;
+}
+
+.rc-header__create:hover,
+.rc-header__create:active {
+  opacity: 0.88;
+  transform: scale(0.97);
+}
+
+/* ── Barre de recherche ── */
+.rc-search {
+  position: relative;
+  margin: 0 0 0.875rem;
+}
+
+.rc-search__icon {
+  position: absolute;
+  left: 0.875rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-idle);
+  display: flex;
+  align-items: center;
+  pointer-events: none;
+}
+
+.rc-search__icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.rc-search__input {
+  width: 100%;
+  background: #141820;
+  border: 1px solid #1f2428;
+  border-radius: 12px;
+  padding: 0.65rem 0.875rem 0.65rem 2.5rem;
+  color: #e5e7eb;
+  font-size: 0.88rem;
+  outline: none;
+  transition: border-color 0.15s;
+  -webkit-appearance: none;
+}
+
+.rc-search__input::placeholder {
+  color: #4b5563;
+}
+
+.rc-search__input:focus {
+  border-color: rgba(57, 224, 122, 0.4);
+}
+
+/* ── État vide ── */
+.rc-empty {
+  text-align: center;
+  padding: 2rem 0.5rem 2rem;
+}
+
+.rc-empty__icon {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1rem;
+  opacity: 0.22;
+  color: var(--text-idle);
+}
+
+.rc-empty__title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #e5e7eb;
+  margin-bottom: 0.5rem;
+}
+
+.rc-empty__hint {
+  font-size: 0.8rem;
+  color: var(--text-idle);
+  line-height: 1.55;
+  max-width: 280px;
+  margin: 0 auto 1.5rem;
+}
+
+.rc-empty__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: var(--accent);
+  color: #000;
+  font-size: 0.85rem;
+  font-weight: 700;
+  border: none;
+  border-radius: 24px;
+  padding: 0.65rem 1.25rem;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.rc-empty__cta:hover,
+.rc-empty__cta:active {
+  opacity: 0.88;
+  transform: scale(0.97);
+}
+
+/* ── Message aucun résultat de recherche ── */
+.rc-no-result {
+  text-align: center;
+  font-size: 0.82rem;
+  color: var(--text-idle);
+  padding: 2rem 1rem;
+}
+
+/* ── Liste des recettes ── */
+.rc-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+/* ── Carte menu ── */
+.rc-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  background: #13171b;
+  border: 1px solid #1f2428;
+  border-radius: 16px;
+  padding: 1rem 1rem 0.875rem;
+  cursor: pointer;
+  transition: background 0.18s ease, border-color 0.18s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.rc-card:hover,
+.rc-card:active {
+  background: #181e25;
+  border-color: rgba(57, 224, 122, 0.22);
+}
+
+/* Ligne du haut : nom + bouton supprimer */
+.rc-card__toprow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.rc-card__name {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #f0f0f0;
+  line-height: 1.25;
+  flex: 1;
+  min-width: 0;
+}
+
+.rc-card__count {
+  font-size: 0.72rem;
+  color: var(--text-idle);
+  line-height: 1;
+}
+
+/* Bloc nutritionnel */
+.rc-card__nutrition {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  padding-top: 0.625rem;
+  border-top: 1px solid #1f2428;
+}
+
+.rc-card__kcal {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--accent);
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.rc-card__kcal-unit {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-idle);
+}
+
+.rc-card__macros {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.rc-card__macro {
+  font-size: 0.7rem;
+  color: var(--text-idle);
+  background: #1a1e23;
+  border: 1px solid #23282f;
+  border-radius: 6px;
+  padding: 2px 7px;
+  white-space: nowrap;
+}
+
+.rc-card__macro strong {
+  color: #e5e7eb;
+  font-weight: 700;
+}
+
+.rc-card__macro--p strong { color: #60a5fa; }
+.rc-card__macro--g strong { color: #fbbf24; }
+.rc-card__macro--l strong { color: #f87171; }
+
+.rc-card__no-ingredients {
+  font-size: 0.72rem;
+  color: #374151;
+  font-style: italic;
+  margin: 0.25rem 0 0;
+}
+
+/* Bouton supprimer */
+.rc-card__del {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  background: rgba(239, 68, 68, 0.07);
+  border: 1px solid rgba(239, 68, 68, 0.18);
+  border-radius: 8px;
+  color: #6b7280;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.rc-card__del:hover,
+.rc-card__del:active {
+  background: rgba(239, 68, 68, 0.18);
+  border-color: rgba(239, 68, 68, 0.5);
+  color: #ef4444;
+}
+
+/* ── Vue édition ── */
+.rc-edit__topbar {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  margin-bottom: 0.875rem;
+}
+
+.rc-edit__back {
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  background: #1a1e23;
+  border: 1px solid #2a3038;
+  border-radius: 10px;
+  color: var(--text-idle);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.rc-edit__back:hover {
+  color: #fff;
+  border-color: #3a4048;
+}
+
+.rc-edit__name {
+  flex: 1;
+  min-width: 0;
+  background: #141820;
+  border: 1px solid #1f2428;
+  border-radius: 10px;
+  color: #f0f0f0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  font-family: inherit;
+  padding: 0.5rem 0.875rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.rc-edit__name:focus { border-color: rgba(57, 224, 122, 0.4); }
+
+.rc-edit__delete {
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: 10px;
+  color: #ef4444;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.rc-edit__delete:hover { background: rgba(239, 68, 68, 0.18); }
+
+/* Totaux nutritionnels */
+.rc-edit__totals {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  background: #141820;
+  border: 1px solid #1f2428;
+  border-radius: 10px;
+  padding: 0.625rem 0.875rem;
+  margin-bottom: 1rem;
+  min-height: 38px;
+}
+
+.rc-total__kcal {
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: var(--accent);
+}
+
+.rc-total__item {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #e5e7eb;
+}
+
+.rc-total__sep {
+  font-size: 0.7rem;
+  color: #374151;
+}
+
+/* Titre de section */
+.rc-edit__section-title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-idle);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  margin-bottom: 0.5rem;
+}
+
+/* Liste des ingrédients */
+.rc-edit__items {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  margin-bottom: 0.75rem;
+}
+
+.rc-edit__empty {
+  font-size: 0.78rem;
+  color: var(--text-idle);
+  text-align: center;
+  padding: 0.875rem 0;
+}
+
+.rc-edit__item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #0e1114;
+  border-radius: 10px;
+  padding: 0.5rem 0.625rem 0.5rem 0.875rem;
+}
+
+.rc-edit__item-name {
+  flex: 1;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #e5e7eb;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rc-edit__item-qty {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.rc-edit__qty-input {
+  width: 54px;
+  background: #141820;
+  border: 1px solid #1f2428;
+  border-radius: 7px;
+  color: #f0f0f0;
+  font-size: 0.82rem;
+  font-weight: 700;
+  font-family: inherit;
+  padding: 4px 6px;
+  text-align: right;
+  outline: none;
+  transition: border-color 0.2s;
+  -webkit-appearance: none;
+}
+
+.rc-edit__qty-input:focus { border-color: rgba(57, 224, 122, 0.4); }
+
+.rc-edit__qty-unit {
+  font-size: 0.7rem;
+  color: var(--text-idle);
+  flex-shrink: 0;
+  min-width: 42px;
+}
+
+.rc-edit__item-del {
+  background: none;
+  border: none;
+  color: #374151;
+  font-size: 0.9rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 0 0 4px;
+  flex-shrink: 0;
+  transition: color 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.rc-edit__item-del:hover { color: #ef4444; }
+
+/* Bouton ajouter ingrédient */
+.rc-edit__add-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: #1a1e23;
+  border: 1px dashed #2a3038;
+  border-radius: 10px;
+  color: var(--text-idle);
+  font-size: 0.82rem;
+  font-weight: 700;
+  font-family: inherit;
+  padding: 0.75rem;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.rc-edit__add-btn:hover {
+  color: var(--accent);
+  border-color: rgba(57, 224, 122, 0.4);
+  background: rgba(57, 224, 122, 0.05);
+}
+
+/* ── FAB Recettes ── */
+.fab-add-recette {
+  position: fixed;
+  bottom: calc(var(--nav-height) + 1rem);
+  right: 1.25rem;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #0a0e12;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 20px rgba(57, 224, 122, 0.4);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.2s ease;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 50;
+  -webkit-tap-highlight-color: transparent;
+}
+
+#alim-recettes:checked ~ .fab-add-recette {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.fab-add-recette.rc-fab--hidden {
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+.fab-add-recette:hover,
+.fab-add-recette:active {
+  transform: scale(1.08);
+  box-shadow: 0 6px 28px rgba(57, 224, 122, 0.55);
+}
+
+/* ── Picker plein écran — sélection aliment pour une recette ── */
+.rc-picker {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  background: #0e1114;
+  display: flex;
+  flex-direction: column;
+  transform: translateX(100%);
+  visibility: hidden;
+  transition: transform 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+              visibility 0s 0.35s;
+}
+
+.rc-picker--open {
+  transform: translateX(0);
+  visibility: visible;
+  transition: transform 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+              visibility 0s 0s;
+}
+
+.rc-picker__header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  height: 64px;
+  padding: 0 1rem;
+  background: linear-gradient(135deg, #111417 0%, #1a2318 100%);
+  border-bottom: 1px solid #1f242a;
+  flex-shrink: 0;
+}
+
+.rc-picker__back {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: #1a1e23;
+  border: 1px solid #2a3038;
+  border-radius: 10px;
+  color: #9ca3af;
+  cursor: pointer;
+  flex-shrink: 0;
+  -webkit-tap-highlight-color: transparent;
+  transition: color 0.2s, border-color 0.2s;
+}
+.rc-picker__back:hover { color: #fff; border-color: #3a4550; }
+
+.rc-picker__title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #fff;
+  flex: 1;
+}
+
+.rc-picker__search {
+  padding: 0.875rem 1rem 0;
+  flex-shrink: 0;
+}
+
+.rc-picker__search .search-bar {
+  margin-bottom: 0.625rem;
+}
+
+.rc-picker__search .filter-chips {
+  margin-bottom: 0;
+}
+
+.rc-picker__list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.75rem 1rem calc(1.5rem + var(--nav-height, 68px));
+  -webkit-overflow-scrolling: touch;
+}
+
+.rc-picker__list::-webkit-scrollbar { display: none; }
+
+.rc-picker__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.875rem;
+  background: #141820;
+  border: 1px solid #1f2428;
+  border-radius: 14px;
+  margin-bottom: 0.5rem;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s, border-color 0.15s, transform 0.1s;
+}
+.rc-picker__item:hover  { background: #1a2028; border-color: #2a3540; }
+.rc-picker__item:active { transform: scale(0.985); }
+
+.rc-picker__item-body { flex: 1; min-width: 0; }
+
+.rc-picker__item-name {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #e5e7eb;
+  margin-bottom: 2px;
+}
+
+.rc-picker__item-cat {
+  font-size: 0.68rem;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.rc-picker__item-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  margin-left: 0.75rem;
+  flex-shrink: 0;
+}
+
+.rc-picker__item-kcal {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.rc-picker__item-unit {
+  font-size: 0.65rem;
+  color: #4b5563;
+  font-weight: 500;
+}
+
+.rc-picker__item-add {
+  width: 30px;
+  height: 30px;
+  background: var(--accent-glow);
+  border: 1px solid rgba(57, 224, 122, 0.25);
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent);
+  flex-shrink: 0;
+  margin-left: 0.625rem;
+  transition: background 0.15s, border-color 0.15s;
+}
+.rc-picker__item:hover .rc-picker__item-add {
+  background: rgba(57, 224, 122, 0.15);
+  border-color: rgba(57, 224, 122, 0.4);
+}
+
+@media (min-width: 768px) {
+  .rc-picker {
+    max-width: 480px;
+    left: 50%;
+    right: auto;
+    transform: translateX(calc(-50% + 240px));
+    box-shadow: -4px 0 32px rgba(0, 0, 0, 0.6);
+  }
+  .rc-picker--open {
+    transform: translateX(-50%);
+  }
+}
+
+/* ============================================================
+   MODALE NOUVELLE RECETTE
+   ============================================================ */
+
+/* ── Modale nouvelle recette : structure identique à session-modal ── */
+
+/* Conteneur : position fixed plein écran, masqué par visibility */
+#rc-new-modal {
+  display: block;
+  visibility: hidden;
+  transition: visibility 0s 0.4s;
+}
+
+#rc-new-modal.rc-new-modal--open {
+  visibility: visible;
+  transition: visibility 0s 0s;
+}
+
+/* Overlay : couvre tout, fondu */
+#rc-new-modal .aj-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0);
+  cursor: pointer;
+  transition: background 0.35s ease;
+}
+
+#rc-new-modal.rc-new-modal--open .aj-modal__backdrop {
+  background: rgba(0, 0, 0, 0.78);
+}
+
+/* Sheet : collée en bas, pleine largeur — identique à session-modal__sheet--tall */
+#rc-new-modal .aj-modal__sheet {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: block;
+  width: auto;
+  max-width: none;
+  margin: 0;
+  background: #1a1e23;
+  border-radius: 24px 24px 0 0;
+  border-top: 1px solid #252b33;
+  padding: 0.75rem 1.25rem calc(1.5rem + var(--nav-height, 68px));
+  max-height: 90vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  transform: translateY(100%);
+  transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+#rc-new-modal.rc-new-modal--open .aj-modal__sheet {
+  transform: translateY(0);
+}
+
+/* Desktop : centrer à 480px comme session-modal */
+@media (min-width: 768px) {
+  #rc-new-modal .aj-modal__sheet {
+    max-width: 480px;
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%) translateY(100%);
+  }
+  #rc-new-modal.rc-new-modal--open .aj-modal__sheet {
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+.rc-new-modal__handle {
+  width: 40px;
+  height: 4px;
+  background: #2e3540;
+  border-radius: 2px;
+  margin: 0 auto 1.5rem;
+}
+
+.rc-new-modal__title {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -0.01em;
+  margin: 0 0 4px;
+}
+
+.rc-new-modal__subtitle {
+  font-size: 0.8rem;
+  color: var(--text-idle);
+  margin: 0 0 1.5rem;
+}
+
+.form-field {
+  margin-bottom: 1rem;
+}
+
+.form-field__label {
+  display: block;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #6b7280;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: 0.5rem;
+}
+
+.form-field__input {
+  width: 100%;
+  background: #1a1e25;
+  border: 1px solid #2a3038;
+  border-radius: 10px;
+  color: #fff;
+  font-size: 0.9rem;
+  font-family: inherit;
+  padding: 0.75rem 0.875rem;
+  box-sizing: border-box;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.form-field__input:focus {
+  border-color: rgba(57, 224, 122, 0.4);
+}
+
+.form-field__input::placeholder {
+  color: #4b5563;
+}
+
+.rc-new__add-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  background: rgba(57, 224, 122, 0.06);
+  border: 1px dashed rgba(57, 224, 122, 0.3);
+  border-radius: 10px;
+  color: var(--accent, #39e07a);
+  font-size: 0.875rem;
+  font-weight: 600;
+  font-family: inherit;
+  padding: 0.75rem;
+  cursor: pointer;
+  transition: background 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.rc-new__add-btn:hover {
+  background: rgba(57, 224, 122, 0.1);
+}
+
+.rc-new__save-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  background: var(--accent, #39e07a);
+  color: #0a0e11;
+  font-size: 0.925rem;
+  font-weight: 700;
+  font-family: inherit;
+  border: none;
+  border-radius: 14px;
+  padding: 0.9rem 1.5rem;
+  cursor: pointer;
+  margin-top: 0.75rem;
+  transition: opacity 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.rc-new__save-btn:hover {
+  opacity: 0.88;
+}
+
+.rc-new__cancel {
+  display: block;
+  width: 100%;
+  text-align: center;
+  background: none;
+  border: none;
+  color: #6b7280;
+  font-size: 0.875rem;
+  font-family: inherit;
+  margin-top: 0.75rem;
+  padding: 0.5rem;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ── Modale config aliment ── */
+#rc-alim-config-modal {
+  display: block;
+  visibility: hidden;
+  transition: visibility 0s 0.4s;
+  z-index: 210; /* au-dessus de rc-new-modal */
+}
+#rc-alim-config-modal.rc-alim-config-modal--open {
+  visibility: visible;
+  transition: visibility 0s 0s;
+}
+#rc-alim-config-modal .aj-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0);
+  cursor: pointer;
+  transition: background 0.35s ease;
+}
+#rc-alim-config-modal.rc-alim-config-modal--open .aj-modal__backdrop {
+  background: rgba(0, 0, 0, 0.78);
+}
+#rc-alim-config-modal .aj-modal__sheet {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: block;
+  width: auto;
+  max-width: none;
+  margin: 0;
+  background: #1a1e23;
+  border-radius: 24px 24px 0 0;
+  border-top: 1px solid #252b33;
+  padding: 0.75rem 1.25rem calc(1.5rem + var(--nav-height, 68px));
+  max-height: 90vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  transform: translateY(100%);
+  transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+#rc-alim-config-modal.rc-alim-config-modal--open .aj-modal__sheet {
+  transform: translateY(0);
+}
+@media (min-width: 768px) {
+  #rc-alim-config-modal .aj-modal__sheet {
+    max-width: 480px;
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%) translateY(100%);
+  }
+  #rc-alim-config-modal.rc-alim-config-modal--open .aj-modal__sheet {
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+.rc-alim-search-wrap--open .form-field__input {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+  border-bottom-color: transparent;
+}
+.rc-alim-search-list {
+  display: none;
+  background: #141820;
+  border: 1px solid #2a3038;
+  border-top: none;
+  border-radius: 0 0 10px 10px;
+  max-height: 220px;
+  overflow-y: auto;
+}
+.rc-alim-search-list--visible {
+  display: block;
+}
+.rc-alim-search-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.625rem 0.875rem;
+  border-bottom: 1px solid #1e2228;
+  cursor: pointer;
+  transition: background 0.1s;
+  -webkit-tap-highlight-color: transparent;
+}
+.rc-alim-search-item:last-child { border-bottom: none; }
+.rc-alim-search-item:hover,
+.rc-alim-search-item:active { background: #1a2030; }
+.rc-alim-search-item__name {
+  font-size: 0.875rem;
+  color: #e5e7eb;
+  font-weight: 500;
+}
+.rc-alim-search-item__kcal {
+  font-size: 0.72rem;
+  color: #6b7280;
+  flex-shrink: 0;
+  margin-left: 0.5rem;
+}
+.rc-alim-search-empty {
+  padding: 0.75rem 0.875rem;
+  font-size: 0.8rem;
+  color: #6b7280;
+  text-align: center;
+}
+
+.rc-alim-config__qty-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.rc-alim-config__qty-row .form-field__input {
+  flex: 1;
+  width: auto;
+}
+.rc-alim-config__unit {
+  font-size: 0.85rem;
+  color: var(--text-idle);
+  flex-shrink: 0;
+  min-width: 40px;
+}
+.rc-new__save-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Ingrédients dans le draft */
+.rc-new-draft-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.625rem 0.75rem;
+  background: #141820;
+  border: 1px solid #1f2428;
+  border-radius: 10px;
+  margin-bottom: 0.375rem;
+}
+
+.rc-new-draft-item__name {
+  font-size: 0.875rem;
+  color: #e5e7eb;
+  font-weight: 500;
+}
+
+.rc-new-draft-item__qty {
+  font-size: 0.72rem;
+  color: #9ca3af;
+  margin-top: 2px;
+}
+
+.rc-new-draft-item__del {
+  background: none;
+  border: none;
+  color: #6b7280;
+  font-size: 0.95rem;
+  cursor: pointer;
+  padding: 0.25rem 0.375rem;
+  line-height: 1;
+  flex-shrink: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Layout mise à jour : info à gauche, qty+del à droite */
+.rc-new-draft-item {
+  flex-wrap: nowrap;
+  align-items: center;
+}
+
+.rc-new-draft-item__info {
+  flex: 1;
+  min-width: 0;
+}
+
+.rc-new-draft-item__kcal {
+  font-size: 0.7rem;
+  color: var(--accent);
+  font-weight: 600;
+  margin-top: 1px;
+  display: block;
+}
+
+.rc-new-draft-item__right {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  flex-shrink: 0;
+  margin-left: 0.5rem;
+}
+
+.rc-new-draft-item__qty-wrap {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.rc-new-draft-item__qty-input {
+  width: 52px;
+  background: #1a1e25;
+  border: 1px solid #2a3038;
+  border-radius: 7px;
+  color: #f0f0f0;
+  font-size: 0.8rem;
+  font-weight: 700;
+  font-family: inherit;
+  padding: 3px 5px;
+  text-align: right;
+  outline: none;
+  transition: border-color 0.15s;
+  -webkit-appearance: none;
+}
+
+.rc-new-draft-item__qty-input:focus { border-color: rgba(57, 224, 122, 0.4); }
+
+.rc-new-draft-item__unit {
+  font-size: 0.68rem;
+  color: var(--text-idle);
+  min-width: 12px;
+}
+
+/* ── Résumé nutritionnel temps réel ── */
+.rc-new__totals {
+  background: #141820;
+  border: 1px solid #1f2428;
+  border-radius: 12px;
+  padding: 0.75rem 0.875rem;
+  margin-bottom: 0.625rem;
+}
+
+.rc-new__totals-values {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  margin-bottom: 0.625rem;
+}
+
+.rc-new__totals-kcal {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.rc-new__totals-kcal span:first-child {
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: var(--accent);
+  letter-spacing: -0.01em;
+}
+
+.rc-new__totals-kcal-unit {
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: var(--text-idle);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.rc-new__totals-macros {
+  display: flex;
+  gap: 0.625rem;
+  flex: 1;
+  justify-content: flex-end;
+}
+
+.rc-new__totals-macro {
+  font-size: 0.72rem;
+  color: var(--text-idle);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.rc-new__totals-macro strong {
+  color: #e5e7eb;
+  font-weight: 700;
+}
+
+.rc-new__totals-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.rc-new__totals-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.rc-new__totals-bar-name {
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: #4b5563;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  width: 28px;
+  flex-shrink: 0;
+}
+
+.rc-new__totals-bar-track {
+  flex: 1;
+  height: 4px;
+  background: #1f2428;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.rc-new__totals-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  width: 0%;
+  transition: width 0.35s ease;
+}
+
+.rc-new__totals-bar-fill--k { background: var(--accent); }
+.rc-new__totals-bar-fill--p { background: #60a5fa; }
+.rc-new__totals-bar-fill--g { background: #fbbf24; }
+.rc-new__totals-bar-fill--l { background: #f97316; }
+
+.rc-new__totals-bar-pct {
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: #4b5563;
+  width: 26px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+/* ── Titre de section ingrédients (création menu) ── */
+.rc-new__ingr-section {
+  margin-bottom: 0.625rem;
+}
+
+.rc-new__ingr-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #6b7280;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: 0.5rem;
+}
+
+/* ── Zone ajout aliment inline (création menu) ── */
+.rc-new__add-zone {
+  background: #141820;
+  border: 1px solid #252b33;
+  border-radius: 12px;
+  padding: 0.625rem;
+  margin-bottom: 0.75rem;
+}
+
+.rc-new__search-wrap {
+  position: relative;
+}
+
+/* Quand la liste est ouverte, arrondir seulement en haut */
+.rc-new__search-wrap--open .search-bar {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+  border-bottom-color: transparent;
+  margin-bottom: 0;
+}
+
+.rc-new__search-bar {
+  margin-bottom: 0;
+}
+
+.rc-new__alim-list {
+  background: #141820;
+  border: 1px solid #252b33;
+  border-top: none;
+  border-radius: 0 0 10px 10px;
+  max-height: 200px;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.rc-new__alim-list::-webkit-scrollbar { display: none; }
+
+.rc-new__alim-list[hidden] { display: none; }
+
+/* Réutilise les styles de rc-alim-search-item existants */
+.rc-new__alim-list .rc-alim-search-item:last-child { border-bottom: none; }
+
+/* ── Rangée quantité (visible après sélection d'un aliment) ── */
+.rc-new__qty-row {
+  margin-top: 0.625rem;
+  padding-top: 0.625rem;
+  border-top: 1px solid #252b33;
+}
+
+.rc-new__qty-row[hidden] { display: none; }
+
+.rc-new__qty-alim-name {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--accent);
+  margin-bottom: 0.5rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rc-new__qty-inputs {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.rc-new__qty-input {
+  width: 70px;
+  background: #1a1e25;
+  border: 1px solid #2a3038;
+  border-radius: 8px;
+  color: #f0f0f0;
+  font-size: 0.9rem;
+  font-weight: 700;
+  font-family: inherit;
+  padding: 0.45rem 0.625rem;
+  text-align: right;
+  outline: none;
+  transition: border-color 0.15s;
+  -webkit-appearance: none;
+  flex-shrink: 0;
+}
+
+.rc-new__qty-input:focus { border-color: rgba(57, 224, 122, 0.4); }
+
+.rc-new__qty-unit {
+  font-size: 0.8rem;
+  color: var(--text-idle);
+  flex-shrink: 0;
+  min-width: 40px;
+}
+
+.rc-new__qty-confirm {
+  flex: 1;
+  background: var(--accent);
+  border: none;
+  border-radius: 8px;
+  color: #0a0e11;
+  font-size: 0.82rem;
+  font-weight: 700;
+  font-family: inherit;
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+  transition: opacity 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.rc-new__qty-confirm:hover { opacity: 0.88; }
+
+/* ============================================================
+   MODALE CRÉATION ALIMENT
+   ============================================================ */
+
+#alim-new-modal {
+  display: block;
+  visibility: hidden;
+  transition: visibility 0s 0.4s;
+  z-index: 200;
+}
+
+#alim-new-modal.alim-new-modal--open {
+  visibility: visible;
+  transition: visibility 0s 0s;
+}
+
+#alim-new-modal .aj-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0);
+  cursor: pointer;
+  transition: background 0.35s ease;
+}
+
+#alim-new-modal.alim-new-modal--open .aj-modal__backdrop {
+  background: rgba(0, 0, 0, 0.78);
+}
+
+#alim-new-modal .aj-modal__sheet {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  display: block; width: auto; max-width: none; margin: 0;
+  background: #1a1e23;
+  border-radius: 24px 24px 0 0;
+  border-top: 1px solid #252b33;
+  padding: 0.75rem 1.25rem calc(1.5rem + var(--nav-height, 68px));
+  max-height: 92vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  transform: translateY(100%);
+  transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+#alim-new-modal.alim-new-modal--open .aj-modal__sheet {
+  transform: translateY(0);
+}
+
+@media (min-width: 768px) {
+  #alim-new-modal .aj-modal__sheet {
+    max-width: 480px;
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%) translateY(100%);
+  }
+  #alim-new-modal.alim-new-modal--open .aj-modal__sheet {
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+/* ── Sélecteur Simple / Produit ── */
+.alim-new__kind-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+
+.alim-new__kind {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  background: #141820;
+  border: 1.5px solid #2a3038;
+  border-radius: 12px;
+  padding: 0.75rem 0.5rem;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.alim-new__kind--active {
+  background: rgba(57, 224, 122, 0.08);
+  border-color: rgba(57, 224, 122, 0.5);
+}
+
+.alim-new__kind-icon {
+  font-size: 1.4rem;
+  line-height: 1;
+}
+
+.alim-new__kind-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #9ca3af;
+  transition: color 0.15s;
+}
+
+.alim-new__kind--active .alim-new__kind-label {
+  color: var(--accent, #39e07a);
+}
+
+/* ── Mode de consommation (grille 2×2) ── */
+.alim-new__mode-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+
+.alim-new__mode-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  background: #141820;
+  border: 1.5px solid #2a3038;
+  border-radius: 12px;
+  padding: 0.75rem 0.5rem;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  -webkit-tap-highlight-color: transparent;
+  font-family: inherit;
+}
+
+.alim-new__mode-btn--active {
+  background: rgba(57, 224, 122, 0.08);
+  border-color: rgba(57, 224, 122, 0.5);
+}
+
+.alim-new__mode-icon {
+  font-size: 1.4rem;
+  line-height: 1;
+}
+
+.alim-new__mode-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #9ca3af;
+  transition: color 0.15s;
+}
+
+.alim-new__mode-btn--active .alim-new__mode-label {
+  color: var(--accent, #39e07a);
+}
+
+/* ── Avertissement doublon ── */
+.alim-new__dup-warn {
+  font-size: 0.72rem;
+  color: #f59e0b;
+  margin-top: 5px;
+  padding: 4px 8px;
+  background: rgba(245,158,11,0.08);
+  border: 1px solid rgba(245,158,11,0.2);
+  border-radius: 6px;
+  line-height: 1.4;
+}
+
+/* ── Référence macros ── */
+.alim-new__macro-ref {
+  font-size: 0.72rem;
+  color: #6b7280;
+  margin-bottom: 0.25rem;
+}
+
+/* ── Toggle Grammes / Unité ── */
+.alim-new__toggle-row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.alim-new__toggle {
+  flex: 1;
+  background: #141820;
+  border: 1px solid #2a3038;
+  border-radius: 10px;
+  color: #6b7280;
+  font-size: 0.875rem;
+  font-weight: 600;
+  font-family: inherit;
+  padding: 0.625rem;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.alim-new__toggle--active {
+  background: rgba(57, 224, 122, 0.1);
+  border-color: rgba(57, 224, 122, 0.45);
+  color: var(--accent, #39e07a);
+}
+
+/* ── Chips catégorie ── */
+.alim-new__cat-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+.alim-new__cat-chip {
+  padding: 0.375rem 0.75rem;
+  background: #141820;
+  border: 1px solid #2a3038;
+  border-radius: 20px;
+  color: #6b7280;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.alim-new__cat-chip--active {
+  background: rgba(57, 224, 122, 0.1);
+  border-color: rgba(57, 224, 122, 0.45);
+  color: var(--accent, #39e07a);
+}
+
+/* ── Bouton infos nutritionnelles ── */
+.alim-new__macros-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  background: none;
+  border: 1px dashed #2a3038;
+  border-radius: 10px;
+  color: #6b7280;
+  font-size: 0.82rem;
+  font-weight: 600;
+  font-family: inherit;
+  padding: 0.625rem;
+  cursor: pointer;
+  margin-bottom: 0.75rem;
+  transition: color 0.15s, border-color 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.alim-new__macros-btn:hover {
+  color: var(--accent, #39e07a);
+  border-color: rgba(57, 224, 122, 0.35);
+}
+
+/* ── Grille macros 2×2 ── */
+.alim-new__macros-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 0.625rem;
+  margin-bottom: 0.25rem;
+}
+
+/* ── Bouton scanner ── */
+.alim-new__scan-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.75rem;
+  background: rgba(57, 224, 122, 0.07);
+  border: 1.5px dashed rgba(57, 224, 122, 0.45);
+  border-radius: 12px;
+  color: var(--accent, #39e07a);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.alim-new__scan-btn:hover {
+  background: rgba(57, 224, 122, 0.13);
+  border-color: rgba(57, 224, 122, 0.7);
+}
+
+/* ── Séparateur "ou" ── */
+.alim-scan-divider {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  margin: 0.125rem 0 0.75rem;
+  color: rgba(255, 255, 255, 0.25);
+  font-size: 0.78rem;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.alim-scan-divider::before,
+.alim-scan-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: #2a3038;
+}
+
+/* ── Ligne code-barres manuel ── */
+.alim-barcode-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: stretch;
+}
+
+.alim-barcode-row .form-field__input {
+  flex: 1;
+  min-width: 0;
+  font-size: 1rem;
+  letter-spacing: 0.05em;
+}
+
+.alim-barcode-search-btn {
+  flex-shrink: 0;
+  padding: 0 1rem;
+  height: 44px;
+  background: var(--accent, #39e07a);
+  border: none;
+  border-radius: 10px;
+  color: #0a0e12;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
+  transition: opacity 0.15s;
+}
+
+.alim-barcode-search-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.alim-barcode-search-btn:not(:disabled):active {
+  opacity: 0.75;
+}
+
+.alim-barcode-search-btn--loading {
+  pointer-events: none;
+  opacity: 0.6;
+}
+
+/* ── Message d'erreur barcode ── */
+.alim-barcode-error {
+  margin: 0.4rem 0 0;
+  font-size: 0.8rem;
+  color: #f87171;
+  line-height: 1.4;
+}
+
+/* ============================================================
+   OVERLAY SCANNER CODE-BARRES
+   ============================================================ */
+
+#scan-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 400;
+  display: flex;
+  align-items: stretch;
+  background: #000;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease, visibility 0s 0.3s;
+}
+
+#scan-overlay.scan-overlay--open {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.3s ease, visibility 0s 0s;
+}
+
+#scan-overlay[hidden] {
+  display: none !important;
+}
+
+#scan-container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+/* ── En-tête scanner ── */
+#scan-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  padding-top: max(0.75rem, env(safe-area-inset-top));
+  background: rgba(0, 0, 0, 0.6);
+  flex-shrink: 0;
+  z-index: 10;
+}
+
+.scan-header-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: 0.01em;
+}
+
+.scan-header-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: rgba(255, 255, 255, 0.12);
+  border: none;
+  border-radius: 50%;
+  color: #fff;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s;
+  flex-shrink: 0;
+}
+
+.scan-header-btn:active {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.scan-flash-btn--on {
+  background: rgba(255, 220, 50, 0.25) !important;
+  color: #ffd700 !important;
+}
+
+/* ── Zone vidéo ── */
+#scan-video-wrapper {
+  position: relative;
+  flex: 1;
+  overflow: hidden;
+  background: #000;
+}
+
+#scan-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* ── Cadre viseur ── */
+#scan-frame {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(72vw, 280px);
+  height: min(26vw, 100px);
+  z-index: 5;
+  overflow: hidden;
+}
+
+/* Coins du viseur */
+.scan-corner {
+  position: absolute;
+  width: 22px;
+  height: 22px;
+  border-color: var(--accent, #39e07a);
+  border-style: solid;
+  border-width: 0;
+}
+
+.scan-corner--tl { top: 0; left: 0;  border-top-width: 3px; border-left-width:  3px; }
+.scan-corner--tr { top: 0; right: 0; border-top-width: 3px; border-right-width: 3px; }
+.scan-corner--bl { bottom: 0; left: 0;  border-bottom-width: 3px; border-left-width:  3px; }
+.scan-corner--br { bottom: 0; right: 0; border-bottom-width: 3px; border-right-width: 3px; }
+
+/* Ligne de scan animée */
+#scan-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent, #39e07a) 30%, #fff 50%, var(--accent, #39e07a) 70%, transparent);
+  box-shadow: 0 0 8px var(--accent, #39e07a);
+  animation: scan-sweep 2s ease-in-out infinite;
+  will-change: top;
+}
+
+@keyframes scan-sweep {
+  0%   { top: 0%; }
+  50%  { top: calc(100% - 2px); }
+  100% { top: 0%; }
+}
+
+/* Overlay sombre autour du cadre */
+#scan-video-wrapper::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(
+      ellipse min(85vw, 330px) min(35vw, 135px) at 50% 50%,
+      transparent 0%,
+      rgba(0, 0, 0, 0.55) 100%
+    );
+  z-index: 4;
+  pointer-events: none;
+}
+
+/* ── Zone infos bas ── */
+#scan-info {
+  padding: 1.25rem 1.25rem max(1.25rem, env(safe-area-inset-bottom));
+  background: rgba(0, 0, 0, 0.75);
+  flex-shrink: 0;
+  text-align: center;
+}
+
+.scan-status {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #fff;
+  margin: 0 0 0.25rem;
+  white-space: pre-wrap;
+}
+
+.scan-hint {
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.45);
+  margin: 0 0 0.875rem;
+}
+
+/* ── Boutons d'action post-scan ── */
+#scan-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.scan-action-btn {
+  width: 100%;
+  padding: 0.7rem 1rem;
+  border-radius: 12px;
+  border: 1.5px solid #2a3038;
+  background: #141820;
+  color: #e5e7eb;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s;
+}
+
+.scan-action-btn--primary {
+  background: var(--accent, #39e07a);
+  border-color: var(--accent, #39e07a);
+  color: #0a0e12;
+}
+
+.scan-action-btn:active {
+  opacity: 0.8;
+}
+
+/* ============================================================
+   AUJOURD'HUI — repas planifiés (lecture seule depuis Planning)
+   ============================================================ */
+
+.aj-planned-section {
+  margin: 0 1rem 0.75rem;
+  background: #111417;
+  border: 1px solid rgba(57, 224, 122, 0.2);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.aj-planned-header {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border-bottom: 1px solid rgba(57, 224, 122, 0.15);
+  background: rgba(57, 224, 122, 0.05);
+}
+
+.aj-planned-entry {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.55rem 0.75rem;
+  border-bottom: 1px solid #1a1e23;
+  cursor: pointer;
+  transition: background 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.aj-planned-entry:hover,
+.aj-planned-entry:active {
+  background: rgba(57, 224, 122, 0.06);
+}
+
+.aj-planned-entry:last-child {
+  border-bottom: none;
+}
+
+.aj-planned-entry__arrow {
+  font-size: 1.2rem;
+  color: #374151;
+  flex-shrink: 0;
+  line-height: 1;
+  transition: color 0.15s;
+}
+
+.aj-planned-entry:hover .aj-planned-entry__arrow {
+  color: var(--accent);
+}
+
+.aj-planned-entry__icon {
+  font-size: 1rem;
+  line-height: 1;
+  flex-shrink: 0;
+  opacity: 0.8;
+}
+
+.aj-planned-entry__body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.aj-planned-entry__meal {
+  font-size: 0.63rem;
+  color: var(--text-idle);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 600;
+}
+
+.aj-planned-entry__name {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #c8cdd4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.aj-planned-entry__kcal {
+  font-size: 0.7rem;
+  color: var(--text-idle);
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ============================================================
+   BOTTOM-SHEET — DÉTAIL MENU PLANIFIÉ
+   ============================================================ */
+
+/* Overlay identique aux autres aj-add-sheet */
+#pl-menu-detail-sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  pointer-events: none;
+}
+
+#pl-menu-detail-sheet:not([hidden]) {
+  pointer-events: auto;
+}
+
+.pl-detail__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+
+#pl-menu-detail-sheet:not([hidden]) .pl-detail__backdrop {
+  opacity: 1;
+}
+
+.pl-detail__panel {
+  position: relative;
+  background: #13171b;
+  border-radius: 20px 20px 0 0;
+  border-top: 1px solid #1f242a;
+  max-height: 90dvh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transform: translateY(100%);
+  transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+#pl-menu-detail-sheet:not([hidden]) .pl-detail__panel {
+  transform: translateY(0);
+}
+
+/* ── Handle ── */
+.pl-detail__handle {
+  width: 36px;
+  height: 4px;
+  background: #2d3540;
+  border-radius: 2px;
+  margin: 0.75rem auto 1rem;
+  padding: 0 !important;
+}
+
+/* Padding du handle + header + totals (zone non-scrollable) */
+.pl-detail__handle,
+.pl-detail__header,
+.pl-detail__totals {
+  flex-shrink: 0;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+/* ── Scroll zone (ingrédients + ajouter + picker) ── */
+.pl-detail__scroll-zone {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding: 0 1rem;
+}
+.pl-detail__scroll-zone::-webkit-scrollbar { display: none; }
+
+/* Zone actions (fixe en bas) */
+.pl-detail__actions {
+  flex-shrink: 0;
+  padding: 0.75rem 1rem calc(env(safe-area-inset-bottom, 0px) + 1rem);
+  border-top: 1px solid #1f242a;
+}
+
+/* ── Header ── */
+.pl-detail__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  padding-top: 0;
+}
+
+.pl-detail__header-left {
+  flex: 1;
+  min-width: 0;
+}
+
+.pl-detail__meal-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 2px;
+}
+
+.pl-detail__title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #fff;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pl-detail__close {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #1a1e23;
+  border: 1px solid #2a3038;
+  color: #9ca3af;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s;
+}
+
+.pl-detail__close:hover { background: #22272e; }
+
+/* ── Résumé nutritionnel ── */
+.pl-detail__totals {
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #1f242a;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: #141820;
+  border: 1px solid #1f2428;
+  border-radius: 10px;
+  padding: 0.625rem 0.875rem;
+  margin-bottom: 1rem;
+}
+
+.pl-detail__total-kcal {
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.pl-detail__total-kcal span {
+  font-size: 1.05rem;
+}
+
+.pl-detail__total-macros {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.pl-detail__total-macro {
+  font-size: 0.72rem;
+  color: var(--text-idle);
+  font-weight: 600;
+}
+
+.pl-detail__total-macro strong {
+  color: #e5e7eb;
+}
+
+.pl-detail__total-sep {
+  font-size: 0.7rem;
+  color: #374151;
+}
+
+/* ── Section label ── */
+.pl-detail__section-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #6b7280;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: 0.5rem;
+}
+
+/* ── Liste des aliments ── */
+.pl-detail__aliments {
+  display: flex;
+  flex-direction: column;
+  background: #141820;
+  border: 1px solid #1f2428;
+  border-radius: 10px;
+  overflow: hidden;
+  margin-top: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.pl-detail__alim-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 0.75rem;
+  border-bottom: 1px solid #1a1e23;
+}
+
+.pl-detail__alim-row:last-child { border-bottom: none; }
+
+/* Mode lecture */
+.pl-detail__alim-name {
+  flex: 1;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #e5e7eb;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pl-detail__alim-qty {
+  font-size: 0.72rem;
+  color: var(--text-idle);
+  flex-shrink: 0;
+}
+
+.pl-detail__alim-kcal {
+  font-size: 0.72rem;
+  color: var(--accent);
+  font-weight: 700;
+  flex-shrink: 0;
+  min-width: 48px;
+  text-align: right;
+}
+
+/* Mode édition — input inline */
+.pl-detail__alim-edit {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.pl-detail__qty-input {
+  width: 58px;
+  background: #0e1114;
+  border: 1px solid #2a3038;
+  border-radius: 6px;
+  color: #f0f0f0;
+  font-size: 0.82rem;
+  font-family: inherit;
+  padding: 0.25rem 0.4rem;
+  text-align: center;
+  -moz-appearance: textfield;
+}
+
+.pl-detail__qty-input::-webkit-inner-spin-button,
+.pl-detail__qty-input::-webkit-outer-spin-button { -webkit-appearance: none; }
+
+.pl-detail__qty-unit {
+  font-size: 0.7rem;
+  color: var(--text-idle);
+  flex-shrink: 0;
+}
+
+/* ── Boutons d'action ── */
+/* (positionnement géré par le flex-column du panel, voir plus haut) */
+.pl-detail__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.pl-detail__btn {
+  width: 100%;
+  border-radius: 14px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  font-family: inherit;
+  padding: 0.85rem 1rem;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.pl-detail__btn--consume {
+  background: var(--accent);
+  color: #000;
+}
+
+.pl-detail__btn--consume:hover {
+  background: #2fcf6a;
+}
+
+.pl-detail__btn--edit {
+  background: #1a1e23;
+  border-color: #2a3038;
+  color: #e5e7eb;
+}
+
+.pl-detail__btn--edit:hover {
+  border-color: rgba(57, 224, 122, 0.35);
+  background: rgba(57, 224, 122, 0.06);
+  color: var(--accent);
+}
+
+.pl-detail__btn--ignore {
+  background: transparent;
+  border-color: transparent;
+  color: #6b7280;
+  font-size: 0.82rem;
+  padding: 0.6rem 1rem;
+}
+
+.pl-detail__btn--ignore:hover { color: #9ca3af; }
+
+/* ── Badge "Modifié" ── */
+.pl-detail__modified-badge {
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: #f59e0b;
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: 99px;
+  padding: 2px 8px;
+  white-space: nowrap;
+  align-self: flex-start;
+  margin-top: 2px;
+}
+
+/* ── Message liste vide ── */
+.pl-detail__alim-empty {
+  font-size: 0.78rem;
+  color: var(--text-idle);
+  padding: 0.75rem;
+  margin: 0;
+}
+
+/* ── Bouton supprimer un aliment ── */
+.pl-detail__alim-del {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 5px;
+  border: 1px solid #2a3038;
+  background: transparent;
+  color: #4b5563;
+  font-size: 0.65rem;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.pl-detail__alim-del:hover,
+.pl-detail__alim-del:active {
+  background: rgba(239, 68, 68, 0.12);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: #ef4444;
+}
+
+/* ── Input quantité inline (mode édition) ── */
+.pl-detail__qty-input-inline {
+  width: 56px;
+  background: #0e1114;
+  border: 1px solid #2a3038;
+  border-radius: 6px;
+  color: #f0f0f0;
+  font-size: 0.82rem;
+  font-family: inherit;
+  padding: 0.2rem 0.35rem;
+  text-align: center;
+  -moz-appearance: textfield;
+}
+.pl-detail__qty-input-inline::-webkit-inner-spin-button,
+.pl-detail__qty-input-inline::-webkit-outer-spin-button { -webkit-appearance: none; }
+
+.pl-detail__qty-unit-inline {
+  font-size: 0.7rem;
+  color: var(--text-idle);
+}
+
+/* ── Zone "Ajouter un aliment" ── */
+.pl-detail__add-zone {
+  padding: 0.375rem 0 0.625rem;
+}
+
+.pl-detail__add-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.75rem;
+  background: transparent;
+  border: 1px solid #2a3038;
+  border-radius: 8px;
+  color: var(--text-idle);
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+  -webkit-tap-highlight-color: transparent;
+  font-family: inherit;
+}
+.pl-detail__add-btn:hover,
+.pl-detail__add-btn:active {
+  color: var(--accent);
+  border-color: rgba(57, 224, 122, 0.4);
+  background: rgba(57, 224, 122, 0.07);
+}
+
+/* ── Picker aliments ── */
+#pl-detail-picker {
+  border-top: 1px solid #1a1e23;
+  padding-top: 0.5rem;
+  padding-bottom: 0.25rem;
+}
+
+.pl-detail__picker-search {
+  margin-bottom: 0.375rem;
+}
+
+.pl-detail__picker-input {
+  width: 100%;
+  box-sizing: border-box;
+  background: #1a1e23;
+  border: 1px solid #2a3038;
+  border-radius: 10px;
+  color: #e5e7eb;
+  font-size: 0.82rem;
+  padding: 0.5rem 0.75rem;
+  outline: none;
+  font-family: inherit;
+}
+.pl-detail__picker-input:focus {
+  border-color: rgba(57, 224, 122, 0.4);
+}
+.pl-detail__picker-input::placeholder { color: #4b5563; }
+
+.pl-detail__picker-list {
+  max-height: 200px;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+.pl-detail__picker-list::-webkit-scrollbar { display: none; }
+
+.pl-detail__picker-item {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.55rem 0.25rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.pl-detail__picker-item:hover,
+.pl-detail__picker-item:active {
+  background: rgba(57, 224, 122, 0.06);
+}
+
+.pl-detail__picker-item__name {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #e5e7eb;
+  flex: 1;
+}
+.pl-detail__picker-item__cat {
+  font-size: 0.68rem;
+  color: var(--text-idle);
+}
+
+.pl-detail__picker-empty {
+  font-size: 0.78rem;
+  color: var(--text-idle);
+  padding: 0.5rem 0.25rem;
+  margin: 0;
+}
+
+/* ── Formulaire quantité (étape 2 picker) ── */
+.pl-detail__qty-form {
+  padding: 0.75rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.pl-detail__qty-label {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #e5e7eb;
+}
+
+.pl-detail__qty-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.pl-detail__qty-input {
+  width: 80px;
+  background: #1a1e23;
+  border: 1px solid #2a3038;
+  border-radius: 8px;
+  color: #f0f0f0;
+  font-size: 1rem;
+  font-family: inherit;
+  padding: 0.4rem 0.5rem;
+  text-align: center;
+  -moz-appearance: textfield;
+}
+.pl-detail__qty-input::-webkit-inner-spin-button,
+.pl-detail__qty-input::-webkit-outer-spin-button { -webkit-appearance: none; }
+
+.pl-detail__qty-unit {
+  font-size: 0.82rem;
+  color: var(--text-idle);
+}
+
+.pl-detail__qty-confirm {
+  padding: 0.5rem 1.25rem;
+  background: var(--accent);
+  color: #0e1114;
+  border: none;
+  border-radius: 10px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.pl-detail__qty-back {
+  background: transparent;
+  border: none;
+  color: var(--text-idle);
+  font-size: 0.78rem;
+  cursor: pointer;
+  padding: 0.25rem 0;
+  font-family: inherit;
+  text-align: left;
+}
+.pl-detail__qty-back:hover { color: #e5e7eb; }
+
+/* ============================================================
+   ONGLET PLANNING — vue hebdomadaire
+   ============================================================ */
+
+/* ── Navigation semaine ── */
+.pl-week-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #1f242a;
+  background: #13171b;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.pl-week-nav__btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: #1a1e23;
+  border: 1px solid #2a3038;
+  border-radius: 10px;
+  color: #e5e7eb;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.pl-week-nav__btn:hover,
+.pl-week-nav__btn:active {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.pl-week-nav__label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #e5e7eb;
+  letter-spacing: 0.01em;
+}
+
+/* ── Carte jour ── */
+.pl-day-card {
+  margin: 0.75rem 1rem;
+  background: #13171b;
+  border: 1px solid #1f242a;
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.pl-day-card--today {
+  border-color: rgba(57, 224, 122, 0.35);
+}
+
+.pl-day-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.625rem 0.875rem;
+  border-bottom: 1px solid #1f242a;
+  background: #111417;
+}
+
+.pl-day-card--today .pl-day-card__header {
+  background: rgba(57, 224, 122, 0.06);
+}
+
+.pl-day-card__day {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #e5e7eb;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.pl-day-card__today-badge {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--accent);
+  background: rgba(57, 224, 122, 0.15);
+  border-radius: 99px;
+  padding: 1px 7px;
+  letter-spacing: 0.02em;
+}
+
+.pl-day-card__date {
+  font-size: 0.75rem;
+  color: var(--text-idle);
+}
+
+.pl-day-card__body {
+  padding: 0;
+}
+
+.pl-day-card__empty {
+  font-size: 0.78rem;
+  color: var(--text-idle);
+  padding: 0.75rem 0.875rem;
+  margin: 0;
+}
+
+.pl-day-card__footer {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-top: 1px solid #1a1e23;
+  flex-wrap: wrap;
+}
+
+/* ── Bouton "Ajouter un repas" dans la journée ── */
+.pl-day-card__add-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.65rem;
+  background: transparent;
+  border: 1px dashed #2a3038;
+  border-radius: 8px;
+  color: var(--text-idle);
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.pl-day-card__add-btn:hover,
+.pl-day-card__add-btn:active {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* ── Bouton "Copier la journée" ── */
+.pl-day-card__copy-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.65rem;
+  background: transparent;
+  border: 1px solid #2a3038;
+  border-radius: 8px;
+  color: var(--text-idle);
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.pl-day-card__copy-btn:hover,
+.pl-day-card__copy-btn:active {
+  border-color: rgba(57, 224, 122, 0.4);
+  color: var(--accent);
+}
+
+/* ── Entrée planifiée ── */
+.pl-entry {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.6rem 0.875rem;
+  border-bottom: 1px solid #1a1e23;
+  cursor: pointer;
+}
+
+.pl-entry:last-child {
+  border-bottom: none;
+}
+
+.pl-entry__icon {
+  font-size: 1.15rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.pl-entry__body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.pl-entry__meal {
+  font-size: 0.68rem;
+  color: var(--text-idle);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 600;
+}
+
+.pl-entry__name {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #e5e7eb;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pl-entry__kcal {
+  font-size: 0.72rem;
+  color: var(--accent);
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Pills macros dans les entrées Planning */
+.pl-entry__macros {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-top: 3px;
+}
+
+.pl-entry__macro {
+  font-size: 0.63rem;
+  color: var(--text-idle);
+  background: #1a1e23;
+  border: 1px solid #23282f;
+  border-radius: 5px;
+  padding: 1px 5px;
+  white-space: nowrap;
+}
+
+.pl-entry__macro strong { font-weight: 700; }
+.pl-entry__macro--p strong { color: #60a5fa; }
+.pl-entry__macro--g strong { color: #fbbf24; }
+.pl-entry__macro--l strong { color: #f87171; }
+
+.pl-entry__badge {
+  display: inline-block;
+  margin-top: 4px;
+  font-size: 0.58rem;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+.pl-entry__badge--planifie {
+  background: rgba(107, 114, 128, 0.15);
+  color: var(--text-idle);
+}
+
+.pl-entry__badge--consomme {
+  background: rgba(57, 224, 122, 0.15);
+  color: var(--accent);
+}
+
+.pl-entry__badge--saute {
+  background: rgba(107, 114, 128, 0.12);
+  color: #4b5563;
+}
+
+/* Entrées consommées/sautées légèrement atténuées */
+.pl-entry--consomme {
+  opacity: 0.6;
+}
+
+.pl-entry--saute {
+  opacity: 0.4;
+}
+
+.pl-entry__btns {
+  display: flex;
+  gap: 0.35rem;
+  flex-shrink: 0;
+}
+
+.pl-entry__btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  border: 1px solid #2a3038;
+  background: transparent;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.pl-entry__btn--dup {
+  color: var(--text-idle);
+}
+
+.pl-entry__btn--dup:hover,
+.pl-entry__btn--dup:active {
+  background: rgba(57, 224, 122, 0.08);
+  border-color: rgba(57, 224, 122, 0.35);
+  color: var(--accent);
+}
+
+.pl-entry__btn--del {
+  color: var(--text-idle);
+}
+
+.pl-entry__btn--del:hover,
+.pl-entry__btn--del:active {
+  background: rgba(248, 113, 113, 0.1);
+  border-color: rgba(248, 113, 113, 0.4);
+  color: #f87171;
+}
+
+/* ── État vide liste recettes dans la sheet Planning ── */
+.pl-rc-empty {
+  text-align: center;
+  padding: 1.5rem 1rem;
+}
+
+.pl-rc-empty__text {
+  font-size: 0.85rem;
+  color: #e5e7eb;
+  margin: 0 0 0.25rem;
+}
+
+.pl-rc-empty__hint {
+  font-size: 0.75rem;
+  color: var(--text-idle);
+  margin: 0;
+}
+
+/* ── Sélecteur de jours (copie / duplication) ── */
+.pl-day-pick-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  padding: 0.25rem 0 1rem;
+}
+
+.pl-day-pick-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.625rem 0.75rem;
+  border-radius: 10px;
+  border: 1px solid #1f242a;
+  background: #1a1e23;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.pl-day-pick-item:has(.pl-day-pick-cb:checked) {
+  border-color: rgba(57, 224, 122, 0.4);
+  background: rgba(57, 224, 122, 0.06);
+}
+
+.pl-day-pick-item--source {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.pl-day-pick-cb {
+  accent-color: var(--accent);
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.pl-day-pick-name {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #e5e7eb;
+  flex: 1;
+}
+
+.pl-day-pick-date {
+  font-size: 0.75rem;
+  color: var(--text-idle);
+}
+
+.pl-day-pick-badge {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--text-idle);
+  background: #1f242a;
+  border-radius: 99px;
+  padding: 1px 7px;
+}
+
+.pl-day-pick-confirm {
+  width: 100%;
+  padding: 0.75rem;
+  background: var(--accent);
+  color: #0a0e12;
+  font-size: 0.9rem;
+  font-weight: 700;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.pl-day-pick-confirm:active {
+  opacity: 0.85;
+}
+
